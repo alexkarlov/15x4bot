@@ -2,11 +2,11 @@ package commands
 
 import (
 	"errors"
-	"reminder/db"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/15x4bot/store"
 	"gopkg.in/telegram-bot-api.v4"
 )
 
@@ -31,7 +31,7 @@ func (c *addEvent) NextStep(answer string) (replyMsg string, err error) {
 			return replyMsg, nil
 		}
 		c.when = t
-		places, err := db.GetPlaces()
+		places, err := store.GetPlaces()
 		if err != nil {
 			return "", err
 		}
@@ -43,7 +43,7 @@ func (c *addEvent) NextStep(answer string) (replyMsg string, err error) {
 			err = errors.New("failed string to int converting")
 			return
 		}
-		db.AddRepetition(c.when, c.where)
+		store.AddRepetition(c.when, c.where)
 		replyMsg = "Репетиція створена"
 	default:
 		err = errors.New("next step for command addRepetition was called in a wrong way")

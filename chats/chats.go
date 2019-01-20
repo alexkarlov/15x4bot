@@ -2,9 +2,9 @@ package chats
 
 import (
 	"log"
-	"reminder/commands"
 	"sync"
 
+	"github.com/15x4bot/commands"
 	"gopkg.in/telegram-bot-api.v4"
 )
 

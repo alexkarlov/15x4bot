@@ -2,10 +2,10 @@ package main
 
 import (
 	"log"
-	"reminder/chats"
-	"reminder/config"
-	"reminder/db"
 
+	"github.com/15x4bot/chats"
+	"github.com/15x4bot/config"
+	"github.com/15x4bot/store"
 	"github.com/antonmashko/envconf"
 	_ "github.com/lib/pq"
 	"gopkg.in/telegram-bot-api.v4"
@@ -36,7 +36,9 @@ func main() {
 	updates, err := bot.GetUpdatesChan(u)
 
 	//TODO: refactor it
-	db.Init(conf.DB.DSN)
+	if err = store.Init(conf.DB.DSN); err != nil {
+		log.Panic("failed connection to db:", err)
+	}
 	for update := range updates {
 		if update.Message == nil || update.Message.Text == "" {
 			continue

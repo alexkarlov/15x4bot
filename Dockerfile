@@ -1,11 +1,6 @@
 FROM golang:1.10
 
-WORKDIR /go/src/reminder
-
+WORKDIR /go/src/github.com/15x4bot
 COPY ./ ./
-
-RUN set -e; \
-    apt update; \
-    apt install -y postgresql-client curl
 
 CMD [ "go", "run", "./main.go"]
