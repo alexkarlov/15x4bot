@@ -1,0 +1,37 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "bhXoTJ5x6GN1glc6Glg3MmpOA68=",
+			"path": "github.com/antonmashko/envconf",
+			"revision": "f11b82c003f8873e4a16f33166323837181bbcf2",
+			"revisionTime": "2018-06-20T21:00:08Z"
+		},
+		{
+			"checksumSHA1": "s6eyIXpJ7VAU06FM27GcEBM/5lo=",
+			"path": "github.com/lib/pq",
+			"revision": "90697d60dd844d5ef6ff15135d0203f65d2f53b8",
+			"revisionTime": "2018-05-23T17:54:26Z"
+		},
+		{
+			"checksumSHA1": "ATnwV0POluBNQEMjPdylodz0oK0=",
+			"path": "github.com/lib/pq/oid",
+			"revision": "90697d60dd844d5ef6ff15135d0203f65d2f53b8",
+			"revisionTime": "2018-05-23T17:54:26Z"
+		},
+		{
+			"checksumSHA1": "t8jzPFIv4DNACv+cuZoigNmjPLQ=",
+			"path": "github.com/technoweenie/multipartstreamer",
+			"revision": "a90a01d73ae432e2611d178c18367fbaa13e0154",
+			"revisionTime": "2013-10-20T00:18:33Z"
+		},
+		{
+			"checksumSHA1": "3tsJ1cWUVwgnXtMP1PTVs70Esfs=",
+			"path": "gopkg.in/telegram-bot-api.v4",
+			"revision": "0e0af0c480ea98e982d5f4d45fb39577c6ab1e3e",
+			"revisionTime": "2018-03-28T13:10:29Z"
+		}
+	],
+	"rootPath": "reminder"
+}
