@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"github.com/15x4bot/store"
+	"github.com/alexkarlov/15x4bot/store"
 	"gopkg.in/telegram-bot-api.v4"
 )
 

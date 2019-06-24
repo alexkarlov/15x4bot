@@ -1,10 +1,10 @@
-package chats
+package chat
 
 import (
 	"log"
 	"sync"
 
-	"github.com/15x4bot/commands"
+	"github.com/alexkarlov/15x4bot/commands"
 	"gopkg.in/telegram-bot-api.v4"
 )
 
@@ -43,12 +43,13 @@ func (c *chat) Speak(m string) (a string) {
 	return
 }
 
+// TODO: receive interface?
 func GetChat(msg *tgbotapi.Message) *chat {
 	chatsManager.l.RLock()
 	res, ok := chatsManager.list[msg.Chat.ID]
 	chatsManager.l.RUnlock()
 	if !ok {
-		log.Println("NOT FOUND CHAT!")
+		log.Println("Chat with user %s not found")
 		//if it is new chat - create chat
 		res = &chat{
 			ID:  msg.Chat.ID,

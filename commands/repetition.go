@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/15x4bot/store"
-	"github.com/15x4bot/utils"
+	"github.com/alexkarlov/15x4bot/store"
+	"github.com/alexkarlov/15x4bot/utils"
 	"gopkg.in/telegram-bot-api.v4"
 )
 

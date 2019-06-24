@@ -1,0 +1,1 @@
+This is a simple logger for write log messages with different levels

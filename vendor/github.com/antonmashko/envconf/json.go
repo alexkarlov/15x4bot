@@ -2,61 +2,64 @@ package envconf
 
 import (
 	"encoding/json"
-	"flag"
-	"io/ioutil"
 	"strings"
 )
 
-const JsonConfigName = "json"
-
 type JsonConfig struct {
-	filepath string
-	values   map[string]interface{}
+	m    map[string]interface{}
+	data []byte
 }
 
-func (j *JsonConfig) SetFilePathFlag(flagName string, defaultPath string) {
-	flag.StringVar(&j.filepath, flagName, defaultPath, "json config file path")
-}
-
-func (j *JsonConfig) RawMessage() []byte {
-	if j.filepath == "" {
-		traceLogger.Println("envconf: json filepath is not defined")
-		return nil
+func NewJsonConfig() *JsonConfig {
+	return &JsonConfig{
+		m: make(map[string]interface{}),
 	}
-	b, err := ioutil.ReadFile(j.filepath)
-	if err != nil {
-		errorLogger.Printf("envconf: failed to read file=%s error=%s", j.filepath, err)
-		return nil
-	}
-	return b
 }
 
-func (j *JsonConfig) Contains(keyName string) bool {
-	values := strings.Split(keyName, string(Separator))
-	m := j.values
-	for i, v := range values {
-		tm, ok := m[strings.ToLower(v)]
-		if !ok {
-			return false
+func (j *JsonConfig) Read(data []byte) {
+	j.data = data
+}
+
+func (j *JsonConfig) Get(values ...Value) (interface{}, bool) {
+	const tagName = "json"
+	mp := map[string]interface{}(j.m)
+	for _, v := range values {
+		name := v.Tag().Tag.Get(tagName)
+		if name == "" {
+			name = v.Name()
 		}
-		if i+1 == len(values) {
+		name = strings.ToLower(name)
+		tmp, ok := mp[name]
+		if !ok {
+			// lookup with ignore case
+			for k, v := range mp {
+				if strings.ToLower(k) == name {
+					tmp = v
+				}
+			}
+			if tmp == nil {
+				// NOTE: not found
+				return nil, false
+			}
+		}
+		switch tmp.(type) {
+		case map[string]interface{}:
+			mp = tmp.(map[string]interface{})
 			break
-		}
-		m, ok = tm.(map[string]interface{})
-		if !ok {
-			return false
+		default:
+			return tmp, true
 		}
 	}
-	return true
+	return nil, false
 }
 
-func (j *JsonConfig) Unmarshal(data interface{}) error {
-	b := j.RawMessage()
-	if b == nil {
+func (j *JsonConfig) Unmarshal(v interface{}) error {
+	if j.data == nil {
 		return nil
 	}
-	if err := json.Unmarshal(b, data); err != nil {
+	err := json.Unmarshal(j.data, &j.m)
+	if err != nil {
 		return err
 	}
-	return json.Unmarshal(b, &j.values)
+	return json.Unmarshal(j.data, v)
 }

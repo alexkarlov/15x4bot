@@ -3,10 +3,16 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "bhXoTJ5x6GN1glc6Glg3MmpOA68=",
+			"checksumSHA1": "L2+8WuyBs9Kv1jUi/harbWE36Ko=",
+			"path": "github.com/alexkarlov/simplelog",
+			"revision": "bc78ae95bc6c30f15cf1e7ff1220e76da3fd116c",
+			"revisionTime": "2019-06-24T10:07:13Z"
+		},
+		{
+			"checksumSHA1": "+jdEny1bC+MWOsTJZVjnJgL0ElQ=",
 			"path": "github.com/antonmashko/envconf",
-			"revision": "f11b82c003f8873e4a16f33166323837181bbcf2",
-			"revisionTime": "2018-06-20T21:00:08Z"
+			"revision": "1dd9ce5473b016e3ac7174f3299d855bd3b13bc1",
+			"revisionTime": "2019-01-16T14:21:23Z"
 		},
 		{
 			"checksumSHA1": "s6eyIXpJ7VAU06FM27GcEBM/5lo=",
@@ -33,5 +39,5 @@
 			"revisionTime": "2018-03-28T13:10:29Z"
 		}
 	],
-	"rootPath": "reminder"
+	"rootPath": "github.com/alexkarlov/15x4bot"
 }

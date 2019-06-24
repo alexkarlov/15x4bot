@@ -3,6 +3,7 @@ package envconf
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"os"
 	"reflect"
 	"strconv"
@@ -101,6 +102,12 @@ func (e *defaultV) value() (string, bool) {
 	return e.v, e.defined
 }
 
+type Value interface {
+	Owner() Value
+	Name() string
+	Tag() reflect.StructField
+}
+
 type value struct {
 	owner    *parser
 	field    reflect.Value
@@ -112,8 +119,8 @@ type value struct {
 	desc     string   // description
 }
 
-func newValue(field reflect.Value, tag reflect.StructField) *value {
-	v := &value{field: field, tag: tag}
+func newValue(owner *parser, field reflect.Value, tag reflect.StructField) *value {
+	v := &value{field: field, tag: tag, owner: owner}
 	// Parse description
 	v.desc = tag.Tag.Get(tagDescription)
 	(&v.flagV).define(tag, v.desc)
@@ -125,33 +132,44 @@ func newValue(field reflect.Value, tag reflect.StructField) *value {
 	return v
 }
 
-func (v *value) name() string {
-	op := v.owner.Path()
-	if op != "" {
-		op += string(Separator)
+func (v *value) Owner() Value {
+	if v.owner == nil {
+		return nil
 	}
-	return op + v.tag.Name
+	return v.owner
+}
+
+func (v *value) Name() string {
+	return v.tag.Name
+}
+
+func (v *value) Tag() reflect.StructField {
+	return v.tag
+}
+
+func (v *value) fullname() string {
+	result := v.Name()
+	owner := v.owner
+	for owner != nil && owner.Name() != "" {
+		result = fmt.Sprintf("%s.%s", owner.Name(), result)
+		owner = owner.parent
+	}
+	return result
 }
 
 func (v *value) define() error {
-	ferr := func(err error) error {
-		if v.required {
-			return err
-		}
-		return nil
-	}
 	// validate reflect value
 	if !v.field.IsValid() {
-		return ferr(errInvalidFiled)
+		return v.err(errInvalidFiled)
 	}
 	if !v.field.CanSet() {
-		return ferr(errFiledIsNotSettable)
+		return v.err(errFiledIsNotSettable)
 	}
 	if v.field.Kind() == reflect.Struct {
-		return ferr(errUnsupportedType)
+		return v.err(errUnsupportedType)
 	}
 	// create correct parse priority
-	var value string
+	var value interface{}
 	var exists bool
 	priority := priorityOrder()
 	for _, p := range priority {
@@ -160,37 +178,58 @@ func (v *value) define() error {
 			value, exists = v.flagV.value()
 		case EnvPriority:
 			value, exists = v.envV.value()
-		case ConfigFilePriority:
-			exists = v.owner.external.Contains(v.name())
-			if !exists {
-				break
-			} else {
-				// setted from external source
-				return nil
+		case ExternalPriority:
+			values := []Value{v}
+			owner := v.owner
+			for owner != nil && owner.Name() != "" {
+				values = append([]Value{owner}, values...)
+				owner = owner.parent
 			}
+			value, exists = v.owner.external.Get(values...)
 		case DefaultPriority:
 			value, exists = v.defaultV.value()
 		}
 		if exists {
-			traceLogger.Printf("envconf: set variable name=%s value=%s from=%s", v.name(), value, p)
+			debugLogger.Printf("envconf: set variable name=%s value=%v from=%s", v.fullname(), value, p)
+			if p == ExternalPriority {
+				// value setted in external source
+				return nil
+			}
 			break
 		}
 	}
 	if !exists {
-		return ferr(errRequiredFiled)
+		return v.err(errRequiredFiled)
 	}
 	// set value
-	switch v.tag.Type.Kind() {
+	switch value.(type) {
+	case string:
+		return v.err(setFromString(v.field, (value.(string))))
+	case []interface{}:
+		values := value.([]interface{})
+		result := reflect.MakeSlice(v.tag.Type, len(values), cap(values))
+		for i, val := range values {
+			if err := setFromString(result.Index(i), fmt.Sprint(val)); v.err(err) != nil {
+				return v.err(err)
+			}
+		}
+		v.field.Set(result)
+	}
+	return nil
+}
+
+func setFromString(field reflect.Value, value string) error {
+	switch field.Kind() {
 	case reflect.Bool:
 		i, err := strconv.ParseBool(value)
 		if err != nil {
 			return err
 		}
-		v.field.SetBool(i)
+		field.SetBool(i)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		var i int64
 		var err error
-		if _, ok := v.field.Interface().(time.Duration); ok {
+		if _, ok := field.Interface().(time.Duration); ok {
 			var d time.Duration
 			d, err = time.ParseDuration(value)
 			if err != nil {
@@ -198,28 +237,42 @@ func (v *value) define() error {
 			}
 			i = d.Nanoseconds()
 		} else {
-			i, err = strconv.ParseInt(value, 0, 64)
+			i, err = strconv.ParseInt(value, 10, 64)
 			if err != nil {
 				return err
 			}
 		}
-		v.field.SetInt(i)
+		field.SetInt(i)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		i, err := strconv.ParseUint(value, 0, 64)
+		i, err := strconv.ParseUint(value, 10, 64)
 		if err != nil {
 			return err
 		}
-		v.field.SetUint(i)
+		field.SetUint(i)
 	case reflect.Float32, reflect.Float64:
 		i, err := strconv.ParseFloat(value, 64)
 		if err != nil {
 			return err
 		}
-		v.field.SetFloat(i)
+		field.SetFloat(i)
 	case reflect.String:
-		v.field.SetString(value)
+		field.SetString(value)
 	default:
-		return ferr(errUnsupportedType)
+		return errUnsupportedType
 	}
 	return nil
+}
+
+func (v *value) err(err error) error {
+	if v.required {
+		return err
+	}
+	if err != nil {
+		debugLogger.Printf("ignoring err=%s for value=%s. value is not required", err, v.fullname())
+	}
+	return nil
+}
+
+func (v *value) String() string {
+	return v.Name()
 }

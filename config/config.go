@@ -1,14 +1,18 @@
 package config
 
 type DB struct {
-	DSN string `env:"DB_DSN" default:"host=postgresql port=5432 user=bot sslmode=disable"`
+	DSN string `env:"DB_DSN"`
 }
 
 type TG struct {
-	Token string `env:"TG_TOKEN" default:"566944285:AAFO3UOClwS4NkFFlOFEbkxdmmd-y7VVShg"`
+	Token         string `env:"TG_TOKEN"`
+	ChatTimeout   int    `env:"TG_CHAT_TIMEOUT"`
+	UpdatesOffset int    `env:"TG_UPDATES_OFFSET"`
+	Debug         bool   `env:"TG_DEBUG"`
 }
 
 type Config struct {
-	DB DB
-	TG TG
+	LogLevel int `env:"LOG_LEVEL"`
+	DB       DB
+	TG       TG
 }

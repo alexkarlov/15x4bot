@@ -1,14 +1,17 @@
 package main
 
 import (
-	"log"
+	"github.com/alexkarlov/15x4bot/bot"
+	"github.com/alexkarlov/15x4bot/scheduler"
+	"github.com/alexkarlov/simplelog"
+	"os"
+	"os/signal"
+	"syscall"
 
-	"github.com/15x4bot/chats"
-	"github.com/15x4bot/config"
-	"github.com/15x4bot/store"
+	"github.com/alexkarlov/15x4bot/config"
+	"github.com/alexkarlov/15x4bot/store"
 	"github.com/antonmashko/envconf"
 	_ "github.com/lib/pq"
-	"gopkg.in/telegram-bot-api.v4"
 )
 
 func main() {
@@ -21,39 +24,27 @@ func main() {
 
 	var conf config.Config
 	envconf.Parse(&conf)
-	bot, err := tgbotapi.NewBotAPI(conf.TG.Token)
+	log.SetLevel(log.LogLevel(conf.LogLevel))
+	// setup DB config and establish connection
+	store.Conf = conf.DB
+	if err := store.Init(); err != nil {
+		panic(err)
+	}
+	// setup bot config and run bot
+	bot.Conf = conf.TG
+	bot, err := bot.NewBot()
 	if err != nil {
-		log.Panic(err)
+		panic(err)
 	}
-
-	bot.Debug = true
-
-	log.Printf("Authorized on account %s", bot.Self.UserName)
-
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
-
-	updates, err := bot.GetUpdatesChan(u)
-
-	//TODO: refactor it
-	if err = store.Init(conf.DB.DSN); err != nil {
-		log.Panic("failed connection to db:", err)
-	}
-	for update := range updates {
-		if update.Message == nil || update.Message.Text == "" {
-			continue
-		}
-
-		log.Printf("[%s] %s", update.Message.From.UserName, string(update.Message.Text))
-		t := update.Message.Text
-		//do we chat with this user now?
-		chat := chats.GetChat(update.Message)
-
-		//get next step for the current chat
-		replyText := chat.Speak(t)
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, replyText)
-		//msg.ReplyToMessageID = update.Message.MessageID
-
-		bot.Send(msg)
-	}
+	// start listening updates
+	go bot.ListenUpdates()
+	// start background job manager
+	go scheduler.Run()
+	// wating for signals (SIGTERM - correct exit from application)
+	log.Info("app has been started. waiting for signals")
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	sig := <-sigs
+	// TODO: finalise all active chats
+	log.Infof("got signal %s.exiting...", sig)
 }

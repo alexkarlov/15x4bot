@@ -1,4 +1,9 @@
 # EnvConf
+[![Go Report](https://goreportcard.com/badge/github.com/antonmashko/envconf)](https://goreportcard.com/report/github.com/antonmashko/envconf)
+[![GoDoc](http://godoc.org/github.com/antonmashko/envconf?status.svg)](http://godoc.org/github.com/antonmashko/envconf)
+[![Build Status](https://travis-ci.org/antonmashko/envconf.svg)](https://travis-ci.org/antonmashko/envconf)
+[![Codecov](https://img.shields.io/codecov/c/github/antonmashko/envconf.svg)](https://codecov.io/gh/antonmashko/envconf)
+    
 Installing
 ```
 go get github.com/antonmashko/envconf
@@ -61,12 +66,13 @@ Field1 <string> example_value
 ```
 1) Flag 
 2) Environment variable 
-3) Default value    
+3) External source
+4) Default value
 ```
 
 **Tags**: 
 - flag - name of flag for field [must be unique];   
-- env - name of environment variable for field [must be unique];    
+- env - name of environment variable for field [must be unique];
 - default - if nothing set this value will be used; 
 - required - on `true` validate value from `flag` or `env` source;  
 - description - description in `help`   
