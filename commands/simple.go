@@ -2,7 +2,6 @@ package commands
 
 import (
 	"github.com/alexkarlov/15x4bot/store"
-	"gopkg.in/telegram-bot-api.v4"
 )
 
 type simple struct {
@@ -13,7 +12,7 @@ func (c *simple) IsEnd() bool {
 	return true
 }
 
-func (c *simple) IsAllow(u *tgbotapi.User) bool {
+func (c *simple) IsAllow(u string) bool {
 	return true
 }
 

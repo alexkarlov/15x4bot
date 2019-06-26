@@ -3,7 +3,7 @@ services:
   bot:
     build:
       context: .   
-    container_name: bot
+    container_name: bot-app
     env_file:
     - .env
     depends_on: 
@@ -11,7 +11,7 @@ services:
   postgresql:
     build:
       context: ./postgresql      
-    container_name: postgresql
+    container_name: bot-db
     ports:
       - "5432:5432"
     volumes:

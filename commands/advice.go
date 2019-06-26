@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-
-	"gopkg.in/telegram-bot-api.v4"
 )
 
 type advice struct {
@@ -15,7 +13,7 @@ func (c *advice) IsEnd() bool {
 	return true
 }
 
-func (c *advice) IsAllow(u *tgbotapi.User) bool {
+func (c *advice) IsAllow(u string) bool {
 	return true
 }
 

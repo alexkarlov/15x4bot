@@ -2,8 +2,6 @@ package commands
 
 import (
 	"math/rand"
-
-	"gopkg.in/telegram-bot-api.v4"
 )
 
 type unknown struct {
@@ -13,7 +11,7 @@ func (c *unknown) IsEnd() bool {
 	return true
 }
 
-func (c *unknown) IsAllow(u *tgbotapi.User) bool {
+func (c *unknown) IsAllow(u string) bool {
 	return true
 }
 

@@ -1,6 +1,12 @@
 package store
 
-import "time"
+import (
+	"database/sql"
+	"errors"
+	"time"
+)
+
+var ErrUndefinedNextRepetition = errors.New("Next repetition is undeffined")
 
 type Repetition struct {
 	Id        int
@@ -23,14 +29,12 @@ func GetNextRepetition() (*Repetition, error) {
 	WHERE r.time>NOW()
 	ORDER BY r.id DESC 
 	LIMIT 1;`
-	row, err := dbConn.Query(q)
-	if err != nil {
-		return nil, err
-	}
+	row := dbConn.QueryRow(q)
 	r := &Repetition{}
-	row.Next()
-	err = row.Scan(&r.Time, &r.PlaceName, &r.Address, &r.MapUrl)
-	if err != nil {
+	if err := row.Scan(&r.Time, &r.PlaceName, &r.Address, &r.MapUrl); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrUndefinedNextRepetition
+		}
 		return nil, err
 	}
 	return r, nil

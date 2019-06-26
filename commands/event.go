@@ -59,7 +59,7 @@ func (c *nextEvent) IsEnd() bool {
 	return true
 }
 
-func (c *nextEvent) IsAllow(u *tgbotapi.User) bool {
+func (c *nextEvent) IsAllow(u string) bool {
 	return true
 }
 

@@ -2,8 +2,6 @@ package commands
 
 import (
 	"regexp"
-
-	"gopkg.in/telegram-bot-api.v4"
 )
 
 var commandPatterns = []struct {
@@ -52,14 +50,14 @@ func init() {
 }
 
 type Command interface {
-	IsAllow(*tgbotapi.User) bool
+	IsAllow(string) bool
 	NextStep(answer string) (replyMsg string, err error)
 	IsEnd() bool
 }
 
-func NewCommand(cmdName string, user *tgbotapi.User) Command {
+func NewCommand(cmdName string, username string) Command {
 	for _, cp := range commandPatterns {
-		if cp.compPattern.MatchString(cmdName) && cp.cmd.IsAllow(user) {
+		if cp.compPattern.MatchString(cmdName) && cp.cmd.IsAllow(username) {
 			return cp.cmd
 		}
 	}
