@@ -1,5 +1,3 @@
-\c bot bot;
-
 INSERT INTO "places" ("name", "address", "description","map_url")
 VALUES ('Зелений театр', 'Парк ім. Тараса Шевченко', 'Місце сили', 'https://www.facebook.com/15x4odessaorg/photos/a.1865602430344414/2281489155422404/?type=1&theater'),
 ('Бібліотека ім. М. Грушевського', 'Троїцька вулиця, 49/51', 'Тут живе наука', ''),

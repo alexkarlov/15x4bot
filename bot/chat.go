@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"github.com/alexkarlov/15x4bot/store"
 	"github.com/alexkarlov/simplelog"
 	"sync"
 
@@ -50,7 +51,6 @@ func LookupChat(msg *Message) *chat {
 	res, ok := chatsManager.list[msg.ChatID]
 	if !ok {
 		log.Infof("chat with user %s not found", msg.Username)
-		// TODO: lookup in the DB
 		//if we haven't chatted before with this user - create a new chat
 		res = &chat{
 			ID:  msg.ChatID,
@@ -59,6 +59,9 @@ func LookupChat(msg *Message) *chat {
 		}
 		// TODO: save in the DB
 		chatsManager.list[msg.ChatID] = res
+		if err := store.ChatUpsert(msg.ChatID, msg.Username); err != nil {
+			log.Error("error while chat upserting: ", err)
+		}
 	}
 	return res
 }

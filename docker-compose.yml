@@ -18,6 +18,10 @@ services:
       - pgdata:/var/lib/postgresql/data
 
 volumes:
-  pgdata:      
+  pgdata:  
 
+networks:
+  default:
+    external:
+      name: 15x4
   

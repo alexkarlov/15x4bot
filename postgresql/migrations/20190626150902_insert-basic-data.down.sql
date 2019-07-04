@@ -1,0 +1,2 @@
+TRUNCATE IF EXISTS actions;
+TRUNCATE IF EXISTS places;

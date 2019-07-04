@@ -6,11 +6,11 @@ import (
 )
 
 type Place struct {
-	Id          int    `db:"id"`
-	Name        string `db:"name"`
-	Address     string `db:"address"`
-	Description string `db:"description"`
-	MapUrl      string `db:"map_url"`
+	Id          int
+	Name        string
+	Address     string
+	Description string
+	MapUrl      string
 }
 
 func GetPlaces() ([]string, error) {
@@ -20,7 +20,6 @@ func GetPlaces() ([]string, error) {
 		return places, err
 	}
 
-	defer rows.Close()
 	for rows.Next() {
 		var place Place
 		if err := rows.Scan(&place.Id, &place.Name, &place.Address); err != nil {
@@ -29,6 +28,7 @@ func GetPlaces() ([]string, error) {
 		placeText := []string{strconv.Itoa(place.Id), "-", place.Name, ",", place.Address}
 		places = append(places, strings.Join(placeText, " "))
 	}
+	rows.Close()
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
