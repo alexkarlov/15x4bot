@@ -9,12 +9,15 @@ import (
 	"github.com/alexkarlov/15x4bot/store"
 )
 
+const END_PHRASE = "end"
+
 type addEvent struct {
 	step        int
 	whenStart   time.Time
 	whenEnd     time.Time
 	where       int
 	description string
+	lections    []int
 }
 
 func (c *addEvent) IsAllow(u string) bool {
@@ -61,13 +64,29 @@ func (c *addEvent) NextStep(answer string) (string, error) {
 		}
 		c.where = where
 		replyMsg = "Текст івенту"
-
 	case 4:
 		c.description = answer
-		if err := store.AddEvent(c.whenStart, c.whenEnd, c.where, c.description); err != nil {
+		lections, err := store.GetLections(true)
+		if err != nil {
 			return "", err
 		}
-		replyMsg = "Івент створений"
+		replyMsg = strings.Join([]string{"Виберіть лекцію. Для закінчення напишіть \"" + END_PHRASE + "\"", strings.Join(lections, "\n")}, "\n")
+	case 5:
+		if answer == END_PHRASE {
+			if err := store.AddEvent(c.whenStart, c.whenEnd, c.where, c.description, c.lections); err != nil {
+				return "", err
+			}
+			replyMsg = "Івент створено"
+			break
+		}
+		// TODO: process answer as lections in one answer
+		lection, err := strconv.Atoi(answer)
+		if err != nil {
+			return "", err
+		}
+		c.lections = append(c.lections, lection)
+		// desrese step counter for returning on the next iteration to the same step
+		c.step--
 	default:
 		return "", errors.New("next step for command addRepetition was called in a wrong way")
 	}
@@ -76,7 +95,7 @@ func (c *addEvent) NextStep(answer string) (string, error) {
 }
 
 func (c *addEvent) IsEnd() bool {
-	return c.step == 5
+	return c.step == 6
 }
 
 type nextEvent struct {
