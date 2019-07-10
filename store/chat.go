@@ -10,11 +10,6 @@ type Chat struct {
 	UserID   int
 }
 
-type User struct {
-	ID       int
-	Username string
-}
-
 func ChatUpsert(chat int64, username string) error {
 	tx, err := dbConn.Begin()
 	if err != nil {

@@ -1,10 +1,9 @@
 CREATE TABLE IF NOT EXISTS events (
     id SERIAL PRIMARY KEY,
-    starttime timestamp without time zone,
-    endtime timestamp without time zone,
-    name VARCHAR(100),
+    starttime TIMESTAMP,
+    endtime TIMESTAMP,
     description VARCHAR(1000),
-    place integer
+    place INT
 );
 
 CREATE TABLE IF NOT EXISTS places (
@@ -23,6 +22,6 @@ CREATE TABLE IF NOT EXISTS actions (
 
 CREATE TABLE IF NOT EXISTS repetitions (
     id SERIAL PRIMARY KEY,
-    time timestamp,
-    place int
+    time TIMESTAMP,
+    place INT
 );

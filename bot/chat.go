@@ -31,6 +31,7 @@ func (c *chat) ReplayText(m *Message) (string, error) {
 		c.cmd = commands.NewCommand(m.Text, m.Username)
 	}
 
+	log.Infof("current command %#v", c.cmd)
 	answer, err := c.cmd.NextStep(m.Text)
 
 	if err != nil {

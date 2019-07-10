@@ -1,6 +1,8 @@
 package store
 
 import (
+	"fmt"
+	"github.com/alexkarlov/simplelog"
 	"strconv"
 	"strings"
 )
@@ -12,10 +14,27 @@ type Place struct {
 	Description string
 	MapUrl      string
 }
+type placeType string
 
-func GetPlaces() ([]string, error) {
+type PlaceTypes []placeType
+
+const (
+	PLACE_TYPE_FOR_ALL        placeType = "for_all"
+	PLACE_TYPE_FOR_REPETITION placeType = "for_repetition"
+	PLACE_TYPE_FOR_EVENT      placeType = "for_event"
+)
+
+func GetPlaces(t PlaceTypes) ([]string, error) {
 	places := make([]string, 0)
-	rows, err := dbConn.Query("SELECT id, name, address FROM places")
+	typeFilter := ""
+	if len(t) > 0 {
+		for _, pl := range t {
+			typeFilter += "'" + string(pl) + "'" + ","
+		}
+		typeFilter = fmt.Sprintf("WHERE type IN (%s)", typeFilter[:len(typeFilter)-1])
+	}
+	log.Info(typeFilter)
+	rows, err := dbConn.Query("SELECT id, name, address FROM places " + typeFilter)
 	if err != nil {
 		return places, err
 	}

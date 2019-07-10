@@ -7,39 +7,65 @@ import (
 var commandPatterns = []struct {
 	pattern     string
 	compPattern *regexp.Regexp
-	cmd         Command
+	createCmd   func() Command
 }{
 	{
 		pattern: `addrep`,
-		cmd:     &addRepetition{},
+		createCmd: func() Command {
+			return &addRepetition{}
+		},
 	},
 	{
 		pattern: `addevent`,
-		cmd:     &addRepetition{},
+		createCmd: func() Command {
+			return &addEvent{}
+		},
+	},
+	{
+		pattern: `adduser`,
+		createCmd: func() Command {
+			return &addUser{}
+		},
+	},
+	{
+		pattern: `addlection`,
+		createCmd: func() Command {
+			return &addLection{}
+		},
 	},
 	{
 		pattern: `nextevent|next event|наступний івент|следующий ивент|когда ивент|коли івент`,
-		cmd:     &nextEvent{},
+		createCmd: func() Command {
+			return &nextEvent{}
+		},
 	},
 	{
 		pattern: `nextrepetition|репетиці|репетици|repetition|коли рєпа|когда репа`,
-		cmd:     &nextRep{},
+		createCmd: func() Command {
+			return &nextRep{}
+		},
 	},
 	{
 		pattern: `documentation|документац|где дока|де дока`,
-		cmd: &simple{
-			action: "documentation",
+		createCmd: func() Command {
+			return &simple{
+				action: "documentation",
+			}
 		},
 	},
 	{
 		pattern: `about|хто ми|кто мы|про нас|15x4\?`,
-		cmd: &simple{
-			action: "about",
+		createCmd: func() Command {
+			return &simple{
+				action: "about",
+			}
 		},
 	},
 	{
 		pattern: `101010|3\.14|advice|порада|що робити|что делать`,
-		cmd:     &advice{},
+		createCmd: func() Command {
+			return &advice{}
+		},
 	},
 }
 
@@ -57,8 +83,11 @@ type Command interface {
 
 func NewCommand(cmdName string, username string) Command {
 	for _, cp := range commandPatterns {
-		if cp.compPattern.MatchString(cmdName) && cp.cmd.IsAllow(username) {
-			return cp.cmd
+		if cp.compPattern.MatchString(cmdName) {
+			cmd := cp.createCmd()
+			if cmd.IsAllow(username) {
+				return cmd
+			}
 		}
 	}
 	c := &unknown{}

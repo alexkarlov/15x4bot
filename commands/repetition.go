@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/alexkarlov/15x4bot/store"
-	"github.com/alexkarlov/15x4bot/utils"
 )
 
 var ErrWrongCall = errors.New("Next step for command addRepetition was called in a wrong way")
@@ -20,8 +19,13 @@ type addRepetition struct {
 
 func (c *addRepetition) IsAllow(u string) bool {
 	//TODO: move it to db
-	t := []string{"zedman95", "alex_karlov"}
-	return utils.Contains(t, u)
+	admins := []string{"zedman95", "alex_karlov"}
+	for _, admin := range admins {
+		if admin == u {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *addRepetition) NextStep(answer string) (replyMsg string, err error) {
@@ -35,7 +39,7 @@ func (c *addRepetition) NextStep(answer string) (replyMsg string, err error) {
 			return replyMsg, nil
 		}
 		c.when = t
-		places, err := store.GetPlaces()
+		places, err := store.GetPlaces(store.PlaceTypes{store.PLACE_TYPE_FOR_REPETITION, store.PLACE_TYPE_FOR_ALL})
 		if err != nil {
 			return "", err
 		}
@@ -71,7 +75,7 @@ func (c *nextRep) IsAllow(u string) bool {
 	return true
 }
 
-func (c *nextRep) NextStep(answer string) (replyMsg string, err error) {
+func (c *nextRep) NextStep(answer string) (string, error) {
 	r, err := store.GetNextRepetition()
 	if err != nil {
 		if err == store.ErrUndefinedNextRepetition {
@@ -79,7 +83,6 @@ func (c *nextRep) NextStep(answer string) (replyMsg string, err error) {
 		}
 		return "", err
 	}
-	replyMsg = strings.Join([]string{"Де: ", r.PlaceName, ", ", r.Address, "\n", "Коли: ", r.Time.Format("2006-01-02 15:04:05"), "\n", "Мапа: ", r.MapUrl}, "")
-
-	return
+	replyMsg := strings.Join([]string{"Де: ", r.PlaceName, ", ", r.Address, "\n", "Коли: ", r.Time.Format("2006-01-02 15:04:05"), "\n", "Мапа: ", r.MapUrl}, "")
+	return replyMsg, nil
 }

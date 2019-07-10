@@ -1,0 +1,2 @@
+ALTER TABLE places DROP COLUMN IF EXISTS type;
+DROP TYPE IF EXISTS placetype;
