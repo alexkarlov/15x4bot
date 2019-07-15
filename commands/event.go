@@ -73,6 +73,7 @@ func (c *addEvent) NextStep(answer string) (string, error) {
 		replyMsg = strings.Join([]string{"Виберіть лекцію. Для закінчення напишіть \"" + END_PHRASE + "\"", strings.Join(lections, "\n")}, "\n")
 	case 5:
 		if answer == END_PHRASE {
+			// TODO: add scheduler tasks
 			if err := store.AddEvent(c.whenStart, c.whenEnd, c.where, c.description, c.lections); err != nil {
 				return "", err
 			}

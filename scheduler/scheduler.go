@@ -1,8 +1,9 @@
 package scheduler
 
 import (
-	"github.com/alexkarlov/simplelog"
 	"time"
+
+	"github.com/alexkarlov/simplelog"
 )
 
 // Run starts checking background tasks from db every minute

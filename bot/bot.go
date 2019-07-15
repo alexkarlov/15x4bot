@@ -56,17 +56,6 @@ func (b *Bot) ListenUpdates() {
 			ChatID:   update.Message.Chat.ID,
 		}
 		go b.Reply(msg)
-
-		// t := update.Message.Text
-		//do we chat with this user now?
-		// chat := chat.GetChat(update.Message)
-
-		//get next step for the current chat
-		// replyText := chat.Speak(t)
-		// msg := tgbotapi.NewMessage(update.Message.Chat.ID, replyText)
-		//msg.ReplyToMessageID = update.Message.MessageID
-
-		// b.bot.Send(msg)
 	}
 }
 
@@ -78,5 +67,6 @@ func (b *Bot) Reply(msg *Message) {
 		replyText = InternalErrorText
 	}
 	replyMsg := tgbotapi.NewMessage(msg.ChatID, replyText)
+
 	b.bot.Send(replyMsg)
 }
