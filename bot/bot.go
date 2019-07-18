@@ -59,6 +59,11 @@ func (b *Bot) ListenUpdates() {
 	}
 }
 
+func (b *Bot) SendText(chatID int64, msg string) {
+	replyMsg := tgbotapi.NewMessage(chatID, msg)
+	b.bot.Send(replyMsg)
+}
+
 func (b *Bot) Reply(msg *Message) {
 	c := LookupChat(msg)
 	replyText, err := c.ReplayText(msg)
@@ -67,6 +72,10 @@ func (b *Bot) Reply(msg *Message) {
 		replyText = InternalErrorText
 	}
 	replyMsg := tgbotapi.NewMessage(msg.ChatID, replyText)
-
+	// button1 := tgbotapi.NewKeyboardButton("sss")
+	// button2 := tgbotapi.NewKeyboardButton("aaa")
+	// keyboardRow := tgbotapi.NewKeyboardButtonRow(button1, button2)
+	// replyMsg.BaseChat.ReplyMarkup = tgbotapi.NewReplyKeyboard(keyboardRow)
+	// replyMsg.BaseChat.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	b.bot.Send(replyMsg)
 }

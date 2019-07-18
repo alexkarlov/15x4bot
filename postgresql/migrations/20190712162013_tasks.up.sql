@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     type task_type NOT NULL,
     execution_time  TIMESTAMP NOT NULL,
     status SMALLINT, 
+    details JSON NOT NULL,
     cdate TIMESTAMP NOT NULL DEFAULT NOW(),
     udate TIMESTAMP NOT NULL DEFAULT NOW()
 );

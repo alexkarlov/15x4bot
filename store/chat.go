@@ -10,6 +10,14 @@ type Chat struct {
 	UserID   int
 }
 
+func GetChatID(u int) (int, error) {
+	q := "SELECT tg_chat_id FROM chats WHERE user_id=$1"
+	row := dbConn.QueryRow(q, u)
+	var ID int
+	err := row.Scan(&ID)
+	return ID, err
+}
+
 func ChatUpsert(chat int64, username string) error {
 	tx, err := dbConn.Begin()
 	if err != nil {
@@ -38,6 +46,5 @@ func ChatUpsert(chat int64, username string) error {
 		return err
 	}
 
-	tx.Commit()
-	return err
+	return tx.Commit()
 }

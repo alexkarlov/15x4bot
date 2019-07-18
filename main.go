@@ -39,7 +39,7 @@ func main() {
 	// start listening updates
 	go bot.ListenUpdates()
 	// start background job manager
-	go scheduler.Run()
+	go scheduler.Run(bot)
 	// wating for signals (SIGTERM - correct exit from application)
 	log.Info("app has been started. waiting for signals")
 	sigs := make(chan os.Signal, 1)

@@ -1,11 +1,14 @@
 package store
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 )
+
+var ErrUserEmptyID = errors.New("empty user ID")
 
 type UserRole string
 
@@ -34,7 +37,18 @@ type User struct {
 	Role     UserRole
 }
 
+func (u *User) TGChat() (*Chat, error) {
+	if u.ID == 0 {
+		return nil, ErrUserEmptyID
+	}
+	c := &Chat{}
+	q := "SELECT c.id, c.tg_chat_id FROM users u LEFT JOIN chats c ON c.user_id=u.id WHERE u.id=$1"
+	err := dbConn.QueryRow(q, u.ID).Scan(&c.ID, &c.TGChatID)
+	return c, err
+}
+
 func AddUser(username string, role UserRole, name string, fb string, vk string, bdate time.Time) error {
+	// TODO: check existense of username
 	_, err := dbConn.Exec("INSERT INTO users (username, role, name, fb, vk, bdate) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id", username, role, name, fb, vk, bdate)
 	return err
 }

@@ -18,25 +18,26 @@ type Event struct {
 	Letions     []int
 }
 
-func AddEvent(startTime time.Time, endTime time.Time, place int, description string, lections []int) error {
+func AddEvent(startTime time.Time, endTime time.Time, place int, description string, lections []int) (int, error) {
+	var eventID int
 	tx, err := dbConn.Begin()
 	if err != nil {
-		return err
+		return eventID, err
 	}
-	var eventID int
 	err = tx.QueryRow("INSERT INTO events (starttime, endtime, place, description) VALUES ($1, $2, $3, $4) RETURNING id", startTime, endTime, place, description).Scan(&eventID)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return eventID, err
 	}
 	for _, lection := range lections {
 		_, err = tx.Exec("INSERT INTO event_lections (id_event, id_lection) VALUES ($1, $2)", eventID, lection)
 		if err != nil {
 			tx.Rollback()
-			return err
+			return eventID, err
 		}
 	}
-	return tx.Commit()
+	err = tx.Commit()
+	return eventID, err
 }
 
 func GetNextEvent() (*Event, error) {
