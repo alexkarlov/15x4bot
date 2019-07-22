@@ -1,8 +1,15 @@
-FROM golang:1.10
+FROM golang:1.10 as builder
 
 WORKDIR /go/src/github.com/alexkarlov/15x4bot
 COPY ./ ./
-RUN go get -d -v ./...
-RUN go install -v ./...
+RUN go get -d -v ./... && \
+ go install -v ./... && \
+ CGO_ENABLED=0 go build -o 15x4bot .
 
-CMD ["15x4bot"]
+FROM alpine:3.10
+
+RUN addgroup -S gogroup && adduser -S gorunner -G gogroup
+USER gorunner
+WORKDIR /home/gorunner
+COPY --from=builder /go/src/github.com/alexkarlov/15x4bot/15x4bot .
+CMD [ "./15x4bot" ]
