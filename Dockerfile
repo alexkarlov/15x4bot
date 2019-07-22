@@ -3,12 +3,13 @@ FROM golang:1.10 as builder
 WORKDIR /go/src/github.com/alexkarlov/15x4bot
 COPY ./ ./
 RUN go get -d -v ./... && \
- go install -v ./... && \
- CGO_ENABLED=0 go build -o 15x4bot .
+    go install -v ./... && \
+    CGO_ENABLED=0 go build -o 15x4bot .
 
 FROM alpine:3.10
 
-RUN addgroup -S gogroup && adduser -S gorunner -G gogroup
+RUN addgroup -S gogroup && adduser -S gorunner -G gogroup && \
+    apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
 USER gorunner
 WORKDIR /home/gorunner
 COPY --from=builder /go/src/github.com/alexkarlov/15x4bot/15x4bot .
