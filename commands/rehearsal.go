@@ -2,22 +2,28 @@ package commands
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/alexkarlov/15x4bot/store"
 )
 
-var ErrWrongCall = errors.New("Next step for command addRepetition was called in a wrong way")
+var (
+	ErrWrongPlace = errors.New("wrong place id: failed to conver from string to int")
+)
 
-type addRepetition struct {
+const (
+	TEMPLATE_NEXT_EVENT = "Де: %s, %s\nКоли: %s\nМапа:%s"
+)
+
+type addRehearsal struct {
 	step  int
 	when  time.Time
 	where int
 }
 
-func (c *addRepetition) IsAllow(u string) bool {
+func (c *addRehearsal) IsAllow(u string) bool {
 	//TODO: move it to db
 	admins := []string{"zedman95", "alex_karlov"}
 	for _, admin := range admins {
@@ -28,7 +34,7 @@ func (c *addRepetition) IsAllow(u string) bool {
 	return false
 }
 
-func (c *addRepetition) NextStep(answer string) (replyMsg string, err error) {
+func (c *addRehearsal) NextStep(answer string) (replyMsg string, err error) {
 	switch c.step {
 	case 0:
 		replyMsg = "Коли? Дата та час в форматі 2018-12-31 19:00:00"
@@ -39,28 +45,28 @@ func (c *addRepetition) NextStep(answer string) (replyMsg string, err error) {
 			return replyMsg, nil
 		}
 		c.when = t
-		places, err := store.GetPlaces(store.PlaceTypes{store.PLACE_TYPE_FOR_REPETITION, store.PLACE_TYPE_FOR_ALL})
-		if err != nil {
-			return "", err
+		places, err := store.Places(store.PlaceTypes{store.PLACE_TYPE_FOR_REHEARSALS, store.PLACE_TYPE_FOR_ALL})
+		pText := ""
+		for _, p := range places {
+			pText = fmt.Sprintf(TEMPLATE_PLACES_LIST, p.ID, p.Name, p.Address)
 		}
-		replyMsg = strings.Join([]string{"Де?", strings.Join(places, "\n")}, "\n")
-
+		replyMsg = fmt.Sprintf(TEMPLATE_INTRO_PLACES_LIST, pText)
 	case 2:
 		c.where, err = strconv.Atoi(answer)
 		if err != nil {
-			err = errors.New("Failed string to int converting")
-			return
+			return "", ErrWrongPlace
 		}
-		store.AddRepetition(c.when, c.where)
+		err = store.AddRehearsal(c.when, c.where)
+		if err != nil {
+			return "", err
+		}
 		replyMsg = "Репетиція створена"
-	default:
-		err = ErrWrongCall
 	}
 	c.step++
 	return
 }
 
-func (c *addRepetition) IsEnd() bool {
+func (c *addRehearsal) IsEnd() bool {
 	return c.step == 3
 }
 
@@ -76,13 +82,13 @@ func (c *nextRep) IsAllow(u string) bool {
 }
 
 func (c *nextRep) NextStep(answer string) (string, error) {
-	r, err := store.GetNextRepetition()
+	r, err := store.NextRehearsal()
 	if err != nil {
-		if err == store.ErrUndefinedNextRepetition {
+		if err == store.ErrUndefinedNextRehearsal {
 			return "Невідомо коли, запитайся пізніше", nil
 		}
 		return "", err
 	}
-	replyMsg := strings.Join([]string{"Де: ", r.PlaceName, ", ", r.Address, "\n", "Коли: ", r.Time.Format("2006-01-02 15:04:05"), "\n", "Мапа: ", r.MapUrl}, "")
+	replyMsg := fmt.Sprintf(TEMPLATE_NEXT_EVENT, r.PlaceName, r.Address, r.Time.Format("2006-01-02 15:04:05"), r.MapUrl)
 	return replyMsg, nil
 }

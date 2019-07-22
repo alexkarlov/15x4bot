@@ -6,10 +6,10 @@ import (
 	"time"
 )
 
-var ErrUndefinedNextRepetition = errors.New("Next repetition is undeffined")
+var ErrUndefinedNextRehearsal = errors.New("Next rehearsal is undeffined")
 
-type Repetition struct {
-	Id        int
+type Rehearsal struct {
+	ID        int
 	Place     int
 	PlaceName string
 	Address   string
@@ -17,23 +17,23 @@ type Repetition struct {
 	Time      time.Time
 }
 
-func AddRepetition(t time.Time, place int) error {
-	_, err := dbConn.Exec("INSERT INTO repetitions (time, place) VALUES ($1, $2)", t, place)
+func AddRehearsal(t time.Time, place int) error {
+	_, err := dbConn.Exec("INSERT INTO rehearsals (time, place) VALUES ($1, $2)", t, place)
 	return err
 }
 
-func GetNextRepetition() (*Repetition, error) {
+func NextRehearsal() (*Rehearsal, error) {
 	q := `SELECT r.time, p.name, p.address, p.map_url 
-	FROM repetitions r 
+	FROM rehearsals r 
 	LEFT JOIN places p ON p.id = r.place 
 	WHERE r.time>NOW()
 	ORDER BY r.id DESC 
 	LIMIT 1;`
 	row := dbConn.QueryRow(q)
-	r := &Repetition{}
+	r := &Rehearsal{}
 	if err := row.Scan(&r.Time, &r.PlaceName, &r.Address, &r.MapUrl); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrUndefinedNextRepetition
+			return nil, ErrUndefinedNextRehearsal
 		}
 		return nil, err
 	}

@@ -46,6 +46,8 @@ func (c *chat) ReplayText(m *Message) (string, error) {
 	return answer, err
 }
 
+// LookupChat tries to find a chat by chatID in the internal list
+// if it didn't find - create a new one and insert/update it
 func LookupChat(msg *Message) *chat {
 	chatsManager.l.Lock()
 	defer chatsManager.l.Unlock()

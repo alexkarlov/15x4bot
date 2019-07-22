@@ -2,6 +2,7 @@ package commands
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -9,7 +10,13 @@ import (
 	"github.com/alexkarlov/15x4bot/store"
 )
 
-const END_PHRASE = "end"
+const (
+	END_PHRASE                   = "end"
+	TEMPLATE_LECTIONS_LIST       = "%d.%s.%s"
+	TEMPLATE_INTRO_LECTIONS_LIST = "Виберіть лекцію. Для закінчення напишіть" + END_PHRASE + "\n%s"
+	TEMPLATE_PLACES_LIST         = "%d. %s - %s"
+	TEMPLATE_INTRO_PLACES_LIST   = "Де?\n%s"
+)
 
 type addEvent struct {
 	step        int
@@ -51,12 +58,12 @@ func (c *addEvent) NextStep(answer string) (string, error) {
 			return replyMsg, nil
 		}
 		c.whenEnd = t
-		places, err := store.GetPlaces(store.PlaceTypes{store.PLACE_TYPE_FOR_EVENT, store.PLACE_TYPE_FOR_ALL})
-		if err != nil {
-			return "", err
+		places, err := store.Places(store.PlaceTypes{store.PLACE_TYPE_FOR_EVENT, store.PLACE_TYPE_FOR_ALL})
+		pText := ""
+		for _, p := range places {
+			pText = fmt.Sprintf(TEMPLATE_PLACES_LIST, p.ID, p.Name, p.Address)
 		}
-		replyMsg = strings.Join([]string{"Де?", strings.Join(places, "\n")}, "\n")
-
+		replyMsg = fmt.Sprintf(TEMPLATE_INTRO_PLACES_LIST, pText)
 	case 3:
 		where, err := strconv.Atoi(answer)
 		if err != nil {
@@ -66,11 +73,15 @@ func (c *addEvent) NextStep(answer string) (string, error) {
 		replyMsg = "Текст івенту"
 	case 4:
 		c.description = answer
-		lections, err := store.GetLections(true)
+		lections, err := store.Lections(true)
 		if err != nil {
 			return "", err
 		}
-		replyMsg = strings.Join([]string{"Виберіть лекцію. Для закінчення напишіть \"" + END_PHRASE + "\"", strings.Join(lections, "\n")}, "\n")
+		lText := ""
+		for _, l := range lections {
+			lText = fmt.Sprintf(TEMPLATE_LECTIONS_LIST, l.ID, l.Name, l.Lector.Name)
+		}
+		replyMsg = fmt.Sprintf(TEMPLATE_INTRO_LECTIONS_LIST, lText)
 	case 5:
 		if answer == END_PHRASE {
 			_, err := store.AddEvent(c.whenStart, c.whenEnd, c.where, c.description, c.lections)
@@ -89,7 +100,7 @@ func (c *addEvent) NextStep(answer string) (string, error) {
 		// desrese step counter for returning on the next iteration to the same step
 		c.step--
 	default:
-		return "", errors.New("next step for command addRepetition was called in a wrong way")
+		return "", errors.New("next step for command addRehearsal was called in a wrong way")
 	}
 	c.step++
 	return replyMsg, nil
@@ -111,7 +122,7 @@ func (c *nextEvent) IsAllow(u string) bool {
 }
 
 func (c *nextEvent) NextStep(answer string) (string, error) {
-	e, err := store.GetNextEvent()
+	e, err := store.NextEvent()
 	if err != nil {
 		if err == store.ErrUndefinedNextEvent {
 			return "Невідомо коли, запитайся пізніше", nil

@@ -13,7 +13,7 @@ var commandPatterns = []struct {
 	{
 		pattern: `addrep`,
 		createCmd: func(cmd string) Command {
-			return &addRepetition{}
+			return &addRehearsal{}
 		},
 	},
 	{
@@ -41,7 +41,7 @@ var commandPatterns = []struct {
 		},
 	},
 	{
-		pattern: `nextrepetition|репетиці|репетици|repetition|коли рєпа|когда репа`,
+		pattern: `nextrehearsal|репетиці|репетици|rehearsal|коли рєпа|когда репа`,
 		createCmd: func(cmd string) Command {
 			return &nextRep{}
 		},

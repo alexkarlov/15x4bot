@@ -1,6 +1,7 @@
 package store
 
 import (
+	"encoding/json"
 	"errors"
 	"time"
 )
@@ -42,6 +43,11 @@ type Task struct {
 	ExecutionTime time.Time
 	Status        StatusType
 	Details       string
+}
+
+// RemindLection contains details (ID) about the lection to ask description from user
+type RemindLection struct {
+	ID int
 }
 
 func GetTasks() ([]*Task, error) {
@@ -86,15 +92,6 @@ func FinishTask(ID int) error {
 	return nil
 }
 
-// TakeTask updates udate field to the current time and set status to IN_PROGRESS if a task fulfills conditions
-func TakeTask(ID int) error {
-	_, err := dbConn.Exec("UPDATE tasks SET udate=NOW(), status=$1 WHERE id=$2 AND status=$3", TASK_STATUS_IN_PROGRESS, ID, TASK_STATUS_NEW)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // PostponeTask updates udate field to the current time, set status to NEW and update execution_time if a task fulfills conditions
 func PostponeTask(ID int, postponePeriod postponePeriod) error {
 	q := "UPDATE tasks SET udate=NOW(), execution_time=execution_time+" + string(postponePeriod) + ", status=$1 WHERE id=$2 AND status=$3"
@@ -108,6 +105,26 @@ func PostponeTask(ID int, postponePeriod postponePeriod) error {
 // AddTask creates new task with details. Each type of task contains specific details
 func AddTask(t TaskType, execTime time.Time, details string) error {
 	_, err := dbConn.Exec("INSERT INTO tasks (type, execution_time, status, details) VALUES ($1, $2, $3, $4)", t, execTime, TASK_STATUS_NEW, details)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// LoadLection loads lection from task details
+func (t *Task) LoadLection() (*Lection, error) {
+	r := &RemindLection{}
+	err := json.Unmarshal([]byte(t.Details), r)
+	if err != nil {
+		return nil, err
+	}
+	l, err := LoadLection(r.ID)
+	return l, err
+}
+
+// TakeTask updates udate field to the current time and set status to IN_PROGRESS if a task fulfills conditions
+func (t *Task) TakeTask() error {
+	_, err := dbConn.Exec("UPDATE tasks SET udate=NOW(), status=$1 WHERE id=$2 AND status=$3", TASK_STATUS_IN_PROGRESS, t.ID, TASK_STATUS_NEW)
 	if err != nil {
 		return err
 	}

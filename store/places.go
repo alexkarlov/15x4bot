@@ -2,52 +2,54 @@ package store
 
 import (
 	"fmt"
-	"github.com/alexkarlov/simplelog"
-	"strconv"
 	"strings"
 )
 
+// Place represents an entity of place for rehearsals, events, etc
 type Place struct {
-	Id          int
+	ID          int
 	Name        string
 	Address     string
 	Description string
-	MapUrl      string
 }
 type placeType string
 
+// PlaceTypes is a slice of place types
 type PlaceTypes []placeType
 
 const (
-	PLACE_TYPE_FOR_ALL        placeType = "for_all"
-	PLACE_TYPE_FOR_REPETITION placeType = "for_repetition"
-	PLACE_TYPE_FOR_EVENT      placeType = "for_event"
+	// this place can be used for rehearsals and events as well
+	PLACE_TYPE_FOR_ALL placeType = "for_all"
+	// this place can be used only for rehearsals
+	PLACE_TYPE_FOR_REHEARSALS placeType = "for_rehearsals"
+	// this place can be used only for events
+	PLACE_TYPE_FOR_EVENT placeType = "for_event"
 )
 
-func GetPlaces(t PlaceTypes) ([]string, error) {
-	places := make([]string, 0)
+// Places returns a list of all available places filtered by types
+func Places(t PlaceTypes) ([]*Place, error) {
 	typeFilter := ""
+	typeFilters := make([]string, 0)
 	if len(t) > 0 {
 		for _, pl := range t {
-			typeFilter += "'" + string(pl) + "'" + ","
+			typeFilters = append(typeFilters, "'"+string(pl)+"'")
 		}
-		typeFilter = fmt.Sprintf("WHERE type IN (%s)", typeFilter[:len(typeFilter)-1])
+		typeFilter = fmt.Sprintf("WHERE type IN (%s)", strings.Join(typeFilters, ","))
 	}
-	log.Info(typeFilter)
 	rows, err := dbConn.Query("SELECT id, name, address FROM places " + typeFilter)
 	if err != nil {
-		return places, err
+		return nil, err
 	}
-
+	defer rows.Close()
+	places := make([]*Place, 0)
 	for rows.Next() {
-		var place Place
-		if err := rows.Scan(&place.Id, &place.Name, &place.Address); err != nil {
+		place := &Place{}
+		if err := rows.Scan(&place.ID, &place.Name, &place.Address); err != nil {
 			return nil, err
 		}
-		placeText := []string{strconv.Itoa(place.Id), "-", place.Name, ",", place.Address}
-		places = append(places, strings.Join(placeText, " "))
+		places = append(places, place)
 	}
-	rows.Close()
+
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}

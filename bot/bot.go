@@ -50,6 +50,7 @@ func (b *Bot) ListenUpdates() {
 			continue
 		}
 		log.Infof("got new msg from [%s]: %s", update.Message.From.UserName, string(update.Message.Text))
+		// TODO: add new record to history table
 		msg := &Message{
 			Text:     update.Message.Text,
 			Username: update.Message.From.UserName,
@@ -59,11 +60,13 @@ func (b *Bot) ListenUpdates() {
 	}
 }
 
+// SendText sends a message to particular chat
 func (b *Bot) SendText(chatID int64, msg string) {
 	replyMsg := tgbotapi.NewMessage(chatID, msg)
 	b.bot.Send(replyMsg)
 }
 
+// Reply sends response (text or markup)
 func (b *Bot) Reply(msg *Message) {
 	c := LookupChat(msg)
 	replyText, err := c.ReplayText(msg)

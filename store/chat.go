@@ -10,14 +10,8 @@ type Chat struct {
 	UserID   int
 }
 
-func GetChatID(u int) (int, error) {
-	q := "SELECT tg_chat_id FROM chats WHERE user_id=$1"
-	row := dbConn.QueryRow(q, u)
-	var ID int
-	err := row.Scan(&ID)
-	return ID, err
-}
-
+// ChatUpsert finds a user by username (tg username)
+// then it inserts in a chat table, if a chat found for requested user (by user_id) - it updates udate and chat_id
 func ChatUpsert(chat int64, username string) error {
 	tx, err := dbConn.Begin()
 	if err != nil {
@@ -25,7 +19,7 @@ func ChatUpsert(chat int64, username string) error {
 	}
 
 	user := &User{}
-	row := tx.QueryRow("SELECT id FROM users WHERE username=($1) FOR UPDATE", username)
+	row := tx.QueryRow("SELECT id FROM users WHERE username=($1)", username)
 
 	if err := row.Scan(&user.ID); err != nil {
 		if err != sql.ErrNoRows {

@@ -38,7 +38,7 @@ func (c *addLection) NextStep(answer string) (string, error) {
 	replyMsg := ""
 	switch c.step {
 	case 0:
-		users, err := store.GetUsers([]store.UserRole{store.USER_ROLE_ADMIN, store.USER_ROLE_LECTOR})
+		users, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN, store.USER_ROLE_LECTOR})
 		if err != nil {
 			return "", err
 		}
@@ -94,17 +94,13 @@ func (c *addDescriptionLection) NextStep(answer string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	l := &store.Lection{}
-	// TODO: implement json.Unmarshal
-	err = json.Unmarshal([]byte(t.Details), l)
-	replyMsg := ""
+	l, err := t.LoadLection()
 	if err != nil {
-		replyMsg = "wrong task"
-		return replyMsg, err
+		return "", err
 	}
-	// TODO: refactor it - add methods for Lection instead of function
-	if !l.OwnedBy(c.username) {
-		replyMsg = "this is not your lection"
+	replyMsg := ""
+	if l.Lector.Username != c.username {
+		replyMsg = "Це не твоя лекція!"
 		return replyMsg, nil
 	}
 	err = l.AddDescriptionLection(c.description)

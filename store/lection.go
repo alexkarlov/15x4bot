@@ -1,28 +1,21 @@
 package store
 
-import (
-	"errors"
-	"strconv"
-	"strings"
-)
-
-var ErrEmptyLectionID = errors.New("empty lection ID")
-
+// Lection represents a 15x4 lection and contains information about a lector
 type Lection struct {
-	ID             int
-	Name           string
-	LectorUsername string
-	LectorID       int
+	ID     int
+	Name   string
+	Lector *User
 }
 
-// TODO: think about checking LectorUsername
-func (l *Lection) OwnedBy(u string) bool {
-	q := "SELECT l.id FROM lections l LEFT JOIN users u ON l.user_id=u.id WHERE l.id = $1 AND u.username = $2"
-	var ID int
-	dbConn.QueryRow(q, l.ID, u).Scan(&ID)
-	return ID != 0
+// LoadLection loads a lection and lector details
+func LoadLection(ID int) (*Lection, error) {
+	q := "SELECT l.id, l.name, u.id, u.username, u.role FROM lections LEFT JOIN users u ON u.id=l.user_id WHERE l.id=$1"
+	l := &Lection{}
+	err := dbConn.QueryRow(q, ID).Scan(&l.ID, &l.Name, &l.Lector.ID, &l.Lector.Username, &l.Lector.Role)
+	return l, err
 }
 
+// AddDescriptionLection adds description for the lection
 func (l *Lection) AddDescriptionLection(d string) error {
 	q := "UPDATE lections SET description=$1 WHERE id=$2"
 	_, err := dbConn.Exec(q, d, l.ID)
@@ -32,50 +25,43 @@ func (l *Lection) AddDescriptionLection(d string) error {
 	return nil
 }
 
-func (l *Lection) Lector() (*User, error) {
-	u := &User{}
-	q := "SELECT u.id, u.username, u.role, u.name FROM lections l LEFT JOIN users u ON u.id=l.user_id WHERE l.id=$1"
-	err := dbConn.QueryRow(q, l.ID).Scan(&u.ID, &u.Username, &u.Role, &u.Name)
-	return u, err
-}
-
+// AddLection creates a lection and returns id of created lection
 func AddLection(name string, description string, userID int) (int, error) {
 	var ID int
 	err := dbConn.QueryRow("INSERT INTO lections (name, description, user_id) VALUES ($1, $2, $3) RETURNING id", name, description, userID).Scan(&ID)
 	return ID, err
 }
 
-func GetLections(newOnly bool) ([]string, error) {
-	lections := make([]string, 0)
+// Lections return list of lections. New lections can be useful for creation of event
+func Lections(newOnly bool) ([]*Lection, error) {
 	typeFilter := ""
 	if newOnly {
 		typeFilter = "WHERE l.id NOT IN (SELECT id_lection FROM event_lections)"
 	}
-	baseQuery := "SELECT l.id, l.name, u.name FROM lections l "
+	baseQuery := "SELECT l.id, l.name, u.username, u.id, u.role FROM lections l "
 	baseQuery += " LEFT JOIN users u ON u.id = user_id " + typeFilter
 	rows, err := dbConn.Query(baseQuery)
 	if err != nil {
 		return nil, err
 	}
-
+	defer rows.Close()
+	lections := make([]*Lection, 0)
 	for rows.Next() {
 		lection := &Lection{}
-		if err := rows.Scan(&lection.ID, &lection.Name, &lection.LectorUsername); err != nil {
+		if err := rows.Scan(&lection.ID, &lection.Name, &lection.Lector.Username, &lection.Lector.ID, &lection.Lector.Role); err != nil {
 			return nil, err
 		}
-		lectionText := []string{strconv.Itoa(lection.ID), ". ", lection.Name, ".", lection.LectorUsername}
-		lections = append(lections, strings.Join(lectionText, " "))
+		lections = append(lections, lection)
 	}
-	rows.Close()
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	return lections, err
 }
 
-func GetEmptyLections(eventID int) ([]*Lection, error) {
-	// TODO: fix filter for empty lections
-	q := `SELECT l.name, l.id, u.username, u.id
+// EmptyLections returns lections without description
+func EmptyLections(eventID int) ([]*Lection, error) {
+	q := `SELECT l.name, l.id, u.username, u.id, u.role
 		FROM lections l 
 		LEFT JOIN users u ON u.id=l.user_id 
 		WHERE l.id IN (SELECT id_lection FROM event_lections WHERE id_event=$1) AND l.description='-'`
@@ -86,7 +72,7 @@ func GetEmptyLections(eventID int) ([]*Lection, error) {
 	lections := make([]*Lection, 0)
 	for rows.Next() {
 		lection := &Lection{}
-		err = rows.Scan(&lection.Name, &lection.ID, &lection.LectorUsername, &lection.LectorID)
+		err = rows.Scan(&lection.Name, &lection.ID, &lection.Lector.Username, &lection.Lector.ID, &lection.Lector.Role)
 		lections = append(lections, lection)
 	}
 	return lections, nil

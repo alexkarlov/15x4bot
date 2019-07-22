@@ -16,8 +16,7 @@ func (c *simple) IsAllow(u string) bool {
 	return true
 }
 
-func (c *simple) NextStep(answer string) (replyMsg string, err error) {
-	replyMsg, err = store.GetActionMsg(c.action)
-
-	return
+func (c *simple) NextStep(answer string) (string, error) {
+	replyMsg, err := store.ActionMsg(c.action)
+	return replyMsg, err
 }

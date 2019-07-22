@@ -57,8 +57,6 @@ func (c *addUser) NextStep(answer string) (string, error) {
 			return "", err
 		}
 		replyMsg = "Користувач успішно створений"
-	default:
-		return "", ErrWrongCall
 	}
 	c.step++
 	return replyMsg, nil
