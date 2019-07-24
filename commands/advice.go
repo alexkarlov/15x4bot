@@ -6,7 +6,14 @@ import (
 	"net/http"
 )
 
+type adviceResp struct {
+	ID    int    `json:"id"`
+	Text  string `json:"text"`
+	Sound string `json:"sound"`
+}
+
 type advice struct {
+	Resp adviceResp
 }
 
 func (c *advice) IsEnd() bool {
@@ -17,27 +24,22 @@ func (c *advice) IsAllow(u string) bool {
 	return true
 }
 
-func (c *advice) NextStep(answer string) (replyMsg string, err error) {
+func (c *advice) NextStep(answer string) (*ReplyMarkup, error) {
 	resp, err := http.Get("http://fucking-great-advice.ru/api/random")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	type advice struct {
-		ID    int    `json:"id"`
-		Text  string `json:"text"`
-		Sound string `json:"sound"`
-	}
-
-	a := &advice{}
 	d, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	err = json.Unmarshal(d, &a)
+	err = json.Unmarshal(d, &c.Resp)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	replyMsg = a.Text
+	replyMarkup := &ReplyMarkup{
+		Text: c.Resp.Text,
+	}
 
-	return
+	return replyMarkup, nil
 }

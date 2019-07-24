@@ -48,6 +48,16 @@ func (u *User) TGChat() (*Chat, error) {
 	return c, err
 }
 
+// LoadUser returns a user loaded by username
+func LoadUser(username string) (*User, error) {
+	u := &User{}
+	q := "SELECT u.id, u.role, u.username FROM users u WHERE u.username=$1"
+	r := ""
+	err := dbConn.QueryRow(q, username).Scan(&u.ID, &r, &u.Username)
+	u.Role = UserRole(r)
+	return u, err
+}
+
 // AddUser creates a new record in users table
 func AddUser(username string, role UserRole, name string, fb string, vk string, bdate time.Time) error {
 	// TODO: check existense of username

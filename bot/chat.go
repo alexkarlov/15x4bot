@@ -24,7 +24,7 @@ type chat struct {
 	l   *sync.RWMutex
 }
 
-func (c *chat) ReplayText(m *Message) (string, error) {
+func (c *chat) ReplyMarkup(m *Message) (*commands.ReplyMarkup, error) {
 	c.l.Lock()
 	defer c.l.Unlock()
 	if c.cmd == nil {
@@ -36,7 +36,7 @@ func (c *chat) ReplayText(m *Message) (string, error) {
 
 	if err != nil {
 		c.cmd = nil
-		return "", err
+		return nil, err
 	}
 
 	if c.cmd.IsEnd() {

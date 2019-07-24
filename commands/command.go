@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/alexkarlov/15x4bot/store"
 	"regexp"
 	"strconv"
 )
@@ -35,19 +36,19 @@ var commandPatterns = []struct {
 		},
 	},
 	{
-		pattern: `nextevent|next event|наступний івент|следующий ивент|когда ивент|коли івент`,
+		pattern: `(?i)наступний івент`,
 		createCmd: func(cmd string) Command {
 			return &nextEvent{}
 		},
 	},
 	{
-		pattern: `nextrehearsal|репетиці|репетици|rehearsal|коли рєпа|когда репа`,
+		pattern: `(?i)наступна репетиція`,
 		createCmd: func(cmd string) Command {
 			return &nextRep{}
 		},
 	},
 	{
-		pattern: `documentation|документац|где дока|де дока`,
+		pattern: `(?i)документація`,
 		createCmd: func(cmd string) Command {
 			return &simple{
 				action: "documentation",
@@ -55,7 +56,7 @@ var commandPatterns = []struct {
 		},
 	},
 	{
-		pattern: `about|хто ми|кто мы|про нас|15x4\?`,
+		pattern: `(?i)хто ми`,
 		createCmd: func(cmd string) Command {
 			return &simple{
 				action: "about",
@@ -63,7 +64,7 @@ var commandPatterns = []struct {
 		},
 	},
 	{
-		pattern: `101010|3\.14|advice|порада|що робити|что делать`,
+		pattern: `(?i)101010|3\.14|advice|порада|що робити|что делать`,
 		createCmd: func(cmd string) Command {
 			return &advice{}
 		},
@@ -95,9 +96,31 @@ func init() {
 	}
 }
 
+type User struct {
+	*store.User
+}
+
+// Markup
+func (u *User) Markup() MessageButtons {
+	buttons := MessageButtons(GuestMarkup)
+	if u.Role == store.USER_ROLE_ADMIN {
+		buttons = append(buttons, AdminMarkup...)
+		buttons = append(buttons, SpeakerMarkup...)
+	} else if u.Role == store.USER_ROLE_LECTOR {
+		buttons = append(buttons, SpeakerMarkup...)
+	}
+	return buttons
+}
+
+// ReplyMarkup contains text answer of the bot and (optional) special command buttons
+type ReplyMarkup struct {
+	Text    string
+	Buttons []string
+}
+
 type Command interface {
 	IsAllow(string) bool
-	NextStep(answer string) (replyMsg string, err error)
+	NextStep(answer string) (reply *ReplyMarkup, err error)
 	IsEnd() bool
 }
 

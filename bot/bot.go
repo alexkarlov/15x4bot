@@ -69,16 +69,19 @@ func (b *Bot) SendText(chatID int64, msg string) {
 // Reply sends response (text or markup)
 func (b *Bot) Reply(msg *Message) {
 	c := LookupChat(msg)
-	replyText, err := c.ReplayText(msg)
+	replyMarkup, err := c.ReplyMarkup(msg)
 	if err != nil {
 		log.Error("Error while getting reply text", err)
-		replyText = InternalErrorText
+		replyMarkup.Text = InternalErrorText
 	}
-	replyMsg := tgbotapi.NewMessage(msg.ChatID, replyText)
-	// button1 := tgbotapi.NewKeyboardButton("sss")
-	// button2 := tgbotapi.NewKeyboardButton("aaa")
-	// keyboardRow := tgbotapi.NewKeyboardButtonRow(button1, button2)
-	// replyMsg.BaseChat.ReplyMarkup = tgbotapi.NewReplyKeyboard(keyboardRow)
+	replyMsg := tgbotapi.NewMessage(msg.ChatID, replyMarkup.Text)
+	if len(replyMarkup.Buttons) > 0 {
+		var buttons [][]tgbotapi.KeyboardButton
+		for _, bText := range replyMarkup.Buttons {
+			buttons = append(buttons, []tgbotapi.KeyboardButton{tgbotapi.NewKeyboardButton(bText)})
+		}
+		replyMsg.BaseChat.ReplyMarkup = tgbotapi.NewReplyKeyboard(buttons...)
+	}
 	// replyMsg.BaseChat.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	b.bot.Send(replyMsg)
 }
