@@ -28,7 +28,8 @@ type chat struct {
 func (c *chat) ReplyMarkup(m *Message) (*commands.ReplyMarkup, error) {
 	c.l.Lock()
 	defer c.l.Unlock()
-	if c.cmd == nil {
+	// Main menu hack
+	if c.cmd == nil || commands.IsMainMenu(m.Text) {
 		c.cmd = commands.NewCommand(m.Text, m.Username)
 	}
 

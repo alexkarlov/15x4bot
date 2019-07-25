@@ -44,7 +44,9 @@ func (c *addLection) IsAllow(u string) bool {
 }
 
 func (c *addLection) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
-	replyMarkup := &ReplyMarkup{}
+	replyMarkup := &ReplyMarkup{
+		Buttons: MainMarkup,
+	}
 	switch c.step {
 	case 0:
 		users, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN, store.USER_ROLE_LECTOR})
@@ -54,7 +56,6 @@ func (c *addLection) NextStep(u *store.User, answer string) (*ReplyMarkup, error
 		speakerText := ""
 		for _, u := range users {
 			speakerText += fmt.Sprintf(TEMPLATE_CREATE_EVENT_STEP_SPEAKER_DETAILS, u.ID, u.Username, u.Name)
-			replyMarkup.Buttons = append(replyMarkup.Buttons, strconv.Itoa(u.ID))
 		}
 		replyMarkup.Text = fmt.Sprintf(TEMPLATE_CREATE_EVENT_STEP_SPEAKER, speakerText)
 	case 1:

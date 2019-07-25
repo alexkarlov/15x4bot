@@ -40,7 +40,9 @@ func (c *addEvent) IsAllow(u string) bool {
 }
 
 func (c *addEvent) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
-	replyMarkup := &ReplyMarkup{}
+	replyMarkup := &ReplyMarkup{
+		Buttons: MainMarkup,
+	}
 	switch c.step {
 	case 0:
 		replyMarkup.Text = "Коли починається? Дата та час в форматі 2018-12-31 19:00:00"

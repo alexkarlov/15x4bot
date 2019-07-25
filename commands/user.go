@@ -27,7 +27,9 @@ func (c *addUser) IsAllow(u string) bool {
 }
 
 func (c *addUser) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
-	replyMarkup := &ReplyMarkup{}
+	replyMarkup := &ReplyMarkup{
+		Buttons: MainMarkup,
+	}
 	switch c.step {
 	case 0:
 		replyMarkup.Text = "Як звуть лектора/лекторку?"

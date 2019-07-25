@@ -24,11 +24,16 @@ var (
 		"Хто ми",
 		"Документація",
 	}
+
+	MainMarkup = MessageButtons{
+		"Головне меню",
+	}
 )
 
 // StandardMarkup returns general markup depends on provided role
 func StandardMarkup(role store.UserRole) MessageButtons {
 	buttons := MessageButtons(GuestMarkup)
+	buttons = append(buttons, MainMarkup...)
 	if role == store.USER_ROLE_ADMIN {
 		buttons = append(buttons, AdminMarkup...)
 		buttons = append(buttons, SpeakerMarkup...)

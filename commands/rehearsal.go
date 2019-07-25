@@ -39,7 +39,9 @@ func (c *addRehearsal) IsAllow(u string) bool {
 }
 
 func (c *addRehearsal) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
-	replyMarkup := &ReplyMarkup{}
+	replyMarkup := &ReplyMarkup{
+		Buttons: MainMarkup,
+	}
 	var err error
 	switch c.step {
 	case 0:

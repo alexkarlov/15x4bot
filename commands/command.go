@@ -80,6 +80,14 @@ var commandPatterns = []struct {
 		},
 	},
 	{
+		pattern: `Головне меню`,
+		createCmd: func(cmd string) Command {
+			return &simple{
+				action: "main_menu",
+			}
+		},
+	},
+	{
 		pattern: `(?i)101010|3\.14|advice|порада|що робити|что делать`,
 		createCmd: func(cmd string) Command {
 			return &advice{}
@@ -122,6 +130,11 @@ type Command interface {
 	IsAllow(string) bool
 	NextStep(u *store.User, answer string) (reply *ReplyMarkup, err error)
 	IsEnd() bool
+}
+
+// IsMainMenu returns if user wants to come back to main menu
+func IsMainMenu(m string) bool {
+	return m == "Головне меню"
 }
 
 func NewCommand(cmdName string, username string) Command {
