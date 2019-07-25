@@ -17,9 +17,10 @@ func (c *simple) IsAllow(u string) bool {
 }
 
 func (c *simple) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
-	replyMarkup := &ReplyMarkup{}
+	replyMarkup := &ReplyMarkup{
+		Buttons: StandardMarkup(u.Role),
+	}
 	replyMsg, err := store.ActionMsg(c.action)
 	replyMarkup.Text = replyMsg
-	replyMarkup.Buttons = StandardMarkup(u.Role)
 	return replyMarkup, err
 }

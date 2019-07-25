@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"github.com/alexkarlov/15x4bot/store"
 	"strconv"
-	"strings"
 	"time"
 )
 
 const (
+	TEMPLATE_CREATE_EVENT_STEP_SPEAKER_DETAILS      = "%d - %s, %s\n"
 	TEMPLATE_CREATE_EVENT_STEP_SPEAKER              = "Хто лектор?\n%s"
 	TEMPLATE_CREATE_EVENT_STEP_LECTION_NAME         = "Назва лекції"
 	TEMPLATE_CREATE_EVENT_STEP_LECTION_DESCRIPTION  = "Опис лекції"
@@ -51,7 +51,12 @@ func (c *addLection) NextStep(u *store.User, answer string) (*ReplyMarkup, error
 		if err != nil {
 			return nil, err
 		}
-		replyMarkup.Text = fmt.Sprintf(TEMPLATE_CREATE_EVENT_STEP_SPEAKER, strings.Join(users, "\n"))
+		speakerText := ""
+		for _, u := range users {
+			speakerText += fmt.Sprintf(TEMPLATE_CREATE_EVENT_STEP_SPEAKER_DETAILS, u.ID, u.Username, u.Name)
+			replyMarkup.Buttons = append(replyMarkup.Buttons, strconv.Itoa(u.ID))
+		}
+		replyMarkup.Text = fmt.Sprintf(TEMPLATE_CREATE_EVENT_STEP_SPEAKER, speakerText)
 	case 1:
 		// TODO: validate it
 		userID, err := strconv.Atoi(answer)

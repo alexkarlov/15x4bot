@@ -64,6 +64,22 @@ var commandPatterns = []struct {
 		},
 	},
 	{
+		pattern: `(?i)/start`,
+		createCmd: func(cmd string) Command {
+			return &simple{
+				action: "start",
+			}
+		},
+	},
+	{
+		pattern: `(?i)/help`,
+		createCmd: func(cmd string) Command {
+			return &simple{
+				action: "help",
+			}
+		},
+	},
+	{
 		pattern: `(?i)101010|3\.14|advice|порада|що робити|что делать`,
 		createCmd: func(cmd string) Command {
 			return &advice{}

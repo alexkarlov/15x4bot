@@ -88,7 +88,9 @@ func (c *nextRep) IsAllow(u string) bool {
 }
 
 func (c *nextRep) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
-	replyMarkup := &ReplyMarkup{}
+	replyMarkup := &ReplyMarkup{
+		Buttons: StandardMarkup(u.Role),
+	}
 	r, err := store.NextRehearsal()
 	if err != nil {
 		if err == store.ErrUndefinedNextRehearsal {

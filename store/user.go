@@ -66,7 +66,7 @@ func AddUser(username string, role UserRole, name string, fb string, vk string, 
 }
 
 // Users returns a list of users by particular user roles
-func Users(roles []UserRole) ([]string, error) {
+func Users(roles []UserRole) ([]*User, error) {
 	roleFilters := make([]string, 0)
 	roleFilter := ""
 	if len(roles) > 0 {
@@ -82,14 +82,13 @@ func Users(roles []UserRole) ([]string, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	users := make([]string, 0)
+	users := make([]*User, 0)
 	for rows.Next() {
 		user := &User{}
 		if err := rows.Scan(&user.ID, &user.Username, &user.Name); err != nil {
 			return nil, err
 		}
-		userText := fmt.Sprintf("%s - %s, %s", user.ID, user.Username, user.Name)
-		users = append(users, userText)
+		users = append(users, user)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

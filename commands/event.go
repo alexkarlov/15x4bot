@@ -121,7 +121,9 @@ func (c *nextEvent) IsAllow(u string) bool {
 }
 
 func (c *nextEvent) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
-	replyMarkup := &ReplyMarkup{}
+	replyMarkup := &ReplyMarkup{
+		Buttons: StandardMarkup(u.Role),
+	}
 	e, err := store.NextEvent()
 	if err != nil {
 		if err == store.ErrUndefinedNextEvent {

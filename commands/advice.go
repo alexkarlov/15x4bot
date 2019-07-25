@@ -39,7 +39,8 @@ func (c *advice) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
 		return nil, err
 	}
 	replyMarkup := &ReplyMarkup{
-		Text: c.Resp.Text,
+		Text:    c.Resp.Text,
+		Buttons: StandardMarkup(u.Role),
 	}
 
 	return replyMarkup, nil
