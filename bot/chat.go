@@ -22,6 +22,7 @@ type chat struct {
 	ID  int64
 	cmd commands.Command
 	l   *sync.RWMutex
+	u   *store.User
 }
 
 func (c *chat) ReplyMarkup(m *Message) (*commands.ReplyMarkup, error) {
@@ -32,7 +33,7 @@ func (c *chat) ReplyMarkup(m *Message) (*commands.ReplyMarkup, error) {
 	}
 
 	log.Infof("current command %#v", c.cmd)
-	answer, err := c.cmd.NextStep(m.Text)
+	answer, err := c.cmd.NextStep(c.u, m.Text)
 
 	if err != nil {
 		c.cmd = nil
@@ -46,9 +47,9 @@ func (c *chat) ReplyMarkup(m *Message) (*commands.ReplyMarkup, error) {
 	return answer, err
 }
 
-// LookupChat tries to find a chat by chatID in the internal list
+// lookupChat tries to find a chat by chatID in the internal list
 // if it didn't find - create a new one and insert/update it
-func LookupChat(msg *Message) *chat {
+func lookupChat(msg *Message) (*chat, error) {
 	chatsManager.l.Lock()
 	defer chatsManager.l.Unlock()
 	res, ok := chatsManager.list[msg.ChatID]
@@ -61,10 +62,15 @@ func LookupChat(msg *Message) *chat {
 			l:   &sync.RWMutex{},
 		}
 		// TODO: save in the DB
-		chatsManager.list[msg.ChatID] = res
 		if err := store.ChatUpsert(msg.ChatID, msg.Username); err != nil {
 			log.Error("error while chat upserting: ", err)
 		}
+		u, err := store.LoadUser(msg.Username)
+		if err != nil {
+			return nil, err
+		}
+		res.u = u
+		chatsManager.list[msg.ChatID] = res
 	}
-	return res
+	return res, nil
 }

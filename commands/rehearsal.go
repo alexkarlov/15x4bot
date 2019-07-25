@@ -38,7 +38,7 @@ func (c *addRehearsal) IsAllow(u string) bool {
 	return false
 }
 
-func (c *addRehearsal) NextStep(answer string) (*ReplyMarkup, error) {
+func (c *addRehearsal) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{}
 	var err error
 	switch c.step {
@@ -87,7 +87,7 @@ func (c *nextRep) IsAllow(u string) bool {
 	return true
 }
 
-func (c *nextRep) NextStep(answer string) (*ReplyMarkup, error) {
+func (c *nextRep) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{}
 	r, err := store.NextRehearsal()
 	if err != nil {

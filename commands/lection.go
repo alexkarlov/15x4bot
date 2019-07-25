@@ -43,7 +43,7 @@ func (c *addLection) IsAllow(u string) bool {
 	return false
 }
 
-func (c *addLection) NextStep(answer string) (*ReplyMarkup, error) {
+func (c *addLection) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{}
 	switch c.step {
 	case 0:
@@ -98,7 +98,7 @@ func lectionRemindTime() time.Time {
 	return rTime
 }
 
-func (c *addDescriptionLection) NextStep(answer string) (*ReplyMarkup, error) {
+func (c *addDescriptionLection) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{}
 	t, err := store.LoadTask(c.taskID)
 	if err != nil {

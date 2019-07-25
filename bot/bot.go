@@ -10,6 +10,7 @@ var Conf config.TG
 
 const (
 	InternalErrorText = "Внутрішня помилка, сорян"
+	ButtonsCountInRow = 2
 )
 
 type Bot struct {
@@ -60,6 +61,16 @@ func (b *Bot) ListenUpdates() {
 	}
 }
 
+// SendError sends message with general error
+func (b *Bot) SendError(chatID int64) {
+	msg := tgbotapi.NewMessage(chatID, InternalErrorText)
+	// TODO: process error
+	_, err := b.bot.Send(msg)
+	if err != nil {
+		log.Error("error while sending error message: ", err)
+	}
+}
+
 // SendText sends a message to particular chat
 func (b *Bot) SendText(chatID int64, msg string) {
 	replyMsg := tgbotapi.NewMessage(chatID, msg)
@@ -68,20 +79,40 @@ func (b *Bot) SendText(chatID int64, msg string) {
 
 // Reply sends response (text or markup)
 func (b *Bot) Reply(msg *Message) {
-	c := LookupChat(msg)
+	c, err := lookupChat(msg)
+	if err != nil {
+		log.Error("error while lookup chat", err)
+		b.SendError(msg.ChatID)
+		return
+	}
 	replyMarkup, err := c.ReplyMarkup(msg)
 	if err != nil {
-		log.Error("Error while getting reply text", err)
-		replyMarkup.Text = InternalErrorText
+		log.Error("error while getting reply text", err)
+		b.SendError(msg.ChatID)
+		return
 	}
 	replyMsg := tgbotapi.NewMessage(msg.ChatID, replyMarkup.Text)
 	if len(replyMarkup.Buttons) > 0 {
-		var buttons [][]tgbotapi.KeyboardButton
-		for _, bText := range replyMarkup.Buttons {
-			buttons = append(buttons, []tgbotapi.KeyboardButton{tgbotapi.NewKeyboardButton(bText)})
-		}
-		replyMsg.BaseChat.ReplyMarkup = tgbotapi.NewReplyKeyboard(buttons...)
+		replyMsg.BaseChat.ReplyMarkup = markup(replyMarkup.Buttons)
+	} else {
+		replyMsg.BaseChat.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	}
-	// replyMsg.BaseChat.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	b.bot.Send(replyMsg)
+}
+
+func markup(b []string) tgbotapi.ReplyKeyboardMarkup {
+	rows := [][]tgbotapi.KeyboardButton{}
+	c := 0
+	buttons := []tgbotapi.KeyboardButton{}
+	for _, bText := range b {
+		if c == ButtonsCountInRow {
+			rows = append(rows, buttons)
+			buttons = []tgbotapi.KeyboardButton{}
+			c = 0
+		}
+		buttons = append(buttons, tgbotapi.NewKeyboardButton(bText))
+		c++
+	}
+	rows = append(rows, buttons)
+	return tgbotapi.NewReplyKeyboard(rows...)
 }

@@ -26,7 +26,7 @@ func (c *addUser) IsAllow(u string) bool {
 	return false
 }
 
-func (c *addUser) NextStep(answer string) (*ReplyMarkup, error) {
+func (c *addUser) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{}
 	switch c.step {
 	case 0:

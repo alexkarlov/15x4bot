@@ -2,6 +2,7 @@ package commands
 
 import (
 	"encoding/json"
+	"github.com/alexkarlov/15x4bot/store"
 	"io/ioutil"
 	"net/http"
 )
@@ -24,7 +25,7 @@ func (c *advice) IsAllow(u string) bool {
 	return true
 }
 
-func (c *advice) NextStep(answer string) (*ReplyMarkup, error) {
+func (c *advice) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
 	resp, err := http.Get("http://fucking-great-advice.ru/api/random")
 	if err != nil {
 		return nil, err

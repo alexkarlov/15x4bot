@@ -12,25 +12,25 @@ var commandPatterns = []struct {
 	createCmd   func(cmd string) Command
 }{
 	{
-		pattern: `addrep`,
+		pattern: `(?i)створити репетицію`,
 		createCmd: func(cmd string) Command {
 			return &addRehearsal{}
 		},
 	},
 	{
-		pattern: `addevent`,
+		pattern: `(?i)створити івент`,
 		createCmd: func(cmd string) Command {
 			return &addEvent{}
 		},
 	},
 	{
-		pattern: `adduser`,
+		pattern: `(?i)створити користувача`,
 		createCmd: func(cmd string) Command {
 			return &addUser{}
 		},
 	},
 	{
-		pattern: `addlection`,
+		pattern: `(?i)створити лекцію`,
 		createCmd: func(cmd string) Command {
 			return &addLection{}
 		},
@@ -96,22 +96,6 @@ func init() {
 	}
 }
 
-type User struct {
-	*store.User
-}
-
-// Markup
-func (u *User) Markup() MessageButtons {
-	buttons := MessageButtons(GuestMarkup)
-	if u.Role == store.USER_ROLE_ADMIN {
-		buttons = append(buttons, AdminMarkup...)
-		buttons = append(buttons, SpeakerMarkup...)
-	} else if u.Role == store.USER_ROLE_LECTOR {
-		buttons = append(buttons, SpeakerMarkup...)
-	}
-	return buttons
-}
-
 // ReplyMarkup contains text answer of the bot and (optional) special command buttons
 type ReplyMarkup struct {
 	Text    string
@@ -120,7 +104,7 @@ type ReplyMarkup struct {
 
 type Command interface {
 	IsAllow(string) bool
-	NextStep(answer string) (reply *ReplyMarkup, err error)
+	NextStep(u *store.User, answer string) (reply *ReplyMarkup, err error)
 	IsEnd() bool
 }
 

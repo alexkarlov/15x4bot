@@ -15,7 +15,7 @@ const (
 	TEMPLATE_INTRO_LECTIONS_LIST  = "Виберіть лекцію. Для закінчення напишіть" + END_PHRASE + "\n%s"
 	TEMPLATE_PLACES_LIST          = "%d. %s - %s"
 	TEMPLATE_INTRO_PLACES_LIST    = "Де?\n%s"
-	TEMPLATE_NEXT_EVENT           = "Де: %s, \nПочаток: %s\nКінець: %s"
+	TEMPLATE_NEXT_EVENT           = "Де: %s, %s\nПочаток: %s\nКінець: %s"
 	TEMPLATE_NEXT_EVENT_UNDEFINED = "Невідомо коли, запитайся пізніше"
 )
 
@@ -39,7 +39,7 @@ func (c *addEvent) IsAllow(u string) bool {
 	return false
 }
 
-func (c *addEvent) NextStep(answer string) (*ReplyMarkup, error) {
+func (c *addEvent) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{}
 	switch c.step {
 	case 0:
@@ -100,8 +100,6 @@ func (c *addEvent) NextStep(answer string) (*ReplyMarkup, error) {
 		c.lections = append(c.lections, lection)
 		// desrese step counter for returning on the next iteration to the same step
 		c.step--
-	default:
-		return nil, errors.New("next step for command addRehearsal was called in a wrong way")
 	}
 	c.step++
 	return replyMarkup, nil
@@ -122,7 +120,7 @@ func (c *nextEvent) IsAllow(u string) bool {
 	return true
 }
 
-func (c *nextEvent) NextStep(answer string) (*ReplyMarkup, error) {
+func (c *nextEvent) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{}
 	e, err := store.NextEvent()
 	if err != nil {
