@@ -68,7 +68,7 @@ func (c *addRehearsal) NextStep(u *store.User, answer string) (*ReplyMarkup, err
 	case 2:
 		regexpLectionID := regexp.MustCompile(`^(\d+)?\.`)
 		matches := regexpLectionID.FindStringSubmatch(answer)
-		if len(matches) > 2 {
+		if len(matches) < 2 {
 			return nil, ErrWrongPlace
 		}
 		c.where, err = strconv.Atoi(matches[1])

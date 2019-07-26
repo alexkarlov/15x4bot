@@ -3,6 +3,8 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"github.com/alexkarlov/simplelog"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -10,9 +12,9 @@ import (
 )
 
 const (
-	END_PHRASE                    = "end"
+	END_PHRASE                    = "Кінець"
 	TEMPLATE_LECTIONS_LIST        = "%d.%s.%s"
-	TEMPLATE_INTRO_LECTIONS_LIST  = "Виберіть лекцію. Для закінчення напишіть" + END_PHRASE + "\n%s"
+	TEMPLATE_INTRO_LECTIONS_LIST  = "Виберіть лекцію. Для закінчення натисніть " + END_PHRASE
 	TEMPLATE_PLACES_LIST          = "%d. %s - %s\n"
 	TEMPLATE_PLACES_LIST_BUTTONS  = "%d. %s\n"
 	TEMPLATE_INTRO_PLACES_LIST    = "Де?\n%s"
@@ -72,7 +74,12 @@ func (c *addEvent) NextStep(u *store.User, answer string) (*ReplyMarkup, error) 
 		}
 		replyMarkup.Text = fmt.Sprintf(TEMPLATE_INTRO_PLACES_LIST, pText)
 	case 3:
-		where, err := strconv.Atoi(answer)
+		regexpLectionID := regexp.MustCompile(`^(\d+)?\.`)
+		matches := regexpLectionID.FindStringSubmatch(answer)
+		if len(matches) < 2 {
+			return nil, ErrWrongPlace
+		}
+		where, err := strconv.Atoi(matches[1])
 		if err != nil {
 			return nil, errors.New("failed string to int converting")
 		}
@@ -84,11 +91,13 @@ func (c *addEvent) NextStep(u *store.User, answer string) (*ReplyMarkup, error) 
 		if err != nil {
 			return nil, err
 		}
-		lText := ""
 		for _, l := range lections {
-			lText = fmt.Sprintf(TEMPLATE_LECTIONS_LIST, l.ID, l.Name, l.Lector.Name)
+			log.Info(l.Lector)
+			lText := fmt.Sprintf(TEMPLATE_LECTIONS_LIST, l.ID, l.Name, l.Lector.Name)
+			replyMarkup.Buttons = append(replyMarkup.Buttons, lText)
 		}
-		replyMarkup.Text = fmt.Sprintf(TEMPLATE_INTRO_LECTIONS_LIST, lText)
+		replyMarkup.Buttons = append(replyMarkup.Buttons, END_PHRASE)
+		replyMarkup.Text = TEMPLATE_INTRO_LECTIONS_LIST
 	case 5:
 		if answer == END_PHRASE {
 			_, err := store.AddEvent(c.whenStart, c.whenEnd, c.where, c.description, c.lections)
@@ -98,8 +107,12 @@ func (c *addEvent) NextStep(u *store.User, answer string) (*ReplyMarkup, error) 
 			replyMarkup.Text = "Івент створено"
 			break
 		}
-		// TODO: process answer as lections in one answer
-		lection, err := strconv.Atoi(answer)
+		regexpLectionID := regexp.MustCompile(`^(\d+)?\.`)
+		matches := regexpLectionID.FindStringSubmatch(answer)
+		if len(matches) < 2 {
+			return nil, ErrWrongPlace
+		}
+		lection, err := strconv.Atoi(matches[1])
 		if err != nil {
 			return nil, err
 		}

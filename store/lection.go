@@ -41,7 +41,7 @@ func Lections(newOnly bool) ([]*Lection, error) {
 	if newOnly {
 		typeFilter = "WHERE l.id NOT IN (SELECT id_lection FROM event_lections)"
 	}
-	baseQuery := "SELECT l.id, l.name, u.username, u.id, u.role FROM lections l "
+	baseQuery := "SELECT l.id, l.name, u.name, u.username, u.id, u.role FROM lections l "
 	baseQuery += " LEFT JOIN users u ON u.id = user_id " + typeFilter
 	rows, err := dbConn.Query(baseQuery)
 	if err != nil {
@@ -53,7 +53,7 @@ func Lections(newOnly bool) ([]*Lection, error) {
 		lection := &Lection{
 			Lector: &User{},
 		}
-		if err := rows.Scan(&lection.ID, &lection.Name, &lection.Lector.Username, &lection.Lector.ID, &lection.Lector.Role); err != nil {
+		if err := rows.Scan(&lection.ID, &lection.Name, &lection.Lector.Name, &lection.Lector.Username, &lection.Lector.ID, &lection.Lector.Role); err != nil {
 			return nil, err
 		}
 		lections = append(lections, lection)
