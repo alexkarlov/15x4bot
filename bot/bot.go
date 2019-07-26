@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"github.com/alexkarlov/15x4bot/commands"
 	"github.com/alexkarlov/15x4bot/config"
 	"github.com/alexkarlov/simplelog"
 	"gopkg.in/telegram-bot-api.v4"
@@ -64,6 +65,7 @@ func (b *Bot) ListenUpdates() {
 // SendError sends message with general error
 func (b *Bot) SendError(chatID int64) {
 	msg := tgbotapi.NewMessage(chatID, InternalErrorText)
+	msg.BaseChat.ReplyMarkup = markup(commands.MainMarkup)
 	// TODO: process error
 	_, err := b.bot.Send(msg)
 	if err != nil {

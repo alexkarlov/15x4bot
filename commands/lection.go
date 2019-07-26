@@ -5,17 +5,26 @@ import (
 	"errors"
 	"fmt"
 	"github.com/alexkarlov/15x4bot/store"
+	"regexp"
 	"strconv"
 	"time"
 )
 
+var (
+	ErrWrongLection = errors.New("wrong lection id: failed to convert from string to int")
+)
+
 const (
-	TEMPLATE_CREATE_EVENT_STEP_SPEAKER_DETAILS      = "%d - %s, %s\n"
-	TEMPLATE_CREATE_EVENT_STEP_SPEAKER              = "Хто лектор?\n%s"
-	TEMPLATE_CREATE_EVENT_STEP_LECTION_NAME         = "Назва лекції"
-	TEMPLATE_CREATE_EVENT_STEP_LECTION_DESCRIPTION  = "Опис лекції"
-	TEMPLATE_CREATE_EVENT_SUCCESS_MSG               = "Лекцію створено"
+	TEMPLATE_CREATE_EVENT_STEP_SPEAKER_DETAILS     = "%d - %s, %s\n"
+	TEMPLATE_CREATE_EVENT_STEP_SPEAKER             = "Хто лектор?\n%s"
+	TEMPLATE_CREATE_EVENT_STEP_LECTION_NAME        = "Назва лекції"
+	TEMPLATE_CREATE_EVENT_STEP_LECTION_DESCRIPTION = "Опис лекції"
+	TEMPLATE_CREATE_EVENT_SUCCESS_MSG              = "Лекцію створено"
+	TEMPLATE_LECTION_NAME                          = "Лекція %d: %s"
+	TEMPLATE_ADD_LECTION_DESCIRPTION_CHOSE_LECTION = "Оберіть лекцію"
+
 	TEMPLATE_ADD_LECTION_DESCIRPTION_ERROR_NOT_YOUR = "Це не твоя лекція!"
+	TEMPLATE_ADD_LECTION_DESCIRPTION_ERROR_WRONG    = "Невірно вибрана лекція"
 )
 
 type addLection struct {
@@ -26,10 +35,9 @@ type addLection struct {
 }
 
 type addDescriptionLection struct {
-	description string
-	username    string
-	taskID      int
-	step        int
+	username  string
+	lectionID int
+	step      int
 }
 
 func (c *addLection) IsAllow(u string) bool {
@@ -69,13 +77,16 @@ func (c *addLection) NextStep(u *store.User, answer string) (*ReplyMarkup, error
 	case 2:
 		c.name = answer
 		replyMarkup.Text = TEMPLATE_CREATE_EVENT_STEP_LECTION_DESCRIPTION
+		replyMarkup.Buttons = append(replyMarkup.Buttons, TEMPLATE_I_DONT_KNOW)
 	case 3:
-		c.description = answer
+		if answer != TEMPLATE_I_DONT_KNOW {
+			c.description = answer
+		}
 		lectionID, err := store.AddLection(c.name, c.description, c.user_id)
 		if err != nil {
 			return nil, err
 		}
-		if c.description == "-" {
+		if answer == TEMPLATE_I_DONT_KNOW {
 			execTime := lectionRemindTime()
 			l := &store.Lection{
 				ID: lectionID,
@@ -87,6 +98,7 @@ func (c *addLection) NextStep(u *store.User, answer string) (*ReplyMarkup, error
 			store.AddTask(store.TASK_TYPE_REMINDER_LECTOR, execTime, string(details))
 		}
 		replyMarkup.Text = TEMPLATE_CREATE_EVENT_SUCCESS_MSG
+		replyMarkup.Buttons = StandardMarkup(u.Role)
 	}
 	c.step++
 	return replyMarkup, nil
@@ -105,28 +117,49 @@ func lectionRemindTime() time.Time {
 }
 
 func (c *addDescriptionLection) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
-	replyMarkup := &ReplyMarkup{}
-	t, err := store.LoadTask(c.taskID)
-	if err != nil {
-		return nil, err
+	replyMarkup := &ReplyMarkup{
+		Buttons: MainMarkup,
 	}
-	l, err := t.LoadLection()
-	if err != nil {
-		return nil, err
+	switch c.step {
+	case 0:
+		lections, err := store.LectionsWithoutDescriptions(u.ID)
+		if err != nil {
+			return nil, err
+		}
+		for _, l := range lections {
+			lText := fmt.Sprintf(TEMPLATE_LECTION_NAME, l.ID, l.Name)
+			replyMarkup.Buttons = append(replyMarkup.Buttons, lText)
+		}
+		replyMarkup.Text = TEMPLATE_ADD_LECTION_DESCIRPTION_CHOSE_LECTION
+	case 1:
+		regexpLectionID := regexp.MustCompile(`^Лекція (\d+)?\:`)
+		matches := regexpLectionID.FindStringSubmatch(answer)
+		if len(matches) > 2 {
+			replyMarkup.Text = TEMPLATE_ADD_LECTION_DESCIRPTION_ERROR_WRONG
+			return replyMarkup, nil
+		}
+		lID, err := strconv.Atoi(matches[1])
+		if err != nil {
+			return nil, ErrWrongLection
+		}
+		l, err := store.LoadLection(lID)
+		if err != nil {
+			return nil, err
+		}
+		if l.Lector.Username != c.username {
+			replyMarkup.Text = TEMPLATE_ADD_LECTION_DESCIRPTION_ERROR_NOT_YOUR
+			return replyMarkup, nil
+		}
+		c.lectionID = lID
+		replyMarkup.Text = TEMPLATE_CREATE_EVENT_STEP_LECTION_DESCRIPTION
+	case 2:
+		err := store.AddLectionDescription(c.lectionID, answer)
+		if err != nil {
+			return nil, err
+		}
+		replyMarkup.Text = "Опис лекції створено"
 	}
-	if l.Lector.Username != c.username {
-		replyMarkup.Text = TEMPLATE_ADD_LECTION_DESCIRPTION_ERROR_NOT_YOUR
-		return replyMarkup, nil
-	}
-	err = l.AddDescriptionLection(c.description)
-	if err != nil {
-		return nil, err
-	}
-	err = store.FinishTask(c.taskID)
-	if err != nil {
-		return nil, err
-	}
-	replyMarkup.Text = "Опис лекції створено"
+	c.step++
 	return replyMarkup, nil
 }
 
@@ -137,5 +170,5 @@ func (c *addDescriptionLection) IsAllow(u string) bool {
 }
 
 func (c *addDescriptionLection) IsEnd() bool {
-	return c.step == 1
+	return c.step == 3
 }

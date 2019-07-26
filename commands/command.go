@@ -3,7 +3,6 @@ package commands
 import (
 	"github.com/alexkarlov/15x4bot/store"
 	"regexp"
-	"strconv"
 )
 
 var commandPatterns = []struct {
@@ -94,22 +93,9 @@ var commandPatterns = []struct {
 		},
 	},
 	{
-		pattern: `task_\d{1,3}:`,
+		pattern: `(?i)^Додати опис до лекції|Лекція \d+?\:`,
 		createCmd: func(cmd string) Command {
-			r := regexp.MustCompile(`task_(\d{1,3})?:(.*)`)
-			match := r.FindStringSubmatch(cmd)
-			if len(match) > 3 {
-				return &unknown{}
-			}
-			taskID, err := strconv.Atoi(match[1])
-			if err != nil {
-				return &unknown{}
-			}
-			descr := match[2]
-			return &addDescriptionLection{
-				taskID:      taskID,
-				description: descr,
-			}
+			return &addDescriptionLection{}
 		},
 	},
 }

@@ -13,7 +13,8 @@ const (
 	END_PHRASE                    = "end"
 	TEMPLATE_LECTIONS_LIST        = "%d.%s.%s"
 	TEMPLATE_INTRO_LECTIONS_LIST  = "Виберіть лекцію. Для закінчення напишіть" + END_PHRASE + "\n%s"
-	TEMPLATE_PLACES_LIST          = "%d. %s - %s"
+	TEMPLATE_PLACES_LIST          = "%d. %s - %s\n"
+	TEMPLATE_PLACES_LIST_BUTTONS  = "%d. %s\n"
 	TEMPLATE_INTRO_PLACES_LIST    = "Де?\n%s"
 	TEMPLATE_NEXT_EVENT           = "Де: %s, %s\nПочаток: %s\nКінець: %s"
 	TEMPLATE_NEXT_EVENT_UNDEFINED = "Невідомо коли, запитайся пізніше"
@@ -63,8 +64,11 @@ func (c *addEvent) NextStep(u *store.User, answer string) (*ReplyMarkup, error) 
 		c.whenEnd = t
 		places, err := store.Places(store.PlaceTypes{store.PLACE_TYPE_FOR_EVENT, store.PLACE_TYPE_FOR_ALL})
 		pText := ""
+		replyMarkup.Buttons = nil
 		for _, p := range places {
-			pText = fmt.Sprintf(TEMPLATE_PLACES_LIST, p.ID, p.Name, p.Address)
+			pText += fmt.Sprintf(TEMPLATE_PLACES_LIST, p.ID, p.Name, p.Address)
+			b := fmt.Sprintf(TEMPLATE_PLACES_LIST_BUTTONS, p.ID, p.Name)
+			replyMarkup.Buttons = append(replyMarkup.Buttons, b)
 		}
 		replyMarkup.Text = fmt.Sprintf(TEMPLATE_INTRO_PLACES_LIST, pText)
 	case 3:

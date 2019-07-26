@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+const (
+	TEMPLATE_I_DONT_KNOW = "Не знаю"
+)
+
 type addUser struct {
 	step     int
 	name     string
@@ -36,29 +40,44 @@ func (c *addUser) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
 	case 1:
 		c.name = answer
 		replyMarkup.Text = "Аккаунт в телеграмі"
+		replyMarkup.Buttons = append(replyMarkup.Buttons, TEMPLATE_I_DONT_KNOW)
 	case 2:
-		c.username = answer
-		replyMarkup.Text = "Аккаунт в Фейсбуці"
-	case 3:
-		c.fb = answer
-		replyMarkup.Text = "Аккаунт в ВК"
-	case 4:
-		c.vk = answer
-		replyMarkup.Text = "Дата народження в форматі 2006-01-02"
-	case 5:
-		t, err := time.Parse("2006-01-02", answer)
-		if err != nil {
-			replyMarkup.Text = "Невірний формат дати та часу. Спробуй ще!"
-			return replyMarkup, nil
+		if answer != TEMPLATE_I_DONT_KNOW {
+			c.username = answer
 		}
-		c.bdate = t
+		replyMarkup.Text = "Аккаунт в Фейсбуці"
+		replyMarkup.Buttons = append(replyMarkup.Buttons, TEMPLATE_I_DONT_KNOW)
+	case 3:
+		if answer != TEMPLATE_I_DONT_KNOW {
+			c.fb = answer
+		}
+		replyMarkup.Text = "Аккаунт в ВК"
+		replyMarkup.Buttons = append(replyMarkup.Buttons, TEMPLATE_I_DONT_KNOW)
+	case 4:
+		if answer != TEMPLATE_I_DONT_KNOW {
+			c.vk = answer
+		}
+		replyMarkup.Text = "Дата народження в форматі 2006-01-02"
+		replyMarkup.Buttons = append(replyMarkup.Buttons, TEMPLATE_I_DONT_KNOW)
+	case 5:
+		if answer != TEMPLATE_I_DONT_KNOW {
+			t, err := time.Parse("2006-01-02", answer)
+			if err != nil {
+				replyMarkup.Text = "Невірний формат дати та часу. Спробуй ще!"
+				return replyMarkup, nil
+			}
+			c.bdate = t
+		}
 		replyMarkup.Text = "Роль в проекті"
+		roles := MessageButtons{string(store.USER_ROLE_ADMIN), string(store.USER_ROLE_LECTOR), string(store.USER_ROLE_GUEST)}
+		replyMarkup.Buttons = append(replyMarkup.Buttons, roles...)
 	case 6:
 		role := store.NewUserRole(answer)
 		if err := store.AddUser(c.username, role, c.name, c.fb, c.vk, c.bdate); err != nil {
 			return nil, err
 		}
 		replyMarkup.Text = "Користувач успішно створений"
+		replyMarkup.Buttons = StandardMarkup(u.Role)
 	}
 	c.step++
 	return replyMarkup, nil

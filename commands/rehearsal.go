@@ -53,10 +53,13 @@ func (c *addRehearsal) NextStep(u *store.User, answer string) (*ReplyMarkup, err
 			return replyMarkup, nil
 		}
 		c.when = t
-		places, err := store.Places(store.PlaceTypes{store.PLACE_TYPE_FOR_REHEARSALS, store.PLACE_TYPE_FOR_ALL})
+		places, err := store.Places(store.PlaceTypes{store.PLACE_TYPE_FOR_REHEARSAL, store.PLACE_TYPE_FOR_ALL})
 		pText := ""
+		replyMarkup.Buttons = nil
 		for _, p := range places {
-			pText = fmt.Sprintf(TEMPLATE_PLACES_LIST, p.ID, p.Name, p.Address)
+			pText += fmt.Sprintf(TEMPLATE_PLACES_LIST, p.ID, p.Name, p.Address)
+			b := fmt.Sprintf(TEMPLATE_PLACES_LIST_BUTTONS, p.ID, p.Name)
+			replyMarkup.Buttons = append(replyMarkup.Buttons, b)
 		}
 		replyMarkup.Text = fmt.Sprintf(TEMPLATE_INTRO_PLACES_LIST, pText)
 	case 2:
@@ -69,6 +72,7 @@ func (c *addRehearsal) NextStep(u *store.User, answer string) (*ReplyMarkup, err
 			return nil, err
 		}
 		replyMarkup.Text = TEMPLATE_ADDREHEARSAL_SUCCESS_MSG
+		replyMarkup.Buttons = StandardMarkup(u.Role)
 	}
 	c.step++
 	return replyMarkup, nil

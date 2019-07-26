@@ -21,7 +21,7 @@ const (
 	// this place can be used for rehearsals and events as well
 	PLACE_TYPE_FOR_ALL placeType = "for_all"
 	// this place can be used only for rehearsals
-	PLACE_TYPE_FOR_REHEARSALS placeType = "for_rehearsals"
+	PLACE_TYPE_FOR_REHEARSAL placeType = "for_rehearsal"
 	// this place can be used only for events
 	PLACE_TYPE_FOR_EVENT placeType = "for_event"
 )
@@ -36,7 +36,8 @@ func Places(t PlaceTypes) ([]*Place, error) {
 		}
 		typeFilter = fmt.Sprintf("WHERE type IN (%s)", strings.Join(typeFilters, ","))
 	}
-	rows, err := dbConn.Query("SELECT id, name, address FROM places " + typeFilter)
+	q := "SELECT id, name, address FROM places " + typeFilter + " ORDER BY id ASC"
+	rows, err := dbConn.Query(q)
 	if err != nil {
 		return nil, err
 	}
