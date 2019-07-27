@@ -1,0 +1,1 @@
+DELETE FROM users WHERE username IN ('a_petrenko', 'VladislavVodko');
