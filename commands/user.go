@@ -2,6 +2,7 @@ package commands
 
 import (
 	"github.com/alexkarlov/15x4bot/store"
+	"github.com/alexkarlov/simplelog"
 	"time"
 )
 
@@ -20,10 +21,14 @@ type addUser struct {
 }
 
 func (c *addUser) IsAllow(u string) bool {
-	//TODO: move it to db
-	admins := []string{"zedman95", "alex_karlov"}
+	//TODO: impove filter instead of read all records
+	admins, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN})
+	if err != nil {
+		log.Error("error while reading admins ", err)
+		return false
+	}
 	for _, admin := range admins {
-		if admin == u {
+		if admin.Username == u {
 			return true
 		}
 	}

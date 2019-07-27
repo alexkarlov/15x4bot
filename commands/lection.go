@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/alexkarlov/15x4bot/store"
+	"github.com/alexkarlov/simplelog"
 	"regexp"
 	"strconv"
 	"time"
@@ -41,10 +42,14 @@ type addDescriptionLection struct {
 }
 
 func (c *addLection) IsAllow(u string) bool {
-	//TODO: move it to db
-	admins := []string{"zedman95", "alex_karlov"}
+	//TODO: impove filter instead of read all records
+	admins, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN})
+	if err != nil {
+		log.Error("error while reading admins ", err)
+		return false
+	}
 	for _, admin := range admins {
-		if admin == u {
+		if admin.Username == u {
 			return true
 		}
 	}
