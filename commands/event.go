@@ -11,6 +11,10 @@ import (
 	"github.com/alexkarlov/15x4bot/store"
 )
 
+var (
+	ErrWrongPlaceID = errors.New("wrong place id: failed to convert from string to int")
+)
+
 const (
 	END_PHRASE                    = "Кінець"
 	TEMPLATE_LECTIONS_LIST        = "%d.%s.%s"
@@ -20,6 +24,8 @@ const (
 	TEMPLATE_INTRO_PLACES_LIST    = "Де?\n%s"
 	TEMPLATE_NEXT_EVENT           = "Де: %s, %s\nПочаток: %s\nКінець: %s"
 	TEMPLATE_NEXT_EVENT_UNDEFINED = "Невідомо коли, запитайся пізніше"
+
+	TEMPLATE_WRONG_PLACE_ID = "Невідоме місце"
 )
 
 type addEvent struct {
@@ -50,6 +56,7 @@ func (c *addEvent) NextStep(u *store.User, answer string) (*ReplyMarkup, error) 
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
 	}
+	var err error
 	switch c.step {
 	case 0:
 		replyMarkup.Text = "Коли починається? Дата та час в форматі 2018-12-31 19:00:00"
@@ -62,13 +69,15 @@ func (c *addEvent) NextStep(u *store.User, answer string) (*ReplyMarkup, error) 
 		c.whenStart = t
 		replyMarkup.Text = "Коли закінчується? Дата та час в форматі 2018-12-31 19:00:00"
 	case 2:
-		t, err := time.Parse("2006-01-02 15:04:05", answer)
+		c.whenEnd, err = time.Parse("2006-01-02 15:04:05", answer)
 		if err != nil {
 			replyMarkup.Text = "Невірний формат дати та часу. Наприклад, якщо івент буде 20-ого грудня о 19:00 то треба ввести: 2018-12-20 19:00:00. Спробуй ще!"
 			return replyMarkup, nil
 		}
-		c.whenEnd = t
 		places, err := store.Places(store.PlaceTypes{store.PLACE_TYPE_FOR_EVENT, store.PLACE_TYPE_FOR_ALL})
+		if err != nil {
+			return nil, err
+		}
 		pText := ""
 		replyMarkup.Buttons = nil
 		for _, p := range places {
@@ -78,16 +87,23 @@ func (c *addEvent) NextStep(u *store.User, answer string) (*ReplyMarkup, error) 
 		}
 		replyMarkup.Text = fmt.Sprintf(TEMPLATE_INTRO_PLACES_LIST, pText)
 	case 3:
-		regexpLectionID := regexp.MustCompile(`^(\d+)?\.`)
-		matches := regexpLectionID.FindStringSubmatch(answer)
+		regexpPlaceID := regexp.MustCompile(`^(\d+)?\.`)
+		matches := regexpPlaceID.FindStringSubmatch(answer)
 		if len(matches) < 2 {
 			return nil, ErrWrongPlace
 		}
-		where, err := strconv.Atoi(matches[1])
+		c.where, err = strconv.Atoi(matches[1])
 		if err != nil {
-			return nil, errors.New("failed string to int converting")
+			return nil, ErrWrongPlaceID
 		}
-		c.where = where
+		ok, err := store.DoesPlaceExist(c.where)
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			replyMarkup.Text = TEMPLATE_WRONG_PLACE_ID
+			return replyMarkup, nil
+		}
 		replyMarkup.Text = "Текст івенту"
 	case 4:
 		c.description = answer

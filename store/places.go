@@ -1,6 +1,7 @@
 package store
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 )
@@ -55,4 +56,17 @@ func Places(t PlaceTypes) ([]*Place, error) {
 		return nil, err
 	}
 	return places, err
+}
+
+// DoesPlaceExist returns whether the place exists by provided id or no
+func DoesPlaceExist(id int) (bool, error) {
+	q := "SELECT id FROM places WHERE id=$1"
+	err := dbConn.QueryRow(q, id).Scan(new(int))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }

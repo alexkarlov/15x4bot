@@ -21,8 +21,6 @@ const (
 	TEMPLATE_ADD_REHEARSAL_ERROR_DATE = "Невірний формат дати та часу. Наприклад, якщо репетиція буде 20-ого грудня о 19:00 то треба ввести: 2018-12-20 19:00:00. Спробуй ще!"
 	TEMPLATE_ADDREHEARSAL_SUCCESS_MSG = "Репетиція створена"
 	TEMPLATE_NEXT_REHEARSAL_UNDEFINED = "Невідомо коли, запитайся пізніше"
-
-	TEMPLATE_ADD_REHEARSAL_ERROR_WRONG_PLACE = "Неправильне місце"
 )
 
 type addRehearsal struct {
@@ -79,6 +77,14 @@ func (c *addRehearsal) NextStep(u *store.User, answer string) (*ReplyMarkup, err
 		c.where, err = strconv.Atoi(matches[1])
 		if err != nil {
 			return nil, ErrWrongPlace
+		}
+		ok, err := store.DoesPlaceExist(c.where)
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			replyMarkup.Text = TEMPLATE_WRONG_PLACE_ID
+			return replyMarkup, nil
 		}
 		err = store.AddRehearsal(c.when, c.where)
 		if err != nil {

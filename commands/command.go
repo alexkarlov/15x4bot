@@ -93,7 +93,7 @@ var commandPatterns = []struct {
 		},
 	},
 	{
-		pattern: `(?i)^Додати опис до лекції|Лекція \d+?\:`,
+		pattern: `(?i)Додати опис до лекції`,
 		createCmd: func(cmd string) Command {
 			return &addDescriptionLection{}
 		},

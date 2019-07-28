@@ -1,6 +1,7 @@
 package store
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -46,6 +47,19 @@ func (u *User) TGChat() (*Chat, error) {
 	q := "SELECT c.id, c.tg_chat_id FROM users u LEFT JOIN chats c ON c.user_id=u.id WHERE u.id=$1"
 	err := dbConn.QueryRow(q, u.ID).Scan(&c.ID, &c.TGChatID)
 	return c, err
+}
+
+// DoesUserExist returns whether user exists by provided id or no
+func DoesUserExist(id int) (bool, error) {
+	q := "SELECT id FROM users WHERE id=$1"
+	err := dbConn.QueryRow(q, id).Scan(new(int))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }
 
 // LoadUser returns a user loaded by username

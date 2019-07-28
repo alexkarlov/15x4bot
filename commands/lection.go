@@ -13,6 +13,7 @@ import (
 
 var (
 	ErrWrongLection = errors.New("wrong lection id: failed to convert from string to int")
+	ErrWrongUserID  = errors.New("wrong user id: failed to convert from string to int")
 )
 
 const (
@@ -23,9 +24,11 @@ const (
 	TEMPLATE_CREATE_EVENT_SUCCESS_MSG              = "Лекцію створено"
 	TEMPLATE_LECTION_NAME                          = "Лекція %d: %s"
 	TEMPLATE_ADD_LECTION_DESCIRPTION_CHOSE_LECTION = "Оберіть лекцію"
+	TEMPLATE_ADD_LECTION_DESCRIPTION_COMPLETE      = "Опис лекції створено"
 
 	TEMPLATE_ADD_LECTION_DESCIRPTION_ERROR_NOT_YOUR = "Це не твоя лекція!"
 	TEMPLATE_ADD_LECTION_DESCIRPTION_ERROR_WRONG    = "Невірно вибрана лекція"
+	TEMPLATE_WRONG_USER_ID                          = "Невідомий користувач"
 )
 
 type addLection struct {
@@ -72,10 +75,17 @@ func (c *addLection) NextStep(u *store.User, answer string) (*ReplyMarkup, error
 		}
 		replyMarkup.Text = fmt.Sprintf(TEMPLATE_CREATE_EVENT_STEP_SPEAKER, speakerText)
 	case 1:
-		// TODO: validate it
 		userID, err := strconv.Atoi(answer)
 		if err != nil {
-			return nil, errors.New("failed string to int converting")
+			return nil, ErrWrongUserID
+		}
+		ok, err := store.DoesUserExist(userID)
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			replyMarkup.Text = TEMPLATE_WRONG_USER_ID
+			return replyMarkup, nil
 		}
 		c.user_id = userID
 		replyMarkup.Text = TEMPLATE_CREATE_EVENT_STEP_LECTION_NAME
@@ -162,7 +172,7 @@ func (c *addDescriptionLection) NextStep(u *store.User, answer string) (*ReplyMa
 		if err != nil {
 			return nil, err
 		}
-		replyMarkup.Text = "Опис лекції створено"
+		replyMarkup.Text = TEMPLATE_ADD_LECTION_DESCRIPTION_COMPLETE
 	}
 	c.step++
 	return replyMarkup, nil
