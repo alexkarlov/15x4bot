@@ -98,6 +98,23 @@ var commandPatterns = []struct {
 			return &addDescriptionLection{}
 		},
 	},
+	{
+		pattern: `^Лекції|Івенти|Юзери|Репетиції$`,
+		createCmd: func(cmd string) Command {
+			reply := &markup{}
+			switch cmd {
+			case "Лекції":
+				reply.buttons = LectionMarkup
+			case "Івенти":
+				reply.buttons = EventMarkup
+			case "Юзери":
+				reply.buttons = UserMarkup
+			case "Репетиції":
+				reply.buttons = RehearsalMarkup
+			}
+			return reply
+		},
+	},
 }
 
 func init() {

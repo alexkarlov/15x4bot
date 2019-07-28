@@ -6,12 +6,18 @@ import (
 
 type MessageButtons []string
 
+const (
+	TEMPLATE_CHOSE_MENU = "Оберіть пункт"
+)
+
 var (
 	AdminMarkup = MessageButtons{
-		"Створити івент",
-		"Створити репетицію",
-		"Створити користувача",
-		"Створити лекцію",
+		"Лекції",
+		"Івенти",
+		"Юзери",
+		"Репетиції",
+		"Хто ми",
+		"Документація",
 	}
 
 	SpeakerMarkup = MessageButtons{
@@ -28,17 +34,59 @@ var (
 	MainMarkup = MessageButtons{
 		"Головне меню",
 	}
+
+	LectionMarkup = MessageButtons{
+		"Створити лекцію",
+		"Додати опис до лекції",
+		"Список лекцій",
+		"Видалити лекцію",
+	}
+	EventMarkup = MessageButtons{
+		"Наступний івент",
+		"Створити івент",
+		"Список івентів",
+	}
+	UserMarkup = MessageButtons{
+		"Створити користувача",
+		"Список користувачів",
+		"Видалити користувача",
+	}
+	RehearsalMarkup = MessageButtons{
+		"Наступна репетиція",
+		"Створити репетицію",
+		"Список репетицій",
+		"Видалити репетицію",
+	}
 )
 
 // StandardMarkup returns general markup depends on provided role
 func StandardMarkup(role store.UserRole) MessageButtons {
 	buttons := MessageButtons(GuestMarkup)
-	buttons = append(buttons, MainMarkup...)
 	if role == store.USER_ROLE_ADMIN {
-		buttons = append(buttons, AdminMarkup...)
-		buttons = append(buttons, SpeakerMarkup...)
+		buttons = MessageButtons(AdminMarkup)
 	} else if role == store.USER_ROLE_LECTOR {
 		buttons = append(buttons, SpeakerMarkup...)
 	}
+	buttons = append(buttons, MainMarkup...)
 	return buttons
+}
+
+type markup struct {
+	buttons MessageButtons
+}
+
+func (c *markup) IsEnd() bool {
+	return true
+}
+
+func (c *markup) IsAllow(u string) bool {
+	return true
+}
+
+func (c *markup) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+	replyMarkup := &ReplyMarkup{
+		Buttons: c.buttons,
+		Text:    TEMPLATE_CHOSE_MENU,
+	}
+	return replyMarkup, nil
 }
