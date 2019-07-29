@@ -42,7 +42,7 @@ func Lections(newOnly bool) ([]*Lection, error) {
 		typeFilter = "WHERE l.id NOT IN (SELECT id_lection FROM event_lections)"
 	}
 	baseQuery := "SELECT l.id, l.name, u.name, u.username, u.id, u.role FROM lections l "
-	baseQuery += " LEFT JOIN users u ON u.id = user_id " + typeFilter
+	baseQuery += " INNER JOIN users u ON u.id = user_id " + typeFilter
 	rows, err := dbConn.Query(baseQuery)
 	if err != nil {
 		return nil, err
