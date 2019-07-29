@@ -38,13 +38,15 @@ var (
 	LectionMarkup = MessageButtons{
 		"Створити лекцію",
 		"Додати опис до лекції",
-		"Список лекцій",
+		"Список лекцій(всі)",
+		"Список лекцій(без опису)",
 		"Видалити лекцію",
 	}
 	EventMarkup = MessageButtons{
 		"Наступний івент",
 		"Створити івент",
 		"Список івентів",
+		"Видалити івент",
 	}
 	UserMarkup = MessageButtons{
 		"Створити користувача",
@@ -54,7 +56,6 @@ var (
 	RehearsalMarkup = MessageButtons{
 		"Наступна репетиція",
 		"Створити репетицію",
-		"Список репетицій",
 		"Видалити репетицію",
 	}
 )
@@ -88,5 +89,6 @@ func (c *markup) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
 		Buttons: c.buttons,
 		Text:    TEMPLATE_CHOSE_MENU,
 	}
+	replyMarkup.Buttons = append(replyMarkup.Buttons, MainMarkup...)
 	return replyMarkup, nil
 }

@@ -39,3 +39,32 @@ func NextRehearsal() (*Rehearsal, error) {
 	}
 	return r, nil
 }
+
+// Rehearsals returns a list of rehearsals
+func Rehearsals() ([]*Rehearsal, error) {
+	q := "SELECT r.id, r.time, p.name FROM rehearsals r LEFT JOIN places p ON p.id=r.place"
+	rows, err := dbConn.Query(q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	rehearsals := make([]*Rehearsal, 0)
+	for rows.Next() {
+		rehearsal := &Rehearsal{}
+		if err := rows.Scan(&rehearsal.ID, &rehearsal.Time, &rehearsal.PlaceName); err != nil {
+			return nil, err
+		}
+		rehearsals = append(rehearsals, rehearsal)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return rehearsals, err
+}
+
+// DeleteRehearsal deletes rehearsal by provided id
+func DeleteRehearsal(id int) error {
+	q := "DELETE FROM rehearsals WHERE id=$1"
+	_, err := dbConn.Exec(q, id)
+	return err
+}

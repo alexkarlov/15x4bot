@@ -12,15 +12,20 @@ import (
 )
 
 var (
-	ErrWrongPlace = errors.New("wrong place id: failed to conver from string to int")
+	ErrWrongPlace     = errors.New("wrong place id: failed to conver from string to int")
+	ErrWrongRehearsal = errors.New("wrong rehearsal id: failed to convert from string to int")
 )
 
 const (
-	TEMPLATE_NEXT_REHEARSAL           = "Де: %s, %s\nКоли: %s\nМапа:%s"
-	TEMPLATE_ADD_REHEARSAL_WHEN       = "Коли? Дата та час в форматі 2018-12-31 19:00:00"
-	TEMPLATE_ADD_REHEARSAL_ERROR_DATE = "Невірний формат дати та часу. Наприклад, якщо репетиція буде 20-ого грудня о 19:00 то треба ввести: 2018-12-20 19:00:00. Спробуй ще!"
-	TEMPLATE_ADDREHEARSAL_SUCCESS_MSG = "Репетиція створена"
-	TEMPLATE_NEXT_REHEARSAL_UNDEFINED = "Невідомо коли, запитайся пізніше"
+	TEMPLATE_NEXT_REHEARSAL            = "Де: %s, %s\nКоли: %s\nМапа:%s"
+	TEMPLATE_ADD_REHEARSAL_WHEN        = "Коли? Дата та час в форматі 2018-12-31 19:00:00"
+	TEMPLATE_ADD_REHEARSAL_ERROR_DATE  = "Невірний формат дати та часу. Наприклад, якщо репетиція буде 20-ого грудня о 19:00 то треба ввести: 2018-12-20 19:00:00. Спробуй ще!"
+	TEMPLATE_ADDREHEARSAL_SUCCESS_MSG  = "Репетиція створена"
+	TEMPLATE_NEXT_REHEARSAL_UNDEFINED  = "Невідомо коли, запитайся пізніше"
+	TEMPLATE_REHEARSAL_BUTTON          = "%d.Коли: %s, місце: %s"
+	TEMPLATE_CHOSE_REHEARSAL           = "Оберіть репетицію"
+	TEMPLATE_REHEARSAL_ERROR_WRONG_ID  = "Невірно вибрана репетиція"
+	TEMPLATE_DELETE_REHEARSAL_COMPLETE = "Репетиція успішно видалена"
 )
 
 type addRehearsal struct {
@@ -125,5 +130,66 @@ func (c *nextRep) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
 		return nil, err
 	}
 	replyMarkup.Text = fmt.Sprintf(TEMPLATE_NEXT_REHEARSAL, r.PlaceName, r.Address, r.Time.Format("2006-01-02 15:04:05"), r.MapUrl)
+	return replyMarkup, nil
+}
+
+type deleteRehearsal struct {
+	step        int
+	rehearsalID int
+}
+
+func (d *deleteRehearsal) IsEnd() bool {
+	return d.step == 2
+}
+
+func (d *deleteRehearsal) IsAllow(u string) bool {
+	//TODO: impove filter instead of read all records
+	admins, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN})
+	if err != nil {
+		log.Error("error while reading admins ", err)
+		return false
+	}
+	for _, admin := range admins {
+		if admin.Username == u {
+			return true
+		}
+	}
+	return false
+}
+
+func (d *deleteRehearsal) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+	replyMarkup := &ReplyMarkup{
+		Buttons: MainMarkup,
+	}
+	switch d.step {
+	case 0:
+		rehearsals, err := store.Rehearsals()
+		if err != nil {
+			return nil, err
+		}
+		for _, r := range rehearsals {
+			lText := fmt.Sprintf(TEMPLATE_REHEARSAL_BUTTON, r.ID, r.Time, r.PlaceName)
+			replyMarkup.Buttons = append(replyMarkup.Buttons, lText)
+		}
+		replyMarkup.Text = TEMPLATE_CHOSE_REHEARSAL
+	case 1:
+		regexpRehearsalID := regexp.MustCompile(`^(\d+)?\.`)
+		matches := regexpRehearsalID.FindStringSubmatch(answer)
+		if len(matches) < 2 {
+			replyMarkup.Text = TEMPLATE_REHEARSAL_ERROR_WRONG_ID
+			return replyMarkup, nil
+		}
+		rID, err := strconv.Atoi(matches[1])
+		if err != nil {
+			return nil, ErrWrongRehearsal
+		}
+		err = store.DeleteRehearsal(rID)
+		if err != nil {
+			return nil, err
+		}
+		replyMarkup.Buttons = StandardMarkup(store.USER_ROLE_ADMIN)
+		replyMarkup.Text = TEMPLATE_DELETE_REHEARSAL_COMPLETE
+	}
+	d.step++
 	return replyMarkup, nil
 }

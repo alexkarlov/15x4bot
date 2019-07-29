@@ -84,3 +84,10 @@ func LectionsWithoutDescriptions(u int) ([]*Lection, error) {
 	}
 	return lections, nil
 }
+
+// DeleteLection deletes lection by provided id
+func DeleteLection(id int) error {
+	q := "DELETE FROM lections WHERE id=$1"
+	_, err := dbConn.Exec(q, id)
+	return err
+}

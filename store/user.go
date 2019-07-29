@@ -109,3 +109,10 @@ func Users(roles []UserRole) ([]*User, error) {
 	}
 	return users, err
 }
+
+// DeleteUser deletes user by provided id
+func DeleteUser(id int) error {
+	q := "DELETE FROM users WHERE id=$1"
+	_, err := dbConn.Exec(q, id)
+	return err
+}

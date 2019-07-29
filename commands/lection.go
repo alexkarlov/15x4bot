@@ -27,8 +27,11 @@ const (
 	TEMPLATE_ADD_LECTION_DESCRIPTION_COMPLETE      = "Опис лекції створено"
 
 	TEMPLATE_ADD_LECTION_DESCIRPTION_ERROR_NOT_YOUR = "Це не твоя лекція!"
-	TEMPLATE_ADD_LECTION_DESCIRPTION_ERROR_WRONG    = "Невірно вибрана лекція"
+	TEMPLATE_LECTION_ERROR_WRONG_ID                 = "Невірно вибрана лекція"
 	TEMPLATE_WRONG_USER_ID                          = "Невідомий користувач"
+	TEMPLATE_LECTION_LIST_ITEM                      = "Лекція %d: %s\nЛектор: %s\n\n"
+	TEMPLATE_LECTION_LIST_EMPTY                     = "Поки лекцій немає"
+	TEMPLATE_DELETE_LECTION_COMPLETE                = "Лекцію успішно видалено"
 )
 
 type addLection struct {
@@ -150,7 +153,7 @@ func (c *addDescriptionLection) NextStep(u *store.User, answer string) (*ReplyMa
 		regexpLectionID := regexp.MustCompile(`^Лекція (\d+)?\:`)
 		matches := regexpLectionID.FindStringSubmatch(answer)
 		if len(matches) > 2 {
-			replyMarkup.Text = TEMPLATE_ADD_LECTION_DESCIRPTION_ERROR_WRONG
+			replyMarkup.Text = TEMPLATE_LECTION_ERROR_WRONG_ID
 			return replyMarkup, nil
 		}
 		lID, err := strconv.Atoi(matches[1])
@@ -180,10 +183,122 @@ func (c *addDescriptionLection) NextStep(u *store.User, answer string) (*ReplyMa
 
 func (c *addDescriptionLection) IsAllow(u string) bool {
 	c.username = u
-	//TODO: check whether it's a lector or admin
-	return true
+	//TODO: impove filter instead of read all records
+	users, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN, store.USER_ROLE_LECTOR})
+	if err != nil {
+		log.Error("error while reading admins and lectors ", err)
+		return false
+	}
+	for _, user := range users {
+		if user.Username == u {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *addDescriptionLection) IsEnd() bool {
 	return c.step == 3
+}
+
+type lectionsList struct {
+	empty bool
+}
+
+func (l *lectionsList) IsEnd() bool {
+	return true
+}
+
+func (l *lectionsList) IsAllow(u string) bool {
+	//TODO: impove filter instead of read all records
+	admins, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN})
+	if err != nil {
+		log.Error("error while reading admins ", err)
+		return false
+	}
+	for _, admin := range admins {
+		if admin.Username == u {
+			return true
+		}
+	}
+	return false
+}
+
+func (l *lectionsList) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+	replyMarkup := &ReplyMarkup{
+		Buttons: StandardMarkup(u.Role),
+	}
+	list, err := store.Lections(l.empty)
+	if err != nil {
+		return nil, err
+	}
+	if len(list) == 0 {
+		replyMarkup.Text = TEMPLATE_LECTION_LIST_EMPTY
+		return replyMarkup, nil
+	}
+	for _, l := range list {
+		replyMarkup.Text += fmt.Sprintf(TEMPLATE_LECTION_LIST_ITEM, l.ID, l.Name, l.Lector.Name)
+	}
+	return replyMarkup, nil
+}
+
+type deleteLection struct {
+	step      int
+	lectionID int
+}
+
+func (d *deleteLection) IsEnd() bool {
+	return d.step == 2
+}
+
+func (d *deleteLection) IsAllow(u string) bool {
+	//TODO: impove filter instead of read all records
+	admins, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN})
+	if err != nil {
+		log.Error("error while reading admins ", err)
+		return false
+	}
+	for _, admin := range admins {
+		if admin.Username == u {
+			return true
+		}
+	}
+	return false
+}
+
+func (d *deleteLection) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+	replyMarkup := &ReplyMarkup{
+		Buttons: MainMarkup,
+	}
+	switch d.step {
+	case 0:
+		lections, err := store.Lections(false)
+		if err != nil {
+			return nil, err
+		}
+		for _, l := range lections {
+			lText := fmt.Sprintf(TEMPLATE_LECTION_NAME, l.ID, l.Name)
+			replyMarkup.Buttons = append(replyMarkup.Buttons, lText)
+		}
+		replyMarkup.Text = TEMPLATE_ADD_LECTION_DESCIRPTION_CHOSE_LECTION
+	case 1:
+		regexpLectionID := regexp.MustCompile(`^Лекція (\d+)?\:`)
+		matches := regexpLectionID.FindStringSubmatch(answer)
+		if len(matches) < 2 {
+			replyMarkup.Text = TEMPLATE_LECTION_ERROR_WRONG_ID
+			return replyMarkup, nil
+		}
+		lID, err := strconv.Atoi(matches[1])
+		if err != nil {
+			return nil, ErrWrongLection
+		}
+		err = store.DeleteLection(lID)
+		if err != nil {
+			return nil, err
+		}
+		replyMarkup.Buttons = StandardMarkup(store.USER_ROLE_ADMIN)
+		replyMarkup.Text = TEMPLATE_DELETE_LECTION_COMPLETE
+	}
+	d.step++
+	return replyMarkup, nil
 }

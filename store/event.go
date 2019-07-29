@@ -61,3 +61,32 @@ func NextEvent() (*Event, error) {
 	}
 	return e, nil
 }
+
+// Events returns a list of events
+func Events() ([]*Event, error) {
+	q := "SELECT e.id, e.starttime, e.endtime, p.name, p.address, e.description FROM events e LEFT JOIN places p ON p.id=e.place"
+	rows, err := dbConn.Query(q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	events := make([]*Event, 0)
+	for rows.Next() {
+		event := &Event{}
+		if err := rows.Scan(&event.ID, &event.StartTime, &event.EndTime, &event.PlaceName, &event.Address, &event.Description); err != nil {
+			return nil, err
+		}
+		events = append(events, event)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return events, err
+}
+
+// DeleteEvent deletes event by provided id
+func DeleteEvent(id int) error {
+	q := "DELETE FROM events WHERE id=$1"
+	_, err := dbConn.Exec(q, id)
+	return err
+}

@@ -11,43 +11,59 @@ var commandPatterns = []struct {
 	createCmd   func(cmd string) Command
 }{
 	{
-		pattern: `(?i)створити репетицію`,
+		pattern: `Створити репетицію`,
 		createCmd: func(cmd string) Command {
 			return &addRehearsal{}
 		},
 	},
 	{
-		pattern: `(?i)створити івент`,
+		pattern: `Створити івент`,
 		createCmd: func(cmd string) Command {
 			return &addEvent{}
 		},
 	},
 	{
-		pattern: `(?i)створити користувача`,
+		pattern: `Створити користувача`,
 		createCmd: func(cmd string) Command {
 			return &addUser{}
 		},
 	},
 	{
-		pattern: `(?i)створити лекцію`,
+		pattern: `Створити лекцію`,
 		createCmd: func(cmd string) Command {
 			return &addLection{}
 		},
 	},
 	{
-		pattern: `(?i)наступний івент`,
+		pattern: `Список лекцій\(всі\)`,
+		createCmd: func(cmd string) Command {
+			return &lectionsList{
+				empty: false,
+			}
+		},
+	},
+	{
+		pattern: `Список лекцій\(без опису\)`,
+		createCmd: func(cmd string) Command {
+			return &lectionsList{
+				empty: true,
+			}
+		},
+	},
+	{
+		pattern: `Наступний івент`,
 		createCmd: func(cmd string) Command {
 			return &nextEvent{}
 		},
 	},
 	{
-		pattern: `(?i)наступна репетиція`,
+		pattern: `Наступна репетиція`,
 		createCmd: func(cmd string) Command {
 			return &nextRep{}
 		},
 	},
 	{
-		pattern: `(?i)документація`,
+		pattern: `Документація`,
 		createCmd: func(cmd string) Command {
 			return &simple{
 				action: "documentation",
@@ -55,7 +71,7 @@ var commandPatterns = []struct {
 		},
 	},
 	{
-		pattern: `(?i)хто ми`,
+		pattern: `Хто ми`,
 		createCmd: func(cmd string) Command {
 			return &simple{
 				action: "about",
@@ -93,9 +109,15 @@ var commandPatterns = []struct {
 		},
 	},
 	{
-		pattern: `(?i)Додати опис до лекції`,
+		pattern: `Додати опис до лекції`,
 		createCmd: func(cmd string) Command {
 			return &addDescriptionLection{}
+		},
+	},
+	{
+		pattern: `Видалити лекцію`,
+		createCmd: func(cmd string) Command {
+			return &deleteLection{}
 		},
 	},
 	{
@@ -113,6 +135,36 @@ var commandPatterns = []struct {
 				reply.buttons = RehearsalMarkup
 			}
 			return reply
+		},
+	},
+	{
+		pattern: `Список івентів`,
+		createCmd: func(cmd string) Command {
+			return &eventsList{}
+		},
+	},
+	{
+		pattern: `Видалити івент`,
+		createCmd: func(cmd string) Command {
+			return &deleteEvent{}
+		},
+	},
+	{
+		pattern: `Список користувачів`,
+		createCmd: func(cmd string) Command {
+			return &usersList{}
+		},
+	},
+	{
+		pattern: `Видалити користувача`,
+		createCmd: func(cmd string) Command {
+			return &deleteUser{}
+		},
+	},
+	{
+		pattern: `Видалити репетицію`,
+		createCmd: func(cmd string) Command {
+			return &deleteRehearsal{}
 		},
 	},
 }

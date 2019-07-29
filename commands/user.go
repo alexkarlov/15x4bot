@@ -1,13 +1,24 @@
 package commands
 
 import (
+	"errors"
+	"fmt"
 	"github.com/alexkarlov/15x4bot/store"
 	"github.com/alexkarlov/simplelog"
+	"regexp"
+	"strconv"
 	"time"
 )
 
+var ErrWrongUser = errors.New("wrong user id: failed to convert from string to int")
+
 const (
 	TEMPLATE_I_DONT_KNOW = "Не знаю"
+
+	TEMPLATE_USERS_LIST_ITEM      = "Юзер %d: %s, telegram: @%s\n\n"
+	TEMPLATE_USER_BUTTON          = "%d: %s"
+	TEMPLATE_USER_ERROR_WRONG_ID  = "Невірно вибраний юзер"
+	TEMPLATE_DELETE_USER_COMPLETE = "Юзер успішно видалений"
 )
 
 type addUser struct {
@@ -90,4 +101,101 @@ func (c *addUser) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
 
 func (c *addUser) IsEnd() bool {
 	return c.step == 7
+}
+
+type usersList struct {
+}
+
+func (l *usersList) IsEnd() bool {
+	return true
+}
+
+func (l *usersList) IsAllow(u string) bool {
+	//TODO: impove filter instead of read all records
+	admins, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN})
+	if err != nil {
+		log.Error("error while reading admins ", err)
+		return false
+	}
+	for _, admin := range admins {
+		if admin.Username == u {
+			return true
+		}
+	}
+	return false
+}
+
+func (l *usersList) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+	replyMarkup := &ReplyMarkup{
+		Buttons: StandardMarkup(u.Role),
+	}
+	list, err := store.Users(nil)
+	if err != nil {
+		return nil, err
+	}
+	for _, l := range list {
+		replyMarkup.Text += fmt.Sprintf(TEMPLATE_USERS_LIST_ITEM, l.ID, l.Name, l.Username)
+	}
+	return replyMarkup, nil
+}
+
+type deleteUser struct {
+	step   int
+	userID int
+}
+
+func (d *deleteUser) IsEnd() bool {
+	return d.step == 2
+}
+
+func (d *deleteUser) IsAllow(u string) bool {
+	//TODO: impove filter instead of read all records
+	admins, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN})
+	if err != nil {
+		log.Error("error while reading admins ", err)
+		return false
+	}
+	for _, admin := range admins {
+		if admin.Username == u {
+			return true
+		}
+	}
+	return false
+}
+
+func (d *deleteUser) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+	replyMarkup := &ReplyMarkup{
+		Buttons: MainMarkup,
+	}
+	switch d.step {
+	case 0:
+		users, err := store.Users(nil)
+		if err != nil {
+			return nil, err
+		}
+		for _, l := range users {
+			lText := fmt.Sprintf(TEMPLATE_USER_BUTTON, l.ID, l.Name)
+			replyMarkup.Buttons = append(replyMarkup.Buttons, lText)
+		}
+		replyMarkup.Text = TEMPLATE_ADD_LECTION_DESCIRPTION_CHOSE_LECTION
+	case 1:
+		regexpLectionID := regexp.MustCompile(`^(\d+)?\:`)
+		matches := regexpLectionID.FindStringSubmatch(answer)
+		if len(matches) < 2 {
+			replyMarkup.Text = TEMPLATE_USER_ERROR_WRONG_ID
+			return replyMarkup, nil
+		}
+		uID, err := strconv.Atoi(matches[1])
+		if err != nil {
+			return nil, ErrWrongUser
+		}
+		err = store.DeleteUser(uID)
+		if err != nil {
+			return nil, err
+		}
+		replyMarkup.Buttons = StandardMarkup(store.USER_ROLE_ADMIN)
+		replyMarkup.Text = TEMPLATE_DELETE_USER_COMPLETE
+	}
+	d.step++
+	return replyMarkup, nil
 }
