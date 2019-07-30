@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/alexkarlov/15x4bot/store"
-	"github.com/alexkarlov/simplelog"
 	"regexp"
 	"strconv"
 	"time"
@@ -13,8 +12,7 @@ import (
 var ErrWrongUser = errors.New("wrong user id: failed to convert from string to int")
 
 const (
-	TEMPLATE_I_DONT_KNOW = "Не знаю"
-
+	TEMPLATE_I_DONT_KNOW          = "Не знаю"
 	TEMPLATE_USERS_LIST_ITEM      = "Юзер %d: %s, telegram: @%s\n\n"
 	TEMPLATE_USER_BUTTON          = "%d: %s"
 	TEMPLATE_USER_ERROR_WRONG_ID  = "Невірно вибраний юзер"
@@ -31,22 +29,11 @@ type addUser struct {
 	role     string
 }
 
-func (c *addUser) IsAllow(u string) bool {
-	//TODO: impove filter instead of read all records
-	admins, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN})
-	if err != nil {
-		log.Error("error while reading admins ", err)
-		return false
-	}
-	for _, admin := range admins {
-		if admin.Username == u {
-			return true
-		}
-	}
-	return false
+func (c *addUser) IsAllow(u *store.User) bool {
+	return u.Role == store.USER_ROLE_ADMIN
 }
 
-func (c *addUser) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+func (c *addUser) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
 	}
@@ -93,7 +80,6 @@ func (c *addUser) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
 			return nil, err
 		}
 		replyMarkup.Text = "Користувач успішно створений"
-		replyMarkup.Buttons = StandardMarkup(u.Role)
 	}
 	c.step++
 	return replyMarkup, nil
@@ -104,30 +90,21 @@ func (c *addUser) IsEnd() bool {
 }
 
 type usersList struct {
+	u *store.User
 }
 
-func (l *usersList) IsEnd() bool {
+func (c *usersList) IsEnd() bool {
 	return true
 }
 
-func (l *usersList) IsAllow(u string) bool {
-	//TODO: impove filter instead of read all records
-	admins, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN})
-	if err != nil {
-		log.Error("error while reading admins ", err)
-		return false
-	}
-	for _, admin := range admins {
-		if admin.Username == u {
-			return true
-		}
-	}
-	return false
+func (c *usersList) IsAllow(u *store.User) bool {
+	c.u = u
+	return u.Role == store.USER_ROLE_ADMIN
 }
 
-func (l *usersList) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+func (c *usersList) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
-		Buttons: StandardMarkup(u.Role),
+		Buttons: StandardMarkup(c.u.Role),
 	}
 	list, err := store.Users(nil)
 	if err != nil {
@@ -142,32 +119,23 @@ func (l *usersList) NextStep(u *store.User, answer string) (*ReplyMarkup, error)
 type deleteUser struct {
 	step   int
 	userID int
+	u      *store.User
 }
 
-func (d *deleteUser) IsEnd() bool {
-	return d.step == 2
+func (c *deleteUser) IsEnd() bool {
+	return c.step == 2
 }
 
-func (d *deleteUser) IsAllow(u string) bool {
-	//TODO: impove filter instead of read all records
-	admins, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN})
-	if err != nil {
-		log.Error("error while reading admins ", err)
-		return false
-	}
-	for _, admin := range admins {
-		if admin.Username == u {
-			return true
-		}
-	}
-	return false
+func (c *deleteUser) IsAllow(u *store.User) bool {
+	c.u = u
+	return u.Role == store.USER_ROLE_ADMIN
 }
 
-func (d *deleteUser) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+func (c *deleteUser) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
 	}
-	switch d.step {
+	switch c.step {
 	case 0:
 		users, err := store.Users(nil)
 		if err != nil {
@@ -193,9 +161,9 @@ func (d *deleteUser) NextStep(u *store.User, answer string) (*ReplyMarkup, error
 		if err != nil {
 			return nil, err
 		}
-		replyMarkup.Buttons = StandardMarkup(store.USER_ROLE_ADMIN)
+		replyMarkup.Buttons = StandardMarkup(c.u.Role)
 		replyMarkup.Text = TEMPLATE_DELETE_USER_COMPLETE
 	}
-	d.step++
+	c.step++
 	return replyMarkup, nil
 }

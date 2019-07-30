@@ -116,3 +116,9 @@ func DeleteUser(id int) error {
 	_, err := dbConn.Exec(q, id)
 	return err
 }
+
+func GuestUser() *User {
+	return &User{
+		Role: USER_ROLE_GUEST,
+	}
+}

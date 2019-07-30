@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/alexkarlov/15x4bot/store"
-	"github.com/alexkarlov/simplelog"
 	"regexp"
 	"strconv"
 	"time"
@@ -34,35 +33,26 @@ const (
 	TEMPLATE_DELETE_LECTION_COMPLETE                = "Лекцію успішно видалено"
 )
 
+func lectionRemindTime() time.Time {
+	curr := time.Now()
+	y, m, d := curr.Date()
+	loc, _ := time.LoadLocation("UTC")
+	rTime := time.Date(y, m, d, 19, 0, 0, 0, loc).AddDate(0, 0, 1)
+	return rTime
+}
+
 type addLection struct {
 	step        int
 	name        string
 	description string
-	user_id     int
+	userID      int
 }
 
-type addDescriptionLection struct {
-	username  string
-	lectionID int
-	step      int
+func (c *addLection) IsAllow(u *store.User) bool {
+	return u.Role == store.USER_ROLE_ADMIN
 }
 
-func (c *addLection) IsAllow(u string) bool {
-	//TODO: impove filter instead of read all records
-	admins, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN})
-	if err != nil {
-		log.Error("error while reading admins ", err)
-		return false
-	}
-	for _, admin := range admins {
-		if admin.Username == u {
-			return true
-		}
-	}
-	return false
-}
-
-func (c *addLection) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+func (c *addLection) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
 	}
@@ -90,7 +80,7 @@ func (c *addLection) NextStep(u *store.User, answer string) (*ReplyMarkup, error
 			replyMarkup.Text = TEMPLATE_WRONG_USER_ID
 			return replyMarkup, nil
 		}
-		c.user_id = userID
+		c.userID = userID
 		replyMarkup.Text = TEMPLATE_CREATE_EVENT_STEP_LECTION_NAME
 	case 2:
 		c.name = answer
@@ -100,7 +90,7 @@ func (c *addLection) NextStep(u *store.User, answer string) (*ReplyMarkup, error
 		if answer != TEMPLATE_I_DONT_KNOW {
 			c.description = answer
 		}
-		lectionID, err := store.AddLection(c.name, c.description, c.user_id)
+		lectionID, err := store.AddLection(c.name, c.description, c.userID)
 		if err != nil {
 			return nil, err
 		}
@@ -116,7 +106,6 @@ func (c *addLection) NextStep(u *store.User, answer string) (*ReplyMarkup, error
 			store.AddTask(store.TASK_TYPE_REMINDER_LECTOR, execTime, string(details))
 		}
 		replyMarkup.Text = TEMPLATE_CREATE_EVENT_SUCCESS_MSG
-		replyMarkup.Buttons = StandardMarkup(u.Role)
 	}
 	c.step++
 	return replyMarkup, nil
@@ -126,21 +115,19 @@ func (c *addLection) IsEnd() bool {
 	return c.step == 4
 }
 
-func lectionRemindTime() time.Time {
-	curr := time.Now()
-	y, m, d := curr.Date()
-	loc, _ := time.LoadLocation("UTC")
-	rTime := time.Date(y, m, d, 19, 0, 0, 0, loc).AddDate(0, 0, 1)
-	return rTime
+type addDescriptionLection struct {
+	u         *store.User
+	lectionID int
+	step      int
 }
 
-func (c *addDescriptionLection) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+func (c *addDescriptionLection) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
 	}
 	switch c.step {
 	case 0:
-		lections, err := store.LectionsWithoutDescriptions(u.ID)
+		lections, err := store.LectionsWithoutDescriptions(c.u.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -164,7 +151,7 @@ func (c *addDescriptionLection) NextStep(u *store.User, answer string) (*ReplyMa
 		if err != nil {
 			return nil, err
 		}
-		if l.Lector.Username != c.username {
+		if l.Lector.Username != c.u.Username {
 			replyMarkup.Text = TEMPLATE_ADD_LECTION_DESCIRPTION_ERROR_NOT_YOUR
 			return replyMarkup, nil
 		}
@@ -181,20 +168,9 @@ func (c *addDescriptionLection) NextStep(u *store.User, answer string) (*ReplyMa
 	return replyMarkup, nil
 }
 
-func (c *addDescriptionLection) IsAllow(u string) bool {
-	c.username = u
-	//TODO: impove filter instead of read all records
-	users, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN, store.USER_ROLE_LECTOR})
-	if err != nil {
-		log.Error("error while reading admins and lectors ", err)
-		return false
-	}
-	for _, user := range users {
-		if user.Username == u {
-			return true
-		}
-	}
-	return false
+func (c *addDescriptionLection) IsAllow(u *store.User) bool {
+	c.u = u
+	return u.Role == store.USER_ROLE_ADMIN || u.Role == store.USER_ROLE_LECTOR
 }
 
 func (c *addDescriptionLection) IsEnd() bool {
@@ -202,33 +178,24 @@ func (c *addDescriptionLection) IsEnd() bool {
 }
 
 type lectionsList struct {
+	u     *store.User
 	empty bool
 }
 
-func (l *lectionsList) IsEnd() bool {
+func (c *lectionsList) IsEnd() bool {
 	return true
 }
 
-func (l *lectionsList) IsAllow(u string) bool {
-	//TODO: impove filter instead of read all records
-	admins, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN})
-	if err != nil {
-		log.Error("error while reading admins ", err)
-		return false
-	}
-	for _, admin := range admins {
-		if admin.Username == u {
-			return true
-		}
-	}
-	return false
+func (c *lectionsList) IsAllow(u *store.User) bool {
+	c.u = u
+	return u.Role == store.USER_ROLE_ADMIN
 }
 
-func (l *lectionsList) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+func (c *lectionsList) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
-		Buttons: StandardMarkup(u.Role),
+		Buttons: StandardMarkup(c.u.Role),
 	}
-	list, err := store.Lections(l.empty)
+	list, err := store.Lections(c.empty)
 	if err != nil {
 		return nil, err
 	}
@@ -245,28 +212,19 @@ func (l *lectionsList) NextStep(u *store.User, answer string) (*ReplyMarkup, err
 type deleteLection struct {
 	step      int
 	lectionID int
+	u         *store.User
 }
 
 func (d *deleteLection) IsEnd() bool {
 	return d.step == 2
 }
 
-func (d *deleteLection) IsAllow(u string) bool {
-	//TODO: impove filter instead of read all records
-	admins, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN})
-	if err != nil {
-		log.Error("error while reading admins ", err)
-		return false
-	}
-	for _, admin := range admins {
-		if admin.Username == u {
-			return true
-		}
-	}
-	return false
+func (d *deleteLection) IsAllow(u *store.User) bool {
+	d.u = u
+	return u.Role == store.USER_ROLE_ADMIN
 }
 
-func (d *deleteLection) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+func (d *deleteLection) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
 	}
@@ -296,7 +254,7 @@ func (d *deleteLection) NextStep(u *store.User, answer string) (*ReplyMarkup, er
 		if err != nil {
 			return nil, err
 		}
-		replyMarkup.Buttons = StandardMarkup(store.USER_ROLE_ADMIN)
+		replyMarkup.Buttons = StandardMarkup(d.u.Role)
 		replyMarkup.Text = TEMPLATE_DELETE_LECTION_COMPLETE
 	}
 	d.step++

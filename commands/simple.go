@@ -6,19 +6,21 @@ import (
 
 type simple struct {
 	action string
+	u      *store.User
 }
 
 func (c *simple) IsEnd() bool {
 	return true
 }
 
-func (c *simple) IsAllow(u string) bool {
+func (c *simple) IsAllow(u *store.User) bool {
+	c.u = u
 	return true
 }
 
-func (c *simple) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+func (c *simple) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
-		Buttons: StandardMarkup(u.Role),
+		Buttons: StandardMarkup(c.u.Role),
 	}
 	replyMsg, err := store.ActionMsg(c.action)
 	replyMarkup.Text = replyMsg

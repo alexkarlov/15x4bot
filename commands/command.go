@@ -167,6 +167,12 @@ var commandPatterns = []struct {
 			return &deleteRehearsal{}
 		},
 	},
+	{
+		pattern: `Я хочу стати лектором!|Я хочу стати волонтером!"`,
+		createCmd: func(cmd string) Command {
+			return &deleteRehearsal{}
+		},
+	},
 }
 
 func init() {
@@ -182,8 +188,8 @@ type ReplyMarkup struct {
 }
 
 type Command interface {
-	IsAllow(string) bool
-	NextStep(u *store.User, answer string) (reply *ReplyMarkup, err error)
+	IsAllow(*store.User) bool
+	NextStep(answer string) (reply *ReplyMarkup, err error)
 	IsEnd() bool
 }
 
@@ -192,15 +198,17 @@ func IsMainMenu(m string) bool {
 	return m == "Головне меню"
 }
 
-func NewCommand(cmdName string, username string) Command {
+func NewCommand(cmdName string, u *store.User) Command {
 	for _, cp := range commandPatterns {
 		if cp.compPattern.MatchString(cmdName) {
 			cmd := cp.createCmd(cmdName)
-			if cmd.IsAllow(username) {
+			if cmd.IsAllow(u) {
 				return cmd
 			}
 		}
 	}
-	c := &unknown{}
+	c := &unknown{
+		u: store.GuestUser(),
+	}
 	return c
 }

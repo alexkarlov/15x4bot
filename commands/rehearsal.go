@@ -3,7 +3,6 @@ package commands
 import (
 	"errors"
 	"fmt"
-	"github.com/alexkarlov/simplelog"
 	"regexp"
 	"strconv"
 	"time"
@@ -32,24 +31,15 @@ type addRehearsal struct {
 	step  int
 	when  time.Time
 	where int
+	u     *store.User
 }
 
-func (c *addRehearsal) IsAllow(u string) bool {
-	//TODO: impove filter instead of read all records
-	admins, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN})
-	if err != nil {
-		log.Error("error while reading admins ", err)
-		return false
-	}
-	for _, admin := range admins {
-		if admin.Username == u {
-			return true
-		}
-	}
-	return false
+func (c *addRehearsal) IsAllow(u *store.User) bool {
+	c.u = u
+	return u.Role == store.USER_ROLE_ADMIN
 }
 
-func (c *addRehearsal) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+func (c *addRehearsal) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
 	}
@@ -96,7 +86,7 @@ func (c *addRehearsal) NextStep(u *store.User, answer string) (*ReplyMarkup, err
 			return nil, err
 		}
 		replyMarkup.Text = TEMPLATE_ADDREHEARSAL_SUCCESS_MSG
-		replyMarkup.Buttons = StandardMarkup(u.Role)
+		replyMarkup.Buttons = StandardMarkup(c.u.Role)
 	}
 	c.step++
 	return replyMarkup, nil
@@ -107,19 +97,21 @@ func (c *addRehearsal) IsEnd() bool {
 }
 
 type nextRep struct {
+	u *store.User
 }
 
 func (c *nextRep) IsEnd() bool {
 	return true
 }
 
-func (c *nextRep) IsAllow(u string) bool {
+func (c *nextRep) IsAllow(u *store.User) bool {
+	c.u = u
 	return true
 }
 
-func (c *nextRep) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+func (c *nextRep) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
-		Buttons: StandardMarkup(u.Role),
+		Buttons: StandardMarkup(c.u.Role),
 	}
 	r, err := store.NextRehearsal()
 	if err != nil {
@@ -136,32 +128,23 @@ func (c *nextRep) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
 type deleteRehearsal struct {
 	step        int
 	rehearsalID int
+	u           *store.User
 }
 
-func (d *deleteRehearsal) IsEnd() bool {
-	return d.step == 2
+func (c *deleteRehearsal) IsEnd() bool {
+	return c.step == 2
 }
 
-func (d *deleteRehearsal) IsAllow(u string) bool {
-	//TODO: impove filter instead of read all records
-	admins, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN})
-	if err != nil {
-		log.Error("error while reading admins ", err)
-		return false
-	}
-	for _, admin := range admins {
-		if admin.Username == u {
-			return true
-		}
-	}
-	return false
+func (c *deleteRehearsal) IsAllow(u *store.User) bool {
+	c.u = u
+	return u.Role == store.USER_ROLE_ADMIN
 }
 
-func (d *deleteRehearsal) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+func (c *deleteRehearsal) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
 	}
-	switch d.step {
+	switch c.step {
 	case 0:
 		rehearsals, err := store.Rehearsals()
 		if err != nil {
@@ -187,9 +170,9 @@ func (d *deleteRehearsal) NextStep(u *store.User, answer string) (*ReplyMarkup, 
 		if err != nil {
 			return nil, err
 		}
-		replyMarkup.Buttons = StandardMarkup(store.USER_ROLE_ADMIN)
+		replyMarkup.Buttons = StandardMarkup(c.u.Role)
 		replyMarkup.Text = TEMPLATE_DELETE_REHEARSAL_COMPLETE
 	}
-	d.step++
+	c.step++
 	return replyMarkup, nil
 }

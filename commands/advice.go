@@ -15,17 +15,19 @@ type adviceResp struct {
 
 type advice struct {
 	Resp adviceResp
+	u    *store.User
 }
 
 func (c *advice) IsEnd() bool {
 	return true
 }
 
-func (c *advice) IsAllow(u string) bool {
+func (c *advice) IsAllow(u *store.User) bool {
+	c.u = u
 	return true
 }
 
-func (c *advice) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+func (c *advice) NextStep(answer string) (*ReplyMarkup, error) {
 	resp, err := http.Get("http://fucking-great-advice.ru/api/random")
 	if err != nil {
 		return nil, err
@@ -40,7 +42,7 @@ func (c *advice) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
 	}
 	replyMarkup := &ReplyMarkup{
 		Text:    c.Resp.Text,
-		Buttons: StandardMarkup(u.Role),
+		Buttons: StandardMarkup(c.u.Role),
 	}
 
 	return replyMarkup, nil

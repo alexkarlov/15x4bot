@@ -30,11 +30,11 @@ func (c *chat) ReplyMarkup(m *Message) (*commands.ReplyMarkup, error) {
 	defer c.l.Unlock()
 	// Main menu hack
 	if c.cmd == nil || commands.IsMainMenu(m.Text) {
-		c.cmd = commands.NewCommand(m.Text, m.Username)
+		c.cmd = commands.NewCommand(m.Text, c.u)
 	}
 
 	log.Infof("current command %#v", c.cmd)
-	answer, err := c.cmd.NextStep(c.u, m.Text)
+	answer, err := c.cmd.NextStep(m.Text)
 
 	if err != nil {
 		c.cmd = nil
@@ -56,21 +56,22 @@ func lookupChat(msg *Message) (*chat, error) {
 	res, ok := chatsManager.list[msg.ChatID]
 	if !ok {
 		log.Infof("chat with user %s not found", msg.Username)
+		u, err := store.LoadUser(msg.Username)
+		if err != nil {
+			return nil, err
+		}
 		//if we haven't chatted before with this user - create a new chat
 		res = &chat{
 			ID:  msg.ChatID,
-			cmd: commands.NewCommand(msg.Text, msg.Username),
+			cmd: commands.NewCommand(msg.Text, u),
 			l:   &sync.RWMutex{},
+			u:   u,
 		}
 		// TODO: save in the DB
 		if err := store.ChatUpsert(msg.ChatID, msg.Username); err != nil {
 			log.Error("error while chat upserting: ", err)
 		}
-		u, err := store.LoadUser(msg.Username)
-		if err != nil {
-			return nil, err
-		}
-		res.u = u
+
 		chatsManager.list[msg.ChatID] = res
 	}
 	return res, nil

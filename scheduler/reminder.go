@@ -8,8 +8,8 @@ import (
 
 const (
 	TEMPLATE_LECTION_DESCRIPTION_REMINDER = `Привіт, %username%!
-	По можливості - напиши, будь ласка, опис до своєї лекції. В головному меню є пункт "Додати опис до лекції". Якщо будуть питання - звертайся до @alex_karlov
-	Дякую велетенське!
+	По можливості - напиши, будь ласка, опис до своєї лекції (два-три речення про що буде лекція). В головному меню є пункт "Додати опис до лекції". Якщо будуть питання - звертайся до @alex_karlov
+	Дякую!
 	`
 )
 
@@ -19,11 +19,17 @@ func RemindLector(t *store.Task, b *bot.Bot) {
 	err := t.TakeTask()
 	if err != nil {
 		log.Errorf("failed to take task %d error:%s", t.ID, err)
+		if err := t.ReleaseTask(); err != nil {
+			log.Errorf("failed to release task %d error:%s", t.ID, err)
+		}
 		return
 	}
 	l, err := t.LoadLection()
 	if err != nil {
 		log.Errorf("failed to load lection of task %d error:%s", t.ID, err)
+		if err := t.ReleaseTask(); err != nil {
+			log.Errorf("failed to release task %d error:%s", t.ID, err)
+		}
 		return
 	}
 	if l.Description != "" {
@@ -35,6 +41,9 @@ func RemindLector(t *store.Task, b *bot.Bot) {
 	c, err := l.Lector.TGChat()
 	if err != nil {
 		log.Error("error while getting tg chat of the lector", err)
+		if err := t.ReleaseTask(); err != nil {
+			log.Errorf("failed to release task %d error:%s", t.ID, err)
+		}
 		return
 	}
 	b.SendText(c.TGChatID, TEMPLATE_LECTION_DESCRIPTION_REMINDER)

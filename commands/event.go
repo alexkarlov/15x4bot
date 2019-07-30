@@ -42,24 +42,15 @@ type addEvent struct {
 	where       int
 	description string
 	lections    []int
+	u           *store.User
 }
 
-func (c *addEvent) IsAllow(u string) bool {
-	//TODO: impove filter instead of read all records
-	admins, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN})
-	if err != nil {
-		log.Error("error while reading admins ", err)
-		return false
-	}
-	for _, admin := range admins {
-		if admin.Username == u {
-			return true
-		}
-	}
-	return false
+func (c *addEvent) IsAllow(u *store.User) bool {
+	c.u = u
+	return u.Role == store.USER_ROLE_ADMIN
 }
 
-func (c *addEvent) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+func (c *addEvent) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
 	}
@@ -132,6 +123,7 @@ func (c *addEvent) NextStep(u *store.User, answer string) (*ReplyMarkup, error) 
 				return nil, err
 			}
 			replyMarkup.Text = "Івент створено"
+			replyMarkup.Buttons = StandardMarkup(c.u.Role)
 			break
 		}
 		regexpLectionID := regexp.MustCompile(`^(\d+)?\.`)
@@ -156,19 +148,21 @@ func (c *addEvent) IsEnd() bool {
 }
 
 type nextEvent struct {
+	u *store.User
 }
 
 func (c *nextEvent) IsEnd() bool {
 	return true
 }
 
-func (c *nextEvent) IsAllow(u string) bool {
+func (c *nextEvent) IsAllow(u *store.User) bool {
+	c.u = u
 	return true
 }
 
-func (c *nextEvent) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+func (c *nextEvent) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
-		Buttons: StandardMarkup(u.Role),
+		Buttons: StandardMarkup(c.u.Role),
 	}
 	e, err := store.NextEvent()
 	if err != nil {
@@ -183,30 +177,21 @@ func (c *nextEvent) NextStep(u *store.User, answer string) (*ReplyMarkup, error)
 }
 
 type eventsList struct {
+	u *store.User
 }
 
-func (e *eventsList) IsEnd() bool {
+func (c *eventsList) IsEnd() bool {
 	return true
 }
 
-func (e *eventsList) IsAllow(u string) bool {
-	//TODO: impove filter instead of read all records
-	admins, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN})
-	if err != nil {
-		log.Error("error while reading admins ", err)
-		return false
-	}
-	for _, admin := range admins {
-		if admin.Username == u {
-			return true
-		}
-	}
-	return false
+func (c *eventsList) IsAllow(u *store.User) bool {
+	c.u = u
+	return u.Role == store.USER_ROLE_ADMIN
 }
 
-func (e *eventsList) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+func (c *eventsList) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
-		Buttons: StandardMarkup(u.Role),
+		Buttons: StandardMarkup(c.u.Role),
 	}
 	list, err := store.Events()
 	if err != nil {
@@ -225,32 +210,23 @@ func (e *eventsList) NextStep(u *store.User, answer string) (*ReplyMarkup, error
 type deleteEvent struct {
 	step    int
 	eventID int
+	u       *store.User
 }
 
-func (d *deleteEvent) IsEnd() bool {
-	return d.step == 2
+func (c *deleteEvent) IsEnd() bool {
+	return c.step == 2
 }
 
-func (d *deleteEvent) IsAllow(u string) bool {
-	//TODO: impove filter instead of read all records
-	admins, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN})
-	if err != nil {
-		log.Error("error while reading admins ", err)
-		return false
-	}
-	for _, admin := range admins {
-		if admin.Username == u {
-			return true
-		}
-	}
-	return false
+func (c *deleteEvent) IsAllow(u *store.User) bool {
+	c.u = u
+	return u.Role == store.USER_ROLE_ADMIN
 }
 
-func (d *deleteEvent) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+func (c *deleteEvent) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
 	}
-	switch d.step {
+	switch c.step {
 	case 0:
 		events, err := store.Events()
 		if err != nil {
@@ -276,9 +252,9 @@ func (d *deleteEvent) NextStep(u *store.User, answer string) (*ReplyMarkup, erro
 		if err != nil {
 			return nil, err
 		}
-		replyMarkup.Buttons = StandardMarkup(store.USER_ROLE_ADMIN)
+		replyMarkup.Buttons = StandardMarkup(c.u.Role)
 		replyMarkup.Text = TEMPLATE_DELETE_EVENT_COMPLETE
 	}
-	d.step++
+	c.step++
 	return replyMarkup, nil
 }

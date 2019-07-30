@@ -130,3 +130,12 @@ func (t *Task) TakeTask() error {
 	}
 	return nil
 }
+
+// ReleaseTask updates udate field to the current time and set status to NEW if a task fulfills conditions
+func (t *Task) ReleaseTask() error {
+	_, err := dbConn.Exec("UPDATE tasks SET udate=NOW(), status=$1 WHERE id=$2 AND status=$3", TASK_STATUS_NEW, t.ID, TASK_STATUS_IN_PROGRESS)
+	if err != nil {
+		return err
+	}
+	return nil
+}

@@ -25,10 +25,11 @@ var (
 	}
 
 	GuestMarkup = MessageButtons{
+		"Я хочу стати лектором!",
+		"Я хочу стати волонтером!",
 		"Наступний івент",
 		"Наступна репетиція",
 		"Хто ми",
-		"Документація",
 	}
 
 	MainMarkup = MessageButtons{
@@ -80,11 +81,11 @@ func (c *markup) IsEnd() bool {
 	return true
 }
 
-func (c *markup) IsAllow(u string) bool {
+func (c *markup) IsAllow(u *store.User) bool {
 	return true
 }
 
-func (c *markup) NextStep(u *store.User, answer string) (*ReplyMarkup, error) {
+func (c *markup) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: c.buttons,
 		Text:    TEMPLATE_CHOSE_MENU,
