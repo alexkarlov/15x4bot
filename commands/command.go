@@ -65,40 +65,40 @@ var commandPatterns = []struct {
 	{
 		pattern: `Документація`,
 		createCmd: func(cmd string) Command {
-			return &simple{
-				action: "documentation",
+			return &article{
+				name: "documentation",
 			}
 		},
 	},
 	{
 		pattern: `Хто ми`,
 		createCmd: func(cmd string) Command {
-			return &simple{
-				action: "about",
+			return &article{
+				name: "about",
 			}
 		},
 	},
 	{
 		pattern: `(?i)/start`,
 		createCmd: func(cmd string) Command {
-			return &simple{
-				action: "start",
+			return &article{
+				name: "start",
 			}
 		},
 	},
 	{
 		pattern: `(?i)/help`,
 		createCmd: func(cmd string) Command {
-			return &simple{
-				action: "help",
+			return &article{
+				name: "help",
 			}
 		},
 	},
 	{
 		pattern: `Головне меню`,
 		createCmd: func(cmd string) Command {
-			return &simple{
-				action: "main_menu",
+			return &article{
+				name: "main_menu",
 			}
 		},
 	},

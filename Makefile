@@ -38,4 +38,4 @@ migrate-version:
 	docker run -v $(PWD)/postgresql/migrations:/migrations --network=$(NETWORK)  migrate/migrate -path=/migrations/ -database $(DSN) version
 
 migrate-fix:
-	docker run  -v $(PWD)/postgresql/migrations:/migrations --network=$(NETWORK)  migrate/migrate -path=/migrations/ -database $(DSN) force $(migration_version)
+	docker run  -v $(PWD)/postgresql/migrations:/migrations --network=$(NETWORK)  migrate/migrate -path=/migrations/ -database $(DSN) force $(version)
