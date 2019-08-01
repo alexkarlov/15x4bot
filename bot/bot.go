@@ -74,9 +74,10 @@ func (b *Bot) SendError(chatID int64) {
 }
 
 // SendText sends a message to particular chat
-func (b *Bot) SendText(chatID int64, msg string) {
+func (b *Bot) SendText(chatID int64, msg string) error {
 	replyMsg := tgbotapi.NewMessage(chatID, msg)
-	b.bot.Send(replyMsg)
+	_, err := b.bot.Send(replyMsg)
+	return err
 }
 
 // Reply sends response (text or markup)

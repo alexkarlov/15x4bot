@@ -11,6 +11,7 @@ import (
 const (
 	// values for task type
 	TASK_TYPE_REMINDER_LECTOR       TaskType = "reminder_lector"
+	TASK_TYPE_MESSENGER             TaskType = "messenger"
 	TASK_TYPE_REMINDER_DESIGNER     TaskType = "reminder_designer"
 	TASK_TYPE_REMINDER_GRAMMAR_NAZI TaskType = "reminder_grammar_nazi"
 	TASK_TYPE_REMINDER_FB_EVENT     TaskType = "reminder_fb_event"
@@ -156,4 +157,17 @@ func (t *Task) ReleaseTask() error {
 		return err
 	}
 	return nil
+}
+
+// Messenger is need for notifies admins about newcomers
+type Messenger struct {
+	Username string
+	Role     string
+}
+
+// LoadMessenger loads Messenger from task details
+func (t *Task) LoadMessenger() (*Messenger, error) {
+	m := &Messenger{}
+	err := json.Unmarshal([]byte(t.Details), m)
+	return m, err
 }

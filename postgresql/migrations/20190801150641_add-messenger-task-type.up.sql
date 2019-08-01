@@ -1,0 +1,1 @@
+ALTER TYPE task_type ADD VALUE 'messenger'

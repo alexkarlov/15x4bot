@@ -16,8 +16,7 @@ const (
 // RemindLector sends message to the speaker about description of his lecture
 func RemindLector(t *store.Task, b *bot.Bot) {
 	log.Info("got new reminder lector:", t)
-	err := t.TakeTask()
-	if err != nil {
+	if err := t.TakeTask(); err != nil {
 		log.Errorf("failed to take task %d error:%s", t.ID, err)
 		if err := t.ReleaseTask(); err != nil {
 			log.Errorf("failed to release task %d error:%s", t.ID, err)

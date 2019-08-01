@@ -9,7 +9,8 @@ RUN go get -d -v ./... && \
 FROM alpine:3.10
 
 RUN addgroup -S gogroup && adduser -S gorunner -G gogroup && \
-    apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
+    apk update && apk add ca-certificates && rm -rf /var/cache/apk/* \
+    && apk add --no-cache tzdata
 USER gorunner
 WORKDIR /home/gorunner
 COPY --from=builder /go/src/github.com/alexkarlov/15x4bot/15x4bot .

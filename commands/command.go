@@ -168,9 +168,17 @@ var commandPatterns = []struct {
 		},
 	},
 	{
-		pattern: `Я хочу стати лектором!|Я хочу стати волонтером!"`,
+		pattern: `Я хочу (читати лекції|волонтерити)!`,
 		createCmd: func(cmd string) Command {
-			return &deleteRehearsal{}
+			p := regexp.MustCompile(`Я хочу (читати лекції|волонтерити)`)
+			m := p.FindStringSubmatch(cmd)
+			role := cmd
+			if len(m) > 1 {
+				role = m[1]
+			}
+			return &messenger{
+				role: role,
+			}
 		},
 	},
 }
