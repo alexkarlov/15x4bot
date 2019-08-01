@@ -96,10 +96,10 @@ func (c *addLection) NextStep(answer string) (*ReplyMarkup, error) {
 		}
 		if answer == TEMPLATE_I_DONT_KNOW {
 			execTime := lectionRemindTime()
-			l := &store.Lection{
+			r := &store.RemindLection{
 				ID: lectionID,
 			}
-			details, err := json.Marshal(l)
+			details, err := json.Marshal(r)
 			if err != nil {
 				return nil, err
 			}

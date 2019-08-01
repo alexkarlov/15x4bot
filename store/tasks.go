@@ -3,6 +3,8 @@ package store
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"math"
 	"time"
 )
 
@@ -24,7 +26,7 @@ const (
 	// Execution time range filter
 	EXECUTION_TIME_FILTER_INTERVAL = "INTERVAL '2 MINUTES'"
 
-	POSTPONE_PERIOD_ONE_DAY  postponePeriod = "INTERVAL '1 DAY'"
+	POSTPONE_PERIOD_ONE_DAY  postponePeriod = "INTERVAL '%d DAY'"
 	POSTPONE_PERIOD_TWO_DAYS postponePeriod = "INTERVAL '2 DAY'"
 	POSTPONE_PERIOD_ONE_WEEK postponePeriod = "INTERVAL '1 WEEK'"
 )
@@ -43,11 +45,6 @@ type Task struct {
 	ExecutionTime time.Time
 	Status        StatusType
 	Details       string
-}
-
-// RemindLection contains details (ID) about the lection to ask description from user
-type RemindLection struct {
-	ID int
 }
 
 func GetTasks() ([]*Task, error) {
@@ -111,15 +108,36 @@ func AddTask(t TaskType, execTime time.Time, details string) error {
 	return nil
 }
 
-// LoadLection loads lection from task details
-func (t *Task) LoadLection() (*Lection, error) {
+// RemindLection contains details (ID) about the lection to ask description from user
+type RemindLection struct {
+	ID       int
+	Attempts int
+}
+
+// LoadLection loads lection by ID
+func (r *RemindLection) LoadLection() (*Lection, error) {
+	return LoadLection(r.ID)
+}
+
+// PostponeTask increases attempts and increases execution time
+func (r *RemindLection) PostponeTask(id int) error {
+	r.Attempts++
+	postponeTime := math.Exp(float64(r.Attempts))
+	postponeInterval := fmt.Sprintf(string(POSTPONE_PERIOD_ONE_DAY), int(postponeTime))
+	details, err := json.Marshal(r)
+	if err != nil {
+		return err
+	}
+	q := "UPDATE tasks SET udate=NOW(), execution_time=execution_time+" + postponeInterval + ", status=$1, details=$2 WHERE id=$3 AND status=$4"
+	_, err = dbConn.Exec(q, TASK_STATUS_NEW, string(details), id, TASK_STATUS_IN_PROGRESS)
+	return err
+}
+
+// LoadReminderLection loads lection remind from task details
+func (t *Task) LoadReminderLection() (*RemindLection, error) {
 	r := &RemindLection{}
 	err := json.Unmarshal([]byte(t.Details), r)
-	if err != nil {
-		return nil, err
-	}
-	l, err := LoadLection(r.ID)
-	return l, err
+	return r, err
 }
 
 // TakeTask updates udate field to the current time and set status to IN_PROGRESS if a task fulfills conditions

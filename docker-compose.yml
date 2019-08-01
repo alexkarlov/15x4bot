@@ -8,9 +8,11 @@ services:
     - .env
     depends_on: 
       - postgresql
-  postgresql:
+  postgresql:    
     build:
-      context: ./postgresql      
+      context: ./postgresql    
+    env_file:
+    - ./postgresql/.env
     container_name: bot-db
     ports:
       - "5432:5432"

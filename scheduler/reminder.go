@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	TEMPLATE_LECTION_DESCRIPTION_REMINDER = `Привіт, %username%!
+	TEMPLATE_LECTION_DESCRIPTION_REMINDER = `Привіт!
 	По можливості - напиши, будь ласка, опис до своєї лекції (два-три речення про що буде лекція). В головному меню є пункт "Додати опис до лекції". Якщо будуть питання - звертайся до @alex_karlov
 	Дякую!
 	`
@@ -24,7 +24,15 @@ func RemindLector(t *store.Task, b *bot.Bot) {
 		}
 		return
 	}
-	l, err := t.LoadLection()
+	r, err := t.LoadReminderLection()
+	if err != nil {
+		log.Errorf("failed to load reminder lection of task %d error:%s", t.ID, err)
+		if err := t.ReleaseTask(); err != nil {
+			log.Errorf("failed to release task %d error:%s", t.ID, err)
+		}
+		return
+	}
+	l, err := r.LoadLection()
 	if err != nil {
 		log.Errorf("failed to load lection of task %d error:%s", t.ID, err)
 		if err := t.ReleaseTask(); err != nil {
@@ -47,6 +55,10 @@ func RemindLector(t *store.Task, b *bot.Bot) {
 		return
 	}
 	b.SendText(c.TGChatID, TEMPLATE_LECTION_DESCRIPTION_REMINDER)
-	store.PostponeTask(t.ID, store.POSTPONE_PERIOD_ONE_DAY)
+	// Udate task with new execution time and attempts
+	if err = r.PostponeTask(t.ID); err != nil {
+		log.Errorf("failed to postpone task %d error:%s", t.ID, err)
+		return
+	}
 	log.Info(t)
 }
