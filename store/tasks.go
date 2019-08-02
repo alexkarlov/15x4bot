@@ -82,8 +82,9 @@ func LoadTask(ID int) (*Task, error) {
 	return t, nil
 }
 
-func FinishTask(ID int) error {
-	_, err := dbConn.Exec("UPDATE tasks SET udate=NOW(), status=$1 WHERE id=$2", TASK_STATUS_DONE, ID)
+// FinishTask set task status to done
+func (t *Task) FinishTask() error {
+	_, err := dbConn.Exec("UPDATE tasks SET udate=NOW(), status=$1 WHERE id=$2", TASK_STATUS_DONE, t.ID)
 	if err != nil {
 		return err
 	}

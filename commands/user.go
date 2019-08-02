@@ -17,6 +17,7 @@ const (
 	TEMPLATE_USER_BUTTON          = "%d: %s"
 	TEMPLATE_USER_ERROR_WRONG_ID  = "Невірно вибраний юзер"
 	TEMPLATE_DELETE_USER_COMPLETE = "Юзер успішно видалений"
+	TEMPLATE_DELETE_USER          = "Оберіть юзера"
 )
 
 type addUser struct {
@@ -145,7 +146,7 @@ func (c *deleteUser) NextStep(answer string) (*ReplyMarkup, error) {
 			lText := fmt.Sprintf(TEMPLATE_USER_BUTTON, l.ID, l.Name)
 			replyMarkup.Buttons = append(replyMarkup.Buttons, lText)
 		}
-		replyMarkup.Text = TEMPLATE_ADD_LECTION_DESCIRPTION_CHOSE_LECTION
+		replyMarkup.Text = TEMPLATE_DELETE_USER
 	case 1:
 		regexpLectionID := regexp.MustCompile(`^(\d+)?\:`)
 		matches := regexpLectionID.FindStringSubmatch(answer)

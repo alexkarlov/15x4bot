@@ -2,9 +2,14 @@ package store
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
+)
+
+var (
+	ErrNoUser = errors.New("no users found")
 )
 
 // UserRole describes what user can do
@@ -66,9 +71,10 @@ func DoesUserExist(id int) (bool, error) {
 func LoadUser(username string) (*User, error) {
 	u := &User{}
 	q := "SELECT u.id, u.role, u.username FROM users u WHERE u.username=$1"
-	r := ""
-	err := dbConn.QueryRow(q, username).Scan(&u.ID, &r, &u.Username)
-	u.Role = UserRole(r)
+	err := dbConn.QueryRow(q, username).Scan(&u.ID, &u.Role, &u.Username)
+	if err == sql.ErrNoRows {
+		return nil, ErrNoUser
+	}
 	return u, err
 }
 
@@ -112,8 +118,24 @@ func Users(roles []UserRole) ([]*User, error) {
 
 // DeleteUser deletes user by provided id
 func DeleteUser(id int) error {
+	tx, err := dbConn.Begin()
+	if err != nil {
+		return err
+	}
+
 	q := "DELETE FROM users WHERE id=$1"
-	_, err := dbConn.Exec(q, id)
+	_, err = tx.Exec(q, id)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	q = "DELETE FROM chats WHERE user_id=$1"
+	_, err = tx.Exec(q, id)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	tx.Commit()
 	return err
 }
 

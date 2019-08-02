@@ -57,7 +57,7 @@ func lookupChat(msg *Message) (*chat, error) {
 	if !ok {
 		log.Infof("chat with user %s not found", msg.Username)
 		u, err := store.LoadUser(msg.Username)
-		if err != nil {
+		if err != nil && err != store.ErrNoUser {
 			return nil, err
 		}
 		//if we haven't chatted before with this user - create a new chat
@@ -69,9 +69,15 @@ func lookupChat(msg *Message) (*chat, error) {
 		}
 		// TODO: save in the DB
 		if err := store.ChatUpsert(msg.ChatID, msg.Username); err != nil {
-			log.Error("error while chat upserting: ", err)
+			return nil, err
 		}
-
+		if res.u == nil {
+			res.u, err = store.LoadUser(msg.Username)
+			// here we should get user; if no - something happened wrong
+			if err != nil {
+				return nil, err
+			}
+		}
 		chatsManager.list[msg.ChatID] = res
 	}
 	return res, nil

@@ -40,7 +40,7 @@ func RemindLector(t *store.Task, b *bot.Bot) {
 		return
 	}
 	if l.Description != "" {
-		if err = store.FinishTask(t.ID); err != nil {
+		if err = t.FinishTask(); err != nil {
 			log.Errorf("failed to finish task %d error:%s", t.ID, err)
 		}
 		return

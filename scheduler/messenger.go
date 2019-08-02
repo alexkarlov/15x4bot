@@ -47,7 +47,7 @@ func MessageToAdmin(t *store.Task, b *bot.Bot) {
 			log.Errorf("error while sending msg to %s. task %d error: %s", a.Username, t.ID, err)
 		}
 	}
-	if err := t.ReleaseTask(); err != nil {
+	if err := t.FinishTask(); err != nil {
 		log.Errorf("failed to release task %d error:%s", t.ID, err)
 	}
 }

@@ -17,11 +17,9 @@ func ChatUpsert(chat int64, username string) error {
 	if err != nil {
 		return err
 	}
-
 	user := &User{}
-	row := tx.QueryRow("SELECT id FROM users WHERE username=($1)", username)
-
-	if err := row.Scan(&user.ID); err != nil {
+	err = tx.QueryRow("SELECT id FROM users WHERE username=($1)", username).Scan(&user.ID)
+	if err != nil {
 		if err != sql.ErrNoRows {
 			tx.Rollback()
 			return err
