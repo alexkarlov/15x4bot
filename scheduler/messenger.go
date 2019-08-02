@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	TEMPLATE_MSG_TO_ADMIN_NEW_VOLUNTEER_COME = "Йу-ху! Новий %s хоче до нас долучитися - @%s"
+	TEMPLATE_MSG_TO_ADMIN_NEW_VOLUNTEER_COME = "Йу-ху! @%s хоче %s"
 )
 
 // MessageToAdmin sends message to admin(s) when new speaker/volunteer comes
