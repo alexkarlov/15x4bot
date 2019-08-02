@@ -22,6 +22,9 @@ var (
 
 	SpeakerMarkup = MessageButtons{
 		"Додати опис до лекції",
+		"Наступний івент",
+		"Наступна репетиція",
+		"Хто ми",
 	}
 
 	GuestMarkup = MessageButtons{
@@ -67,7 +70,7 @@ func StandardMarkup(role store.UserRole) MessageButtons {
 	if role == store.USER_ROLE_ADMIN {
 		buttons = MessageButtons(AdminMarkup)
 	} else if role == store.USER_ROLE_LECTOR {
-		buttons = append(buttons, SpeakerMarkup...)
+		buttons = MessageButtons(SpeakerMarkup)
 	}
 	buttons = append(buttons, MainMarkup...)
 	return buttons
