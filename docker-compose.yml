@@ -8,6 +8,8 @@ services:
     - .env
     depends_on: 
       - postgresql
+    restart_policy:
+      condition: on-failure
   postgresql:    
     build:
       context: ./postgresql    
