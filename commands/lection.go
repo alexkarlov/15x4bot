@@ -141,7 +141,7 @@ func (c *addDescriptionLection) NextStep(answer string) (*ReplyMarkup, error) {
 	case 1:
 		regexpLectionID := regexp.MustCompile(`^Лекція (\d+)?\:`)
 		matches := regexpLectionID.FindStringSubmatch(answer)
-		if len(matches) > 2 {
+		if len(matches) < 2 {
 			replyMarkup.Text = TEMPLATE_LECTION_ERROR_WRONG_ID
 			return replyMarkup, nil
 		}
