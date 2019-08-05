@@ -16,6 +16,8 @@ var (
 )
 
 const (
+	UserRemindHour = 19
+
 	TEMPLATE_CREATE_EVENT_STEP_SPEAKER_DETAILS     = "%d - %s, %s\n"
 	TEMPLATE_CREATE_EVENT_STEP_SPEAKER             = "Хто лектор?\n%s"
 	TEMPLATE_CREATE_EVENT_STEP_LECTION_NAME        = "Назва лекції"
@@ -33,11 +35,11 @@ const (
 	TEMPLATE_DELETE_LECTION_COMPLETE                = "Лекцію успішно видалено"
 )
 
-func lectionRemindTime() time.Time {
+func nextDay(hour int) time.Time {
 	curr := time.Now()
 	y, m, d := curr.Date()
 	loc, _ := time.LoadLocation("UTC")
-	rTime := time.Date(y, m, d, 19, 0, 0, 0, loc).AddDate(0, 0, 1)
+	rTime := time.Date(y, m, d, hour, 0, 0, 0, loc).AddDate(0, 0, 1)
 	return rTime
 }
 
@@ -95,7 +97,7 @@ func (c *addLection) NextStep(answer string) (*ReplyMarkup, error) {
 			return nil, err
 		}
 		if answer == TEMPLATE_I_DONT_KNOW {
-			execTime := lectionRemindTime()
+			execTime := nextDay(UserRemindHour)
 			r := &store.RemindLection{
 				ID: lectionID,
 			}

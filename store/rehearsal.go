@@ -17,9 +17,10 @@ type Rehearsal struct {
 	Time      time.Time
 }
 
-func AddRehearsal(t time.Time, place int) error {
-	_, err := dbConn.Exec("INSERT INTO rehearsals (time, place) VALUES ($1, $2)", t, place)
-	return err
+func AddRehearsal(t time.Time, place int) (int, error) {
+	var ID int
+	err := dbConn.QueryRow("INSERT INTO rehearsals (time, place) VALUES ($1, $2) RETURNING id", t, place).Scan(&ID)
+	return ID, err
 }
 
 func NextRehearsal() (*Rehearsal, error) {
@@ -67,4 +68,15 @@ func DeleteRehearsal(id int) error {
 	q := "DELETE FROM rehearsals WHERE id=$1"
 	_, err := dbConn.Exec(q, id)
 	return err
+}
+
+// LoadRehearsal returns a rehearsal loaded by id
+func LoadRehearsal(ID int) (*Rehearsal, error) {
+	r := &Rehearsal{}
+	q := "SELECT r.id, r.time, p.name, p.address, p.map_url FROM rehearsals r LEFT JOIN places p ON p.id = r.place WHERE r.id=$1"
+	err := dbConn.QueryRow(q, ID).Scan(&r.ID, &r.Time, &r.PlaceName, &r.Address, &r.MapUrl)
+	if err == sql.ErrNoRows {
+		return nil, ErrNoUser
+	}
+	return r, err
 }

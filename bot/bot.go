@@ -80,6 +80,13 @@ func (b *Bot) SendText(chatID int64, msg string) error {
 	return err
 }
 
+// SendTextToChannel sends a message to particular chat
+func (b *Bot) SendTextToChannel(channel string, msg string) error {
+	replyMsg := tgbotapi.NewMessageToChannel(channel, msg)
+	_, err := b.bot.Send(replyMsg)
+	return err
+}
+
 // Reply sends response (text or markup)
 func (b *Bot) Reply(msg *Message) {
 	c, err := lookupChat(msg)

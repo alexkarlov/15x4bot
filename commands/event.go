@@ -20,11 +20,10 @@ const (
 	END_PHRASE                    = "Кінець"
 	TEMPLATE_LECTIONS_LIST        = "%d.%s.%s"
 	TEMPLATE_INTRO_LECTIONS_LIST  = "Виберіть лекцію. Для закінчення натисніть " + END_PHRASE
-	TEMPLATE_PLACES_LIST          = "%d. %s - %s\n"
 	TEMPLATE_PLACES_LIST_BUTTONS  = "%d. %s\n"
-	TEMPLATE_INTRO_PLACES_LIST    = "Де?\n%s"
+	TEMPLATE_CHOSE_PLACE          = "Оберіть місце"
 	TEMPLATE_NEXT_EVENT           = "Де: %s, %s\nПочаток: %s\nКінець: %s"
-	TEMPLATE_NEXT_EVENT_UNDEFINED = "Невідомо коли, запитайся пізніше"
+	TEMPLATE_NEXT_EVENT_UNDEFINED = "Невідомо коли, спитай пізніше"
 
 	TEMPLATE_WRONG_PLACE_ID        = "Невідоме місце"
 	TEMPLATE_EVENTS_LIST_EMPTY     = "Поки івентів немає"
@@ -76,14 +75,12 @@ func (c *addEvent) NextStep(answer string) (*ReplyMarkup, error) {
 		if err != nil {
 			return nil, err
 		}
-		pText := ""
 		replyMarkup.Buttons = nil
 		for _, p := range places {
-			pText += fmt.Sprintf(TEMPLATE_PLACES_LIST, p.ID, p.Name, p.Address)
 			b := fmt.Sprintf(TEMPLATE_PLACES_LIST_BUTTONS, p.ID, p.Name)
 			replyMarkup.Buttons = append(replyMarkup.Buttons, b)
 		}
-		replyMarkup.Text = fmt.Sprintf(TEMPLATE_INTRO_PLACES_LIST, pText)
+		replyMarkup.Text = TEMPLATE_CHOSE_PLACE
 	case 3:
 		regexpPlaceID := regexp.MustCompile(`^(\d+)?\.`)
 		matches := regexpPlaceID.FindStringSubmatch(answer)

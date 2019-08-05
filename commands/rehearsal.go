@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -16,15 +17,21 @@ var (
 )
 
 const (
-	TEMPLATE_NEXT_REHEARSAL            = "Де: %s, %s\nКоли: %s\nМапа:%s"
-	TEMPLATE_ADD_REHEARSAL_WHEN        = "Коли? Дата та час в форматі 2018-12-31 19:00:00"
-	TEMPLATE_ADD_REHEARSAL_ERROR_DATE  = "Невірний формат дати та часу. Наприклад, якщо репетиція буде 20-ого грудня о 19:00 то треба ввести: 2018-12-20 19:00:00. Спробуй ще!"
-	TEMPLATE_ADDREHEARSAL_SUCCESS_MSG  = "Репетиція створена"
-	TEMPLATE_NEXT_REHEARSAL_UNDEFINED  = "Невідомо коли, запитайся пізніше"
-	TEMPLATE_REHEARSAL_BUTTON          = "%d.Коли: %s, місце: %s"
-	TEMPLATE_CHOSE_REHEARSAL           = "Оберіть репетицію"
-	TEMPLATE_REHEARSAL_ERROR_WRONG_ID  = "Невірно вибрана репетиція"
-	TEMPLATE_DELETE_REHEARSAL_COMPLETE = "Репетиція успішно видалена"
+	ChannelUsernameInternal = "@test15x4"
+	ChatInternalID          = "-321869033"
+	RemindHourStart         = 10
+	RemindHourEnd           = 21
+
+	TEMPLATE_NEXT_REHEARSAL                  = "Де: %s, %s\nКоли: %s\nМапа:%s"
+	TEMPLATE_ADD_REHEARSAL_WHEN              = "Коли? Дата та час в форматі 2018-12-31 19:00:00"
+	TEMPLATE_ADD_REHEARSAL_ERROR_DATE        = "Невірний формат дати та часу. Наприклад, якщо репетиція буде 20-ого грудня о 19:00 то треба ввести: 2018-12-20 19:00:00. Спробуй ще!"
+	TEMPLATE_ADDREHEARSAL_SUCCESS_MSG        = "Репетиція створена"
+	TEMPLATE_NEXT_REHEARSAL_UNDEFINED        = "Невідомо коли, спитай пізніше"
+	TEMPLATE_REHEARSAL_BUTTON                = "%d.Коли: %s, місце: %s"
+	TEMPLATE_CHOSE_REHEARSAL                 = "Оберіть репетицію"
+	TEMPLATE_REHEARSAL_ERROR_WRONG_ID        = "Невірно вибрана репетиція"
+	TEMPLATE_DELETE_REHEARSAL_COMPLETE       = "Репетиція успішно видалена"
+	TEMPLATE_ADDREHEARSAL_ERROR_REMINDER_MSG = "Репетиція створена, але якась фігня скоїлась при створенні нагадувань. Звернись пліз до @alex_karlov"
 )
 
 type addRehearsal struct {
@@ -55,14 +62,12 @@ func (c *addRehearsal) NextStep(answer string) (*ReplyMarkup, error) {
 		}
 		c.when = t
 		places, err := store.Places(store.PlaceTypes{store.PLACE_TYPE_FOR_REHEARSAL, store.PLACE_TYPE_FOR_ALL})
-		pText := ""
 		replyMarkup.Buttons = nil
 		for _, p := range places {
-			pText += fmt.Sprintf(TEMPLATE_PLACES_LIST, p.ID, p.Name, p.Address)
 			b := fmt.Sprintf(TEMPLATE_PLACES_LIST_BUTTONS, p.ID, p.Name)
 			replyMarkup.Buttons = append(replyMarkup.Buttons, b)
 		}
-		replyMarkup.Text = fmt.Sprintf(TEMPLATE_INTRO_PLACES_LIST, pText)
+		replyMarkup.Text = TEMPLATE_CHOSE_PLACE
 	case 2:
 		regexpLectionID := regexp.MustCompile(`^(\d+)?\.`)
 		matches := regexpLectionID.FindStringSubmatch(answer)
@@ -81,15 +86,46 @@ func (c *addRehearsal) NextStep(answer string) (*ReplyMarkup, error) {
 			replyMarkup.Text = TEMPLATE_WRONG_PLACE_ID
 			return replyMarkup, nil
 		}
-		err = store.AddRehearsal(c.when, c.where)
+		id, err := store.AddRehearsal(c.when, c.where)
+		// create a task for sending post in the internal channel
 		if err != nil {
 			return nil, err
 		}
+		err = addRehearsalReminder(id)
+		if err != nil {
+			replyMarkup.Text = TEMPLATE_ADDREHEARSAL_ERROR_REMINDER_MSG
+			break
+		}
+
 		replyMarkup.Text = TEMPLATE_ADDREHEARSAL_SUCCESS_MSG
 		replyMarkup.Buttons = StandardMarkup(c.u.Role)
 	}
 	c.step++
 	return replyMarkup, nil
+}
+
+func addRehearsalReminder(id int) error {
+	// create chat reminder
+	r := &store.RemindRehearsalChannel{
+		RehearsalID:     id,
+		ChannelUsername: ChatInternalID,
+	}
+	details, err := json.Marshal(r)
+	if err != nil {
+		return err
+	}
+	execTime := asSoonAsPossible()
+	err = store.AddTask(store.TASK_TYPE_REMINDER_TG_CHANNEL, execTime, string(details))
+	if err != nil {
+		return err
+	}
+	// create channel reminder
+	r.ChannelUsername = ChannelUsernameInternal
+	details, err = json.Marshal(r)
+	if err != nil {
+		return err
+	}
+	return store.AddTask(store.TASK_TYPE_REMINDER_TG_CHANNEL, execTime, string(details))
 }
 
 func (c *addRehearsal) IsEnd() bool {
@@ -175,4 +211,26 @@ func (c *deleteRehearsal) NextStep(answer string) (*ReplyMarkup, error) {
 	}
 	c.step++
 	return replyMarkup, nil
+}
+
+// asSoonAsPossible returns nearest time  according to start/end hour
+// i.e. we have start hour = 10, end hour = 21
+// current time = 2019-01-01 12:00:00
+// asSoonAsPossible returns 2019-01-01 12:00:00
+// if current time = 2019-01-01 09:00:00
+// asSoonAsPossible returns 2019-01-01 10:00:00
+// if current time = 2019-01-01 22:00:00
+// asSoonAsPossible returns 2019-01-02 10:00:00
+func asSoonAsPossible() time.Time {
+	loc, _ := time.LoadLocation(MsgLocation)
+	curr := time.Now().In(loc)
+	y, m, d := curr.Date()
+	currH := curr.Hour()
+	if currH < RemindHourStart {
+		return time.Date(y, m, d, RemindHourStart, 0, 0, 0, loc)
+	} else if currH > RemindHourEnd {
+		// next day at as early as possible
+		return time.Date(y, m, d, RemindHourStart, 0, 0, 0, loc).AddDate(0, 0, 1)
+	}
+	return curr
 }
