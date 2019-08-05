@@ -9,9 +9,17 @@ import (
 
 var Conf config.TG
 
+// ChatType represents a tg types of chat
+type ChatType string
+
 const (
 	InternalErrorText = "Внутрішня помилка, сорян"
 	ButtonsCountInRow = 2
+
+	ChatGroup      ChatType = "group"
+	ChatPrivate    ChatType = "private"
+	ChatChannel    ChatType = "channel"
+	ChatSupergroup ChatType = "supergroup"
 )
 
 type Bot struct {
@@ -32,6 +40,7 @@ func NewBot() (*Bot, error) {
 }
 
 type Message struct {
+	Type     ChatType
 	Text     string
 	Username string
 	ChatID   int64
@@ -53,7 +62,9 @@ func (b *Bot) ListenUpdates() {
 		}
 		log.Infof("got new msg from [%s]: %s", update.Message.From.UserName, string(update.Message.Text))
 		// TODO: add new record to history table
+
 		msg := &Message{
+			Type:     ChatType(update.Message.Chat.Type),
 			Text:     update.Message.Text,
 			Username: update.Message.From.UserName,
 			ChatID:   update.Message.Chat.ID,

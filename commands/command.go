@@ -216,7 +216,7 @@ func NewCommand(cmdName string, u *store.User) Command {
 		}
 	}
 	c := &unknown{
-		u: store.GuestUser(),
+		u: u,
 	}
 	return c
 }
