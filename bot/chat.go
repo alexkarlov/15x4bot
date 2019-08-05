@@ -71,7 +71,7 @@ func lookupChat(msg *Message) (*chat, error) {
 		if err := store.ChatUpsert(msg.ChatID, msg.Username); err != nil {
 			return nil, err
 		}
-		if res.u == nil {
+		if u == nil {
 			res.u, err = store.LoadUser(msg.Username)
 			// here we should get user; if no - something happened wrong
 			if err != nil {
