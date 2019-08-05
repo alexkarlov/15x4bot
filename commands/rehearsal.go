@@ -17,8 +17,8 @@ var (
 )
 
 const (
-	ChannelUsernameInternal = "@test15x4"
-	ChatInternalID          = "-321869033"
+	ChannelUsernameInternal = "@odessa15x4_org"
+	ChatInternalID          = "-1001163442626"
 	RemindHourStart         = 10
 	RemindHourEnd           = 21
 

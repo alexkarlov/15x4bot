@@ -1,0 +1,1 @@
+ALTER TABLE chats ALTER COLUMN tg_chat_id TYPE INT;

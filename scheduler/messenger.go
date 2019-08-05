@@ -37,7 +37,7 @@ func MessageToAdmin(t *store.Task, b *bot.Bot) {
 		}
 		return
 	}
-	msg := fmt.Sprintf(TEMPLATE_MSG_TO_ADMIN_NEW_VOLUNTEER_COME, m.Role, m.Username)
+	msg := fmt.Sprintf(TEMPLATE_MSG_TO_ADMIN_NEW_VOLUNTEER_COME, m.Username, m.Role)
 	for _, a := range admins {
 		chat, err := a.TGChat()
 		if err != nil {
