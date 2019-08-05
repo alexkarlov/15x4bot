@@ -62,10 +62,9 @@ func lookupChat(msg *Message) (*chat, error) {
 		}
 		//if we haven't chatted before with this user - create a new chat
 		res = &chat{
-			ID:  msg.ChatID,
-			cmd: commands.NewCommand(msg.Text, u),
-			l:   &sync.RWMutex{},
-			u:   u,
+			ID: msg.ChatID,
+			l:  &sync.RWMutex{},
+			u:  u,
 		}
 		// TODO: save in the DB
 		if err := store.ChatUpsert(msg.ChatID, msg.Username); err != nil {
