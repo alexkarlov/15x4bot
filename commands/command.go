@@ -25,7 +25,15 @@ var commandPatterns = []struct {
 	{
 		pattern: `Створити користувача`,
 		createCmd: func(cmd string) Command {
-			return &addUser{}
+			return &upsertUser{}
+		},
+	},
+	{
+		pattern: `Змінити користувача`,
+		createCmd: func(cmd string) Command {
+			return &upsertUser{
+				exists: true,
+			}
 		},
 	},
 	{

@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	ErrNoUser = errors.New("no users found")
+	ErrNoUser     = errors.New("no users found")
+	ErrUserExists = errors.New("user with this username is aleready exists!")
 )
 
 // UserRole describes what user can do
@@ -78,8 +79,25 @@ func LoadUser(username string) (*User, error) {
 	return u, err
 }
 
-// AddUser creates a new record in users table
-func AddUser(username string, role UserRole, name string, fb string, vk string, bdate time.Time) error {
+// UpsertUser creates a new record in users table
+func UpsertUser(ID int, username string, role UserRole, name string, fb string, vk string, bdate time.Time) error {
+	if ID != 0 {
+		_, err := dbConn.Exec("UPDATE users SET username=$1, role=$2, name=$3, fb=$4, vk=$5, bdate=$6, udate=NOW() WHERE id=$7", username, role, name, fb, vk, bdate, ID)
+		return err
+	}
+	// check username whether does it exist in db
+	if username != "" {
+		// normal case - when we get ErrNoUser, that means that there is no user with this uesrname
+		_, err := LoadUser(username)
+		// no error means that user with this username is already exist
+		if err == nil {
+			return ErrUserExists
+		}
+		// other error means something weird
+		if err != ErrNoUser {
+			return err
+		}
+	}
 	// TODO: check existense of username
 	_, err := dbConn.Exec("INSERT INTO users (username, role, name, fb, vk, bdate) VALUES ($1, $2, $3, $4, $5, $6)", username, role, name, fb, vk, bdate)
 	return err
