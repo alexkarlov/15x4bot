@@ -28,6 +28,9 @@ func Run(b *bot.Bot) {
 			case store.TASK_TYPE_MESSENGER:
 				// TODO: add task manager
 				go MessageToAdmin(t, b)
+			case store.TASK_TYPE_REMINDER_TG_CHANNEL:
+				// TODO: add task manager
+				go MessageToChannel(t, b)
 			}
 		}
 		time.Sleep(time.Minute * 1)

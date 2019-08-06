@@ -9,9 +9,17 @@ import (
 
 var Conf config.TG
 
+// ChatType represents a tg types of chat
+type ChatType string
+
 const (
 	InternalErrorText = "Внутрішня помилка, сорян"
 	ButtonsCountInRow = 2
+
+	ChatGroup      ChatType = "group"
+	ChatPrivate    ChatType = "private"
+	ChatChannel    ChatType = "channel"
+	ChatSupergroup ChatType = "supergroup"
 )
 
 type Bot struct {
@@ -32,6 +40,7 @@ func NewBot() (*Bot, error) {
 }
 
 type Message struct {
+	Type     ChatType
 	Text     string
 	Username string
 	ChatID   int64
@@ -51,9 +60,11 @@ func (b *Bot) ListenUpdates() {
 		if update.Message == nil || update.Message.Text == "" {
 			continue
 		}
-		log.Infof("got new msg from [%s]: %s", update.Message.From.UserName, string(update.Message.Text))
+		log.Infof("got new msg from [%s]: %s, chatID: %d", update.Message.From.UserName, string(update.Message.Text), update.Message.Chat.ID)
 		// TODO: add new record to history table
+
 		msg := &Message{
+			Type:     ChatType(update.Message.Chat.Type),
 			Text:     update.Message.Text,
 			Username: update.Message.From.UserName,
 			ChatID:   update.Message.Chat.ID,
@@ -76,6 +87,13 @@ func (b *Bot) SendError(chatID int64) {
 // SendText sends a message to particular chat
 func (b *Bot) SendText(chatID int64, msg string) error {
 	replyMsg := tgbotapi.NewMessage(chatID, msg)
+	_, err := b.bot.Send(replyMsg)
+	return err
+}
+
+// SendTextToChannel sends a message to particular chat
+func (b *Bot) SendTextToChannel(channel string, msg string) error {
+	replyMsg := tgbotapi.NewMessageToChannel(channel, msg)
 	_, err := b.bot.Send(replyMsg)
 	return err
 }

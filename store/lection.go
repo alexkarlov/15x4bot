@@ -37,11 +37,11 @@ func AddLection(name string, description string, userID int) (int, error) {
 
 // Lections return list of lections. New lections can be useful for creation of event
 func Lections(newOnly bool) ([]*Lection, error) {
-	typeFilter := ""
+	typeFilter := "WHERE 1=1 "
 	if newOnly {
-		typeFilter = "WHERE l.id NOT IN (SELECT id_lection FROM event_lections)"
+		typeFilter = " AND l.id NOT IN (SELECT id_lection FROM event_lections)"
 	}
-	baseQuery := "SELECT l.id, l.name, u.name, u.username, u.id, u.role FROM lections l "
+	baseQuery := "SELECT l.id, l.name, l.description, u.name, u.username, u.id, u.role FROM lections l "
 	baseQuery += " INNER JOIN users u ON u.id = user_id " + typeFilter
 	rows, err := dbConn.Query(baseQuery)
 	if err != nil {
@@ -53,7 +53,7 @@ func Lections(newOnly bool) ([]*Lection, error) {
 		lection := &Lection{
 			Lector: &User{},
 		}
-		if err := rows.Scan(&lection.ID, &lection.Name, &lection.Lector.Name, &lection.Lector.Username, &lection.Lector.ID, &lection.Lector.Role); err != nil {
+		if err := rows.Scan(&lection.ID, &lection.Name, &lection.Description, &lection.Lector.Name, &lection.Lector.Username, &lection.Lector.ID, &lection.Lector.Role); err != nil {
 			return nil, err
 		}
 		lections = append(lections, lection)
@@ -62,27 +62,6 @@ func Lections(newOnly bool) ([]*Lection, error) {
 		return nil, err
 	}
 	return lections, err
-}
-
-// LectionsWithoutDescriptions returns lections without description for provided speaker
-func LectionsWithoutDescriptions(u int) ([]*Lection, error) {
-	q := `SELECT l.name, l.id, u.username, u.id, u.role
-		FROM lections l 
-		LEFT JOIN users u ON u.id=l.user_id 
-		WHERE u.id=$1 AND l.description=''`
-	rows, err := dbConn.Query(q, u)
-	if err != nil {
-		return nil, err
-	}
-	lections := make([]*Lection, 0)
-	for rows.Next() {
-		lection := &Lection{
-			Lector: &User{},
-		}
-		err = rows.Scan(&lection.Name, &lection.ID, &lection.Lector.Username, &lection.Lector.ID, &lection.Lector.Role)
-		lections = append(lections, lection)
-	}
-	return lections, nil
 }
 
 // DeleteLection deletes lection by provided id

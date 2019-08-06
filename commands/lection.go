@@ -7,6 +7,7 @@ import (
 	"github.com/alexkarlov/15x4bot/store"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -16,6 +17,8 @@ var (
 )
 
 const (
+	UserRemindHour = 19
+
 	TEMPLATE_CREATE_EVENT_STEP_SPEAKER_DETAILS     = "%d - %s, %s\n"
 	TEMPLATE_CREATE_EVENT_STEP_SPEAKER             = "Хто лектор?\n%s"
 	TEMPLATE_CREATE_EVENT_STEP_LECTION_NAME        = "Назва лекції"
@@ -28,20 +31,21 @@ const (
 	TEMPLATE_ADD_LECTION_DESCIRPTION_ERROR_NOT_YOUR = "Це не твоя лекція!"
 	TEMPLATE_LECTION_ERROR_WRONG_ID                 = "Невірно вибрана лекція"
 	TEMPLATE_WRONG_USER_ID                          = "Невідомий користувач"
-	TEMPLATE_LECTION_LIST_ITEM                      = "Лекція %d: %s\nЛектор: %s\n\n"
+	TEMPLATE_LECTION_LIST_ITEM                      = "Лекція %d: %s\nЛектор: @%s,  %s"
 	TEMPLATE_LECTION_LIST_EMPTY                     = "Поки лекцій немає"
 	TEMPLATE_DELETE_LECTION_COMPLETE                = "Лекцію успішно видалено"
 )
 
-func lectionRemindTime() time.Time {
+func nextDay(hour int) time.Time {
 	curr := time.Now()
 	y, m, d := curr.Date()
 	loc, _ := time.LoadLocation("UTC")
-	rTime := time.Date(y, m, d, 19, 0, 0, 0, loc).AddDate(0, 0, 1)
+	rTime := time.Date(y, m, d, hour, 0, 0, 0, loc).AddDate(0, 0, 1)
 	return rTime
 }
 
 type addLection struct {
+	u           *store.User
 	step        int
 	name        string
 	description string
@@ -49,7 +53,8 @@ type addLection struct {
 }
 
 func (c *addLection) IsAllow(u *store.User) bool {
-	return u.Role == store.USER_ROLE_ADMIN
+	c.u = u
+	return (u.Role == store.USER_ROLE_ADMIN || u.Role == store.USER_ROLE_LECTOR)
 }
 
 func (c *addLection) NextStep(answer string) (*ReplyMarkup, error) {
@@ -58,6 +63,13 @@ func (c *addLection) NextStep(answer string) (*ReplyMarkup, error) {
 	}
 	switch c.step {
 	case 0:
+		// if the user is a lector = add him as an lection owner and skip the next step
+		if c.u.Role == store.USER_ROLE_LECTOR {
+			c.userID = c.u.ID
+			replyMarkup.Text = TEMPLATE_CREATE_EVENT_STEP_LECTION_NAME
+			c.step++
+			break
+		}
 		users, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN, store.USER_ROLE_LECTOR})
 		if err != nil {
 			return nil, err
@@ -95,7 +107,7 @@ func (c *addLection) NextStep(answer string) (*ReplyMarkup, error) {
 			return nil, err
 		}
 		if answer == TEMPLATE_I_DONT_KNOW {
-			execTime := lectionRemindTime()
+			execTime := nextDay(UserRemindHour)
 			r := &store.RemindLection{
 				ID: lectionID,
 			}
@@ -127,19 +139,31 @@ func (c *addDescriptionLection) NextStep(answer string) (*ReplyMarkup, error) {
 	}
 	switch c.step {
 	case 0:
-		lections, err := store.LectionsWithoutDescriptions(c.u.ID)
+		lections, err := store.Lections(true)
 		if err != nil {
 			return nil, err
 		}
-		for _, l := range lections {
-			lText := fmt.Sprintf(TEMPLATE_LECTION_NAME, l.ID, l.Name)
-			replyMarkup.Buttons = append(replyMarkup.Buttons, lText)
+		var l []string
+		for _, lection := range lections {
+			if (c.u.Role != store.USER_ROLE_ADMIN && c.u.ID != lection.Lector.ID) || lection.Description != "" {
+				// skip lections which doesn't belong to user (if he isn't admin) or it has description
+				continue
+			}
+			l = append(l, fmt.Sprintf(TEMPLATE_LECTION_NAME, lection.ID, lection.Name))
 		}
+		// if there are no appropriate lections - send special response
+		if len(l) == 0 {
+			replyMarkup.Text = TEMPLATE_LECTION_LIST_EMPTY
+			// TODO: OMG, remove that shit
+			c.step = 3
+			return replyMarkup, nil
+		}
+		replyMarkup.Buttons = append(replyMarkup.Buttons, l...)
 		replyMarkup.Text = TEMPLATE_ADD_LECTION_DESCIRPTION_CHOSE_LECTION
 	case 1:
 		regexpLectionID := regexp.MustCompile(`^Лекція (\d+)?\:`)
 		matches := regexpLectionID.FindStringSubmatch(answer)
-		if len(matches) > 2 {
+		if len(matches) < 2 {
 			replyMarkup.Text = TEMPLATE_LECTION_ERROR_WRONG_ID
 			return replyMarkup, nil
 		}
@@ -151,7 +175,7 @@ func (c *addDescriptionLection) NextStep(answer string) (*ReplyMarkup, error) {
 		if err != nil {
 			return nil, err
 		}
-		if l.Lector.Username != c.u.Username {
+		if c.u.Role != store.USER_ROLE_ADMIN && l.Lector.Username != c.u.Username {
 			replyMarkup.Text = TEMPLATE_ADD_LECTION_DESCIRPTION_ERROR_NOT_YOUR
 			return replyMarkup, nil
 		}
@@ -178,8 +202,8 @@ func (c *addDescriptionLection) IsEnd() bool {
 }
 
 type lectionsList struct {
-	u     *store.User
-	empty bool
+	u                  *store.User
+	withoutDescription bool
 }
 
 func (c *lectionsList) IsEnd() bool {
@@ -188,24 +212,35 @@ func (c *lectionsList) IsEnd() bool {
 
 func (c *lectionsList) IsAllow(u *store.User) bool {
 	c.u = u
-	return u.Role == store.USER_ROLE_ADMIN
+	return (u.Role == store.USER_ROLE_ADMIN || u.Role == store.USER_ROLE_LECTOR)
 }
 
 func (c *lectionsList) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: StandardMarkup(c.u.Role),
 	}
-	list, err := store.Lections(c.empty)
+	list, err := store.Lections(true)
 	if err != nil {
 		return nil, err
 	}
-	if len(list) == 0 {
+	var l []string
+	for _, lection := range list {
+		if c.withoutDescription && lection.Description != "" {
+			// if we want to see only lections without descriptions and the current lection does have description - skip it
+			continue
+		}
+		if c.u.Role != store.USER_ROLE_ADMIN && c.u.ID != lection.Lector.ID {
+			// skip lections which doesn't belong to user (if he isn't admin)
+			continue
+		}
+		l = append(l, fmt.Sprintf(TEMPLATE_LECTION_LIST_ITEM, lection.ID, lection.Name, lection.Lector.Username, lection.Lector.Name))
+	}
+	// if there are no appropriate lections - send special response
+	if len(l) == 0 {
 		replyMarkup.Text = TEMPLATE_LECTION_LIST_EMPTY
 		return replyMarkup, nil
 	}
-	for _, l := range list {
-		replyMarkup.Text += fmt.Sprintf(TEMPLATE_LECTION_LIST_ITEM, l.ID, l.Name, l.Lector.Name)
-	}
+	replyMarkup.Text = strings.Join(l, "\n\n")
 	return replyMarkup, nil
 }
 
@@ -215,29 +250,42 @@ type deleteLection struct {
 	u         *store.User
 }
 
-func (d *deleteLection) IsEnd() bool {
-	return d.step == 2
+func (c *deleteLection) IsEnd() bool {
+	return c.step == 2
 }
 
-func (d *deleteLection) IsAllow(u *store.User) bool {
-	d.u = u
-	return u.Role == store.USER_ROLE_ADMIN
+func (c *deleteLection) IsAllow(u *store.User) bool {
+	c.u = u
+	return u.Role == store.USER_ROLE_ADMIN || u.Role == store.USER_ROLE_LECTOR
 }
 
-func (d *deleteLection) NextStep(answer string) (*ReplyMarkup, error) {
+func (c *deleteLection) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
 	}
-	switch d.step {
+	switch c.step {
 	case 0:
 		lections, err := store.Lections(false)
 		if err != nil {
 			return nil, err
 		}
-		for _, l := range lections {
-			lText := fmt.Sprintf(TEMPLATE_LECTION_NAME, l.ID, l.Name)
-			replyMarkup.Buttons = append(replyMarkup.Buttons, lText)
+
+		var l []string
+		for _, lection := range lections {
+			if c.u.Role != store.USER_ROLE_ADMIN && c.u.ID != lection.Lector.ID {
+				// skip lections which doesn't belong to user (if he isn't admin)
+				continue
+			}
+			l = append(l, fmt.Sprintf(TEMPLATE_LECTION_NAME, lection.ID, lection.Name))
 		}
+		// if there are no appropriate lections - send special response
+		if len(l) == 0 {
+			replyMarkup.Text = TEMPLATE_LECTION_LIST_EMPTY
+			// TODO: OMG, remove that shit
+			c.step = 2
+			return replyMarkup, nil
+		}
+		replyMarkup.Buttons = append(replyMarkup.Buttons, l...)
 		replyMarkup.Text = TEMPLATE_ADD_LECTION_DESCIRPTION_CHOSE_LECTION
 	case 1:
 		regexpLectionID := regexp.MustCompile(`^Лекція (\d+)?\:`)
@@ -250,13 +298,21 @@ func (d *deleteLection) NextStep(answer string) (*ReplyMarkup, error) {
 		if err != nil {
 			return nil, ErrWrongLection
 		}
+		l, err := store.LoadLection(lID)
+		if err != nil {
+			return nil, err
+		}
+		if c.u.Role != store.USER_ROLE_ADMIN && c.u.ID != l.Lector.ID {
+			replyMarkup.Text = TEMPLATE_ADD_LECTION_DESCIRPTION_ERROR_NOT_YOUR
+			return replyMarkup, nil
+		}
 		err = store.DeleteLection(lID)
 		if err != nil {
 			return nil, err
 		}
-		replyMarkup.Buttons = StandardMarkup(d.u.Role)
+		replyMarkup.Buttons = StandardMarkup(c.u.Role)
 		replyMarkup.Text = TEMPLATE_DELETE_LECTION_COMPLETE
 	}
-	d.step++
+	c.step++
 	return replyMarkup, nil
 }

@@ -37,16 +37,14 @@ var commandPatterns = []struct {
 	{
 		pattern: `Список лекцій\(всі\)`,
 		createCmd: func(cmd string) Command {
-			return &lectionsList{
-				empty: false,
-			}
+			return &lectionsList{}
 		},
 	},
 	{
 		pattern: `Список лекцій\(без опису\)`,
 		createCmd: func(cmd string) Command {
 			return &lectionsList{
-				empty: true,
+				withoutDescription: true,
 			}
 		},
 	},
@@ -216,7 +214,7 @@ func NewCommand(cmdName string, u *store.User) Command {
 		}
 	}
 	c := &unknown{
-		u: store.GuestUser(),
+		u: u,
 	}
 	return c
 }

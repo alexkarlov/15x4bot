@@ -5,7 +5,7 @@ import (
 	"math/rand"
 )
 
-var unknownMsgs = []string{"Вибач, я не розумію тебе", "Ніпанятна"}
+var unknownMsgs = []string{"Вибач, я не розумію тебе", "Ніпанятна", "Шта?"}
 
 type unknown struct {
 	u *store.User
