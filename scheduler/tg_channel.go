@@ -7,9 +7,35 @@ import (
 	"github.com/alexkarlov/simplelog"
 )
 
+var (
+	weekdays = map[string]string{
+		"Monday":    "Понеділок",
+		"Tuesday":   "Вівторок",
+		"Wednesday": "Середа",
+		"Thursday":  "Четвер",
+		"Friday":    "П'ятниця",
+		"Saturday":  "Субота",
+		"Sunday":    "Неділя",
+	}
+	months = map[string]string{
+		"January":   "Січень",
+		"February":  "Лютий",
+		"March":     "Березень",
+		"April":     "Квітень",
+		"May":       "Травень",
+		"June":      "Червень",
+		"July":      "Липень",
+		"August":    "Серпень",
+		"September": "Вересень",
+		"October":   "Жовтень",
+		"November":  "Листопад",
+		"December":  "Грудень",
+	}
+)
+
 const (
-	TimeLayout                        = "Monday, January 02, 15:04"
-	TEMPLATE_REHEARSAL_MSG_TO_CHANNEL = "Привіт! Нова репетиція\nДе: %s\nКоли: %s\nАдреса: %s\nМапа: %s\n"
+	TimeLayout                        = "15:04"
+	TEMPLATE_REHEARSAL_MSG_TO_CHANNEL = "Привіт! Нова репетиція\nДе: %s\nКоли: %s, %d %s, %s\nАдреса: %s\nМапа: %s\n"
 )
 
 // MessageToChannel sends message to channel
@@ -38,7 +64,9 @@ func MessageToChannel(t *store.Task, b *bot.Bot) {
 		}
 		return
 	}
-	msg := fmt.Sprintf(TEMPLATE_REHEARSAL_MSG_TO_CHANNEL, r.PlaceName, r.Time.Format(TimeLayout), r.Address, r.MapUrl)
+	wd := weekdays[r.Time.Weekday().String()]
+	m := months[r.Time.Month().String()]
+	msg := fmt.Sprintf(TEMPLATE_REHEARSAL_MSG_TO_CHANNEL, r.PlaceName, wd, r.Time.Day(), m, r.Time.Format(TimeLayout), r.Address, r.MapUrl)
 	if err := b.SendTextToChannel(rh.ChannelUsername, msg); err != nil {
 		log.Errorf("error while sending msg to %s. task %d error: %s", rh.ChannelUsername, t.ID, err)
 		if err := t.ReleaseTask(); err != nil {
