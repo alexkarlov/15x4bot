@@ -1,6 +1,7 @@
-version: '2'
+version: '3.5'
 services:
   bot:
+    image: bot:latest
     build:
       context: .   
     container_name: bot-app
@@ -8,7 +9,9 @@ services:
     - .env
     depends_on: 
       - postgresql
-  postgresql:    
+    restart: on-failure
+  postgresql:
+    image: bot-db:latest
     build:
       context: ./postgresql    
     env_file:
@@ -18,6 +21,12 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
 volumes:
   pgdata:  
