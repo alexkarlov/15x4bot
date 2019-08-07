@@ -188,7 +188,7 @@ var commandPatterns = []struct {
 		},
 	},
 	{
-		pattern: `share your knowledge`,
+		pattern: `(?i)share your knowledge`,
 		createCmd: func(cmd string) Command {
 			return &quiz{}
 		},
