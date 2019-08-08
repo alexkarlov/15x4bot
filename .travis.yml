@@ -1,0 +1,36 @@
+language: minimal
+
+env:
+  - SERVER_USER=ec2-user SERVER_DNS=ec2-35-180-69-65.eu-west-3.compute.amazonaws.com
+
+before_install:
+  - openssl aes-256-cbc -K $encrypted_2c430460807a_key -iv $encrypted_2c430460807a_iv -in travis.pem.enc -out /tmp/travis.pem -d
+
+script:
+  - chmod 400 travis.pem
+  # Build container with application
+  - docker build . -t bot:latest
+  # Build container with database
+  - docker build ./postgresql -t bot-db:latest
+  # Save images to targ
+  - docker save -o ./bot.tar bot:latest
+  - docker save -o ./bot-db.tar bot-db:latest
+  # Send tar ro EC2 instaces
+  - scp -o StrictHostKeyChecking=no -i "travis.pem" ./bot.tar $SERVER_USER@$SERVER_DNS:~/bot.tar
+  - scp -o StrictHostKeyChecking=no -i "travis.pem" ./bot-db.tar $SERVER_USER@$SERVER_DNS:~/bot-db.tar
+  # Proccess env file
+  - echo .env-sample > .env
+  - scp -o StrictHostKeyChecking=no -i "travis.pem" ./.env $SERVER_USER@$SERVER_DNS:~/.env
+  - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "mkdir -p ~/postgresql/migrations"
+  - scp -o StrictHostKeyChecking=no -i "travis.pem" ./postgresql/.env $SERVER_USER@$SERVER_DNS:~/postgresql/.env
+  # Copy migrations
+  - scp -o StrictHostKeyChecking=no -i "travis.pem" -r ./postgresql/migrations $SERVER_USER@$SERVER_DNS:~/postgresql
+  # Copy docker compose
+  - scp -o StrictHostKeyChecking=no -i "travis.pem" ./docker-compose.yml $SERVER_USER@$SERVER_DNS:~/docker-compose.yml
+  # Upload images
+  - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "docker load -i bot.tar"
+  - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "docker load -i bot-db.tar"
+  # Run containers
+  - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "docker-compose up --force-recreate -d"
+  # Run migrations
+  - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "docker run -v /home/ec2-user/postgresql/migrations:/migrations --network=15x4  migrate/migrate -path=/migrations/ -database postgres://bot:@bot-db:5432/bot?sslmode=disable up"
