@@ -60,7 +60,7 @@ func (b *Bot) ListenUpdates() {
 		if update.Message == nil || update.Message.Text == "" {
 			continue
 		}
-		log.Infof("got new msg from [%s]: %s, chatID: %d", update.Message.From.UserName, string(update.Message.Text), update.Message.Chat.ID)
+		log.Infof("got new msg from [%d:%s]: %s, chatID: %d", update.Message.From.ID, update.Message.From.UserName, string(update.Message.Text), update.Message.Chat.ID)
 		// TODO: add new record to history table
 
 		msg := &Message{

@@ -41,7 +41,7 @@ func (c *quiz) IsAllow(u *store.User) bool {
 			question:    "Хочеш дізнатись наскільки глибоко ти в кролячій норі? Тоді напиши quiz me",
 			answer:      regexp.MustCompile(`quiz me`),
 			correctResp: "Почнемо!",
-			wrongResp:   "Ок, тоді наступного разу",
+			wrongResp:   "Ок, тоді іншим разом",
 		},
 		{
 			question:    "Як називалась лекція про горизонтальний перенесення генів?",
