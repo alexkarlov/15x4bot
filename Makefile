@@ -24,6 +24,9 @@ shutdown:
 	# stop containers, remove volumes and containers for services not defined in the compose file
 	docker-compose down --remove-orphans -v
 
+db-connect:
+	docker exec -it bot-db psql -U bot -d bot
+
 # migration commands 
 migrate: 
 	docker run -v $(PWD)/postgresql/migrations:/migrations --network=$(NETWORK)  migrate/migrate -path=/migrations/ -database $(DSN) up
