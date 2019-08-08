@@ -31,7 +31,7 @@ const (
 	TEMPLATE_ADD_LECTION_DESCIRPTION_ERROR_NOT_YOUR = "Це не твоя лекція!"
 	TEMPLATE_LECTION_ERROR_WRONG_ID                 = "Невірно вибрана лекція"
 	TEMPLATE_WRONG_USER_ID                          = "Невідомий користувач"
-	TEMPLATE_LECTION_LIST_ITEM                      = "Лекція %d: %s\nЛектор: @%s,  %s"
+	TEMPLATE_LECTION_LIST_ITEM                      = "Лекція %d: %s\nОпис: %s\nЛектор: @%s,  %s"
 	TEMPLATE_LECTION_LIST_EMPTY                     = "Поки лекцій немає"
 	TEMPLATE_DELETE_LECTION_COMPLETE                = "Лекцію успішно видалено"
 )
@@ -233,7 +233,7 @@ func (c *lectionsList) NextStep(answer string) (*ReplyMarkup, error) {
 			// skip lections which doesn't belong to user (if he isn't admin)
 			continue
 		}
-		l = append(l, fmt.Sprintf(TEMPLATE_LECTION_LIST_ITEM, lection.ID, lection.Name, lection.Lector.Username, lection.Lector.Name))
+		l = append(l, fmt.Sprintf(TEMPLATE_LECTION_LIST_ITEM, lection.ID, lection.Name, lection.Description, lection.Lector.Username, lection.Lector.Name))
 	}
 	// if there are no appropriate lections - send special response
 	if len(l) == 0 {

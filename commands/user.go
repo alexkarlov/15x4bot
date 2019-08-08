@@ -13,7 +13,7 @@ var ErrWrongUser = errors.New("wrong user id: failed to convert from string to i
 
 const (
 	TEMPLATE_I_DONT_KNOW          = "Не знаю"
-	TEMPLATE_USERS_LIST_ITEM      = "Юзер %d: %s, telegram: @%s\n\n"
+	TEMPLATE_USERS_LIST_ITEM      = "Юзер %d: %s, role: %s, telegram: @%s\n\n"
 	TEMPLATE_USER_BUTTON          = "%d: %s"
 	TEMPLATE_USER_ERROR_WRONG_ID  = "Невірно вибраний юзер"
 	TEMPLATE_DELETE_USER_COMPLETE = "Юзер успішно видалений"
@@ -159,7 +159,7 @@ func (c *usersList) NextStep(answer string) (*ReplyMarkup, error) {
 		return nil, err
 	}
 	for _, l := range list {
-		replyMarkup.Text += fmt.Sprintf(TEMPLATE_USERS_LIST_ITEM, l.ID, l.Name, l.Username)
+		replyMarkup.Text += fmt.Sprintf(TEMPLATE_USERS_LIST_ITEM, l.ID, l.Name, l.Role, l.Username)
 	}
 	return replyMarkup, nil
 }
