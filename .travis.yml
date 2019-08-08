@@ -10,15 +10,11 @@ script:
   - chmod 400 travis.pem
   # Build container with application
   - docker build . -t bot:latest
-  # Build container with database
-  - docker build ./postgresql -t bot-db:latest
   # Save images to targ
   - docker save -o ./bot.tar bot:latest
-  - docker save -o ./bot-db.tar bot-db:latest
-  # Send tar ro EC2 instaces
+  # Send tar to EC2 instances
   - scp -o StrictHostKeyChecking=no -i "travis.pem" ./bot.tar $SERVER_USER@$SERVER_DNS:~/bot.tar
-  - scp -o StrictHostKeyChecking=no -i "travis.pem" ./bot-db.tar $SERVER_USER@$SERVER_DNS:~/bot-db.tar
-  # Proccess env file
+  # Process env file
   - cat .env-sample > .env
   - scp -o StrictHostKeyChecking=no -i "travis.pem" ./.env $SERVER_USER@$SERVER_DNS:~/.env
   - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "mkdir -p ~/postgresql/migrations"
@@ -29,7 +25,6 @@ script:
   - scp -o StrictHostKeyChecking=no -i "travis.pem" ./docker-compose.yml $SERVER_USER@$SERVER_DNS:~/docker-compose.yml
   # Upload images
   - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "docker load -i bot.tar"
-  - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "docker load -i bot-db.tar"
   # Run containers
   - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "docker-compose up --force-recreate -d"
   # Run migrations
