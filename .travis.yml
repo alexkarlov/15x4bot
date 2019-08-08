@@ -19,7 +19,7 @@ script:
   - scp -o StrictHostKeyChecking=no -i "travis.pem" ./bot.tar $SERVER_USER@$SERVER_DNS:~/bot.tar
   - scp -o StrictHostKeyChecking=no -i "travis.pem" ./bot-db.tar $SERVER_USER@$SERVER_DNS:~/bot-db.tar
   # Proccess env file
-  - echo .env-sample > .env
+  - cat .env-sample > .env
   - scp -o StrictHostKeyChecking=no -i "travis.pem" ./.env $SERVER_USER@$SERVER_DNS:~/.env
   - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "mkdir -p ~/postgresql/migrations"
   - scp -o StrictHostKeyChecking=no -i "travis.pem" ./postgresql/.env $SERVER_USER@$SERVER_DNS:~/postgresql/.env
