@@ -83,11 +83,13 @@ func (c *upsertUser) NextStep(answer string) (*ReplyMarkup, error) {
 	case 2:
 		c.name = answer
 		replyMarkup.Text = "Аккаунт в телеграмі"
-	case 3:
-		if answer == "" {
-			return nil, ErrEmptyUserTGAccount
+		if c.exists {
+			replyMarkup.Buttons = append(replyMarkup.Buttons, TEMPLATE_I_DONT_KNOW)
 		}
-		c.username = answer
+	case 3:
+		if answer != TEMPLATE_I_DONT_KNOW {
+			c.username = answer
+		}
 		replyMarkup.Text = "Аккаунт в Фейсбуці"
 		replyMarkup.Buttons = append(replyMarkup.Buttons, TEMPLATE_I_DONT_KNOW)
 	case 4:
