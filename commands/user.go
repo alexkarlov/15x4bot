@@ -10,6 +10,7 @@ import (
 )
 
 var ErrWrongUser = errors.New("wrong user id: failed to convert from string to int")
+var ErrEmptyUserTGAccount = errors.New("empty user tg account")
 
 const (
 	TEMPLATE_I_DONT_KNOW          = "Не знаю"
@@ -22,7 +23,7 @@ const (
 	TEMPLATE_USER_WHAT_IS_NAME        = "Як звуть лектора/лекторку?"
 	TEMPLATE_USER_SUCCESSFULY_UPDATED = "Користувач успішно змінений"
 	TEMPLATE_USER_SUCCESSFULY_CREATED = "Користувач успішно створений"
-	TEMPLATE_USER_IS_ALREADY_EXIST    = "Користувач з таким телеграм аккаунтом вже існує!"
+	TEMPLATE_USER_IS_ALREADY_EXIST    = "Користувач з таким телеграм аккаунтом вже існує! Якщо хочеш змінити дані юзера - вибери змінити юзера з меню Юзери"
 )
 
 type upsertUser struct {
@@ -82,11 +83,11 @@ func (c *upsertUser) NextStep(answer string) (*ReplyMarkup, error) {
 	case 2:
 		c.name = answer
 		replyMarkup.Text = "Аккаунт в телеграмі"
-		replyMarkup.Buttons = append(replyMarkup.Buttons, TEMPLATE_I_DONT_KNOW)
 	case 3:
-		if answer != TEMPLATE_I_DONT_KNOW {
-			c.username = answer
+		if answer == "" {
+			return nil, ErrEmptyUserTGAccount
 		}
+		c.username = answer
 		replyMarkup.Text = "Аккаунт в Фейсбуці"
 		replyMarkup.Buttons = append(replyMarkup.Buttons, TEMPLATE_I_DONT_KNOW)
 	case 4:
@@ -115,18 +116,21 @@ func (c *upsertUser) NextStep(answer string) (*ReplyMarkup, error) {
 		replyMarkup.Buttons = append(replyMarkup.Buttons, roles...)
 	case 7:
 		role := store.NewUserRole(answer)
-		if err := store.UpsertUser(c.ID, c.username, role, c.name, c.fb, c.vk, c.bdate); err != nil {
-			if err == store.ErrUserExists {
+		var err error
+		if c.exists {
+			err = store.UpdateUser(c.ID, c.username, role, c.name, c.fb, c.vk, c.bdate)
+			replyMarkup.Text = TEMPLATE_USER_SUCCESSFULY_UPDATED
+		} else {
+			err = store.AddUserByAdmin(c.username, role, c.name, c.fb, c.vk, c.bdate)
+			if err == store.ErrNoUser {
 				replyMarkup.Text = TEMPLATE_USER_IS_ALREADY_EXIST
 				return replyMarkup, nil
 			}
-			return nil, err
+			replyMarkup.Text = TEMPLATE_USER_SUCCESSFULY_CREATED
 		}
 
-		if c.exists {
-			replyMarkup.Text = TEMPLATE_USER_SUCCESSFULY_UPDATED
-		} else {
-			replyMarkup.Text = TEMPLATE_USER_SUCCESSFULY_CREATED
+		if err != nil {
+			return nil, err
 		}
 	}
 	c.step++

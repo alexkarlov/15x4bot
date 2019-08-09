@@ -39,11 +39,11 @@ func MessageToAdmin(t *store.Task, b *bot.Bot) {
 	}
 	msg := fmt.Sprintf(TEMPLATE_MSG_TO_ADMIN_NEW_VOLUNTEER_COME, m.Username, m.Role)
 	for _, a := range admins {
-		chat, err := a.TGChat()
-		if err != nil {
-			log.Errorf("error while getting a chat id. task %d error: %s", t.ID, err)
+		// skip unregistered admins (bot hasn't spoken with them yet)
+		if a.TGUserID == 0 {
+			continue
 		}
-		if err := b.SendText(chat.TGChatID, msg); err != nil {
+		if err := b.SendText(int64(a.TGUserID), msg); err != nil {
 			log.Errorf("error while sending msg to %s. task %d error: %s", a.Username, t.ID, err)
 		}
 	}

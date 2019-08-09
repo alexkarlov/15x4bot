@@ -10,11 +10,11 @@ type Lection struct {
 
 // LoadLection loads a lection and lector details
 func LoadLection(ID int) (*Lection, error) {
-	q := "SELECT l.id, l.name, l.description, u.id, u.username, u.role FROM lections l LEFT JOIN users u ON u.id=l.user_id WHERE l.id=$1"
+	q := "SELECT l.id, l.name, l.description, u.id, u.username, u.tg_id, u.role FROM lections l LEFT JOIN users u ON u.id=l.user_id WHERE l.id=$1"
 	l := &Lection{
 		Lector: &User{},
 	}
-	err := dbConn.QueryRow(q, ID).Scan(&l.ID, &l.Name, &l.Description, &l.Lector.ID, &l.Lector.Username, &l.Lector.Role)
+	err := dbConn.QueryRow(q, ID).Scan(&l.ID, &l.Name, &l.Description, &l.Lector.ID, &l.Lector.Username, &l.Lector.TGUserID, &l.Lector.Role)
 	return l, err
 }
 
@@ -41,7 +41,7 @@ func Lections(newOnly bool) ([]*Lection, error) {
 	if newOnly {
 		typeFilter = " AND l.id NOT IN (SELECT id_lection FROM event_lections)"
 	}
-	baseQuery := "SELECT l.id, l.name, l.description, u.name, u.username, u.id, u.role FROM lections l "
+	baseQuery := "SELECT l.id, l.name, l.description, u.name, u.username, u.tg_id, u.id, u.role FROM lections l "
 	baseQuery += " INNER JOIN users u ON u.id = user_id " + typeFilter
 	rows, err := dbConn.Query(baseQuery)
 	if err != nil {
@@ -53,7 +53,7 @@ func Lections(newOnly bool) ([]*Lection, error) {
 		lection := &Lection{
 			Lector: &User{},
 		}
-		if err := rows.Scan(&lection.ID, &lection.Name, &lection.Description, &lection.Lector.Name, &lection.Lector.Username, &lection.Lector.ID, &lection.Lector.Role); err != nil {
+		if err := rows.Scan(&lection.ID, &lection.Name, &lection.Description, &lection.Lector.Name, &lection.Lector.Username, &lection.Lector.TGUserID, &lection.Lector.ID, &lection.Lector.Role); err != nil {
 			return nil, err
 		}
 		lections = append(lections, lection)

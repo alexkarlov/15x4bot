@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"fmt"
 	"github.com/alexkarlov/15x4bot/bot"
 	"github.com/alexkarlov/15x4bot/store"
 	"github.com/alexkarlov/simplelog"
@@ -45,15 +46,12 @@ func RemindLector(t *store.Task, b *bot.Bot) {
 		}
 		return
 	}
-	c, err := l.Lector.TGChat()
-	if err != nil {
-		log.Error("error while getting tg chat of the lector", err)
-		if err := t.ReleaseTask(); err != nil {
-			log.Errorf("failed to release task %d error:%s", t.ID, err)
-		}
+	// skip unregistered users (bot hasn't spoken with them yet)
+	if l.Lector.TGUserID == 0 {
+		log.Info(fmt.Sprintf("reminder skip the user %d since it doesn't have tg id", l.Lector.ID))
 		return
 	}
-	b.SendText(c.TGChatID, TEMPLATE_LECTION_DESCRIPTION_REMINDER)
+	b.SendText(int64(l.Lector.TGUserID), TEMPLATE_LECTION_DESCRIPTION_REMINDER)
 	// Udate task with new execution time and attempts
 	if err = r.PostponeTask(t.ID); err != nil {
 		log.Errorf("failed to postpone task %d error:%s", t.ID, err)
