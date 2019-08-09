@@ -43,6 +43,7 @@ type Message struct {
 	Type     ChatType
 	Text     string
 	Username string
+	Name     string
 	UserID   int
 	ChatID   int64
 }
@@ -70,6 +71,7 @@ func (b *Bot) ListenUpdates() {
 			Username: update.Message.From.UserName,
 			UserID:   update.Message.From.ID,
 			ChatID:   update.Message.Chat.ID,
+			Name:     update.Message.From.FirstName + " " + update.Message.From.LastName,
 		}
 		go b.Reply(msg)
 	}

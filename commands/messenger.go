@@ -10,7 +10,8 @@ import (
 const (
 	MsgLocation = "Europe/Kiev"
 
-	TEMPLATE_MESSENGER_THANKS = "Дякую! Я передав інформацію організаторам"
+	TEMPLATE_MESSENGER_THANKS         = "Дякую! Я передав інформацію організаторам"
+	TEMPLATE_MESSENGER_USERNAME_EMPTY = "Напиши, будь ласка, @alex_karlov ! Він розповість що робити далі)"
 )
 
 type messenger struct {
@@ -30,6 +31,10 @@ func (c *messenger) IsAllow(u *store.User) bool {
 func (c *messenger) NextStep(answer string) (*ReplyMarkup, error) {
 	reply := &ReplyMarkup{
 		Buttons: StandardMarkup(c.u.Role),
+	}
+	if c.u.Username == "" {
+		reply.Text = TEMPLATE_MESSENGER_USERNAME_EMPTY
+		return reply, nil
 	}
 	loc, err := time.LoadLocation(MsgLocation)
 	if err != nil {

@@ -117,13 +117,14 @@ func AddUserByAdmin(username string, role UserRole, name string, fb string, vk s
 }
 
 // AddGuestUser creates a new guest in users table and returns created user
-func AddGuestUser(username string, tgID int) (*User, error) {
+func AddGuestUser(username string, tgID int, name string) (*User, error) {
 	u := &User{
 		Username: username,
 		TGUserID: tgID,
 		Role:     USER_ROLE_GUEST,
+		Name:     name,
 	}
-	err := dbConn.QueryRow("INSERT INTO users (username, tg_id, role) VALUES ($1, $2, $3) RETURNING id", u.Username, u.TGUserID, u.Role).Scan(&u.ID)
+	err := dbConn.QueryRow("INSERT INTO users (username, tg_id, role, name) VALUES ($1, $2, $3, $4) RETURNING id", u.Username, u.TGUserID, u.Role, u.Name).Scan(&u.ID)
 	if err != nil {
 		return nil, err
 	}

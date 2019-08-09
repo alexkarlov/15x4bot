@@ -118,7 +118,7 @@ func loadChat(msg *Message) (*chat, error) {
 	}
 
 	// here we need to create a new user because we didn't find it by tg id nor tg username
-	u, err = store.AddGuestUser(msg.Username, msg.UserID)
+	u, err = store.AddGuestUser(msg.Username, msg.UserID, msg.Name)
 	if err != nil {
 		return nil, err
 	}
