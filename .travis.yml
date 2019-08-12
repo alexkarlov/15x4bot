@@ -26,7 +26,8 @@ script:
   # Copy migrations
   - scp -o StrictHostKeyChecking=no -i "travis.pem" -r ./postgresql/migrations $SERVER_USER@$SERVER_DNS:~/postgresql
   # Copy docker compose
-  - scp -o StrictHostKeyChecking=no -i "travis.pem" ./docker-compose.yml $SERVER_USER@$SERVER_DNS:~/docker-compose.yml ./docker-compose.production.yml $SERVER_USER@$SERVER_DNS:~/docker-compose.production.yml
+  - scp -o StrictHostKeyChecking=no -i "travis.pem" ./docker-compose.yml $SERVER_USER@$SERVER_DNS:~/docker-compose.yml 
+  - scp -o StrictHostKeyChecking=no -i "travis.pem" ./docker-compose.production.yml $SERVER_USER@$SERVER_DNS:~/docker-compose.production.yml
   # Upload images
   - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "docker load -i bot.tar"
   # Run containers
