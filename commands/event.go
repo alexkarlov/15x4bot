@@ -1,26 +1,17 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
-	"github.com/alexkarlov/simplelog"
-	"regexp"
-	"strconv"
 	"time"
 
 	"github.com/alexkarlov/15x4bot/store"
 )
 
-var (
-	ErrWrongPlaceID = errors.New("wrong place id: failed to convert from string to int")
-	ErrWrongEventID = errors.New("wrong event id: failed to convert from string to int")
-)
-
 const (
 	END_PHRASE                    = "Кінець"
-	TEMPLATE_LECTIONS_LIST        = "%d.%s.%s"
+	TEMPLATE_LECTIONS_LIST        = "Лекція %d: %s.%s"
 	TEMPLATE_INTRO_LECTIONS_LIST  = "Виберіть лекцію. Для закінчення натисніть " + END_PHRASE
-	TEMPLATE_PLACES_LIST_BUTTONS  = "%d. %s\n"
+	TEMPLATE_PLACES_LIST_BUTTONS  = "Місце %d: %s\n"
 	TEMPLATE_CHOSE_PLACE          = "Оберіть місце"
 	TEMPLATE_NEXT_EVENT           = "Де: %s, %s\nПочаток: %s\nКінець: %s"
 	TEMPLATE_NEXT_EVENT_UNDEFINED = "Невідомо коли, спитай пізніше"
@@ -82,14 +73,9 @@ func (c *addEvent) NextStep(answer string) (*ReplyMarkup, error) {
 		}
 		replyMarkup.Text = TEMPLATE_CHOSE_PLACE
 	case 3:
-		regexpPlaceID := regexp.MustCompile(`^(\d+)?\.`)
-		matches := regexpPlaceID.FindStringSubmatch(answer)
-		if len(matches) < 2 {
-			return nil, ErrWrongPlace
-		}
-		c.where, err = strconv.Atoi(matches[1])
+		c.where, err = parseID(answer)
 		if err != nil {
-			return nil, ErrWrongPlaceID
+			return nil, err
 		}
 		ok, err := store.DoesPlaceExist(c.where)
 		if err != nil {
@@ -107,7 +93,6 @@ func (c *addEvent) NextStep(answer string) (*ReplyMarkup, error) {
 			return nil, err
 		}
 		for _, l := range lections {
-			log.Info(l.Lector)
 			lText := fmt.Sprintf(TEMPLATE_LECTIONS_LIST, l.ID, l.Name, l.Lector.Name)
 			replyMarkup.Buttons = append(replyMarkup.Buttons, lText)
 		}
@@ -123,16 +108,11 @@ func (c *addEvent) NextStep(answer string) (*ReplyMarkup, error) {
 			replyMarkup.Buttons = StandardMarkup(c.u.Role)
 			break
 		}
-		regexpLectionID := regexp.MustCompile(`^(\d+)?\.`)
-		matches := regexpLectionID.FindStringSubmatch(answer)
-		if len(matches) < 2 {
-			return nil, ErrWrongPlace
-		}
-		lection, err := strconv.Atoi(matches[1])
+		lID, err := parseID(answer)
 		if err != nil {
 			return nil, err
 		}
-		c.lections = append(c.lections, lection)
+		c.lections = append(c.lections, lID)
 		// desrese step counter for returning on the next iteration to the same step
 		c.step--
 	}
@@ -235,15 +215,9 @@ func (c *deleteEvent) NextStep(answer string) (*ReplyMarkup, error) {
 		}
 		replyMarkup.Text = TEMPLATE_CHOSE_EVENT
 	case 1:
-		regexpEventID := regexp.MustCompile(`^Івент (\d+)`)
-		matches := regexpEventID.FindStringSubmatch(answer)
-		if len(matches) < 2 {
-			replyMarkup.Text = TEMPLATE_EVENT_ERROR_WRONG_ID
-			return replyMarkup, nil
-		}
-		eID, err := strconv.Atoi(matches[1])
+		eID, err := parseID(answer)
 		if err != nil {
-			return nil, ErrWrongEventID
+			return nil, err
 		}
 		err = store.DeleteEvent(eID)
 		if err != nil {

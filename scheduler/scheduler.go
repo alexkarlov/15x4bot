@@ -11,7 +11,6 @@ import (
 // Run starts checking background tasks from db every minute
 func Run(b *bot.Bot) {
 	for {
-		log.Info("checking for scheduler task...")
 		// check tasks in db
 		tasks, err := store.GetTasks()
 		if err != nil {

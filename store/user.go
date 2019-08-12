@@ -142,7 +142,7 @@ func Users(roles []UserRole) ([]*User, error) {
 		// here used a plain string instead of prepared statment because roles aren't a 3-rd party data
 		roleFilter = fmt.Sprintf("WHERE role IN (%s)", strings.Join(roleFilters, ","))
 	}
-	q := "SELECT id, tg_id, username, name, role FROM users " + roleFilter
+	q := "SELECT id, tg_id, username, name, role FROM users " + roleFilter + " ORDER BY id"
 	rows, err := dbConn.Query(q)
 	if err != nil {
 		return nil, err

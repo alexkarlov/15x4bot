@@ -1,10 +1,18 @@
 package commands
 
 import (
+	"errors"
 	"github.com/alexkarlov/15x4bot/store"
 	"regexp"
+	"strconv"
 )
 
+// ERRORS
+var (
+	ErrWrongID = errors.New("wrong id: failed to parse id")
+)
+
+var regexpID = regexp.MustCompile(`^[^\d]+?\d+:`)
 var commandPatterns = []struct {
 	pattern     string
 	compPattern *regexp.Regexp
@@ -39,7 +47,15 @@ var commandPatterns = []struct {
 	{
 		pattern: `Створити лекцію`,
 		createCmd: func(cmd string) Command {
-			return &addLection{}
+			return &upsertLection{}
+		},
+	},
+	{
+		pattern: `Змінити лекцію`,
+		createCmd: func(cmd string) Command {
+			return &upsertLection{
+				exists: true,
+			}
 		},
 	},
 	{
@@ -231,4 +247,13 @@ func NewCommand(cmdName string, u *store.User) Command {
 		u: u,
 	}
 	return c
+}
+
+// parseID parses id from standard user answers
+func parseID(a string) (int, error) {
+	matches := regexpID.FindStringSubmatch(a)
+	if len(matches) < 2 {
+		return 0, ErrWrongID
+	}
+	return strconv.Atoi(matches[1])
 }

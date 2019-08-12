@@ -4,18 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"github.com/alexkarlov/15x4bot/store"
-	"regexp"
-	"strconv"
 	"time"
 )
 
-var ErrWrongUser = errors.New("wrong user id: failed to convert from string to int")
 var ErrEmptyUserTGAccount = errors.New("empty user tg account")
 
 const (
 	TEMPLATE_I_DONT_KNOW          = "Не знаю"
 	TEMPLATE_USERS_LIST_ITEM      = "Юзер %d: %s, role: %s, telegram: @%s\n\n"
-	TEMPLATE_USER_BUTTON          = "%d: %s"
+	TEMPLATE_USER_BUTTON          = "Юзер %d: %s"
 	TEMPLATE_USER_ERROR_WRONG_ID  = "Невірно вибраний юзер"
 	TEMPLATE_DELETE_USER_COMPLETE = "Юзер успішно видалений"
 	TEMPLATE_CHOOSE_USER          = "Оберіть юзера"
@@ -46,6 +43,7 @@ func (c *upsertUser) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
 	}
+	var err error
 	switch c.step {
 	case 0:
 		// if we try to insert a user
@@ -67,17 +65,10 @@ func (c *upsertUser) NextStep(answer string) (*ReplyMarkup, error) {
 	case 1:
 		// if we try to update a user - catch user ID
 		if c.exists {
-			regexpLectionID := regexp.MustCompile(`^(\d+)?\:`)
-			matches := regexpLectionID.FindStringSubmatch(answer)
-			if len(matches) < 2 {
-				replyMarkup.Text = TEMPLATE_USER_ERROR_WRONG_ID
-				return replyMarkup, nil
-			}
-			uID, err := strconv.Atoi(matches[1])
+			c.ID, err = parseID(answer)
 			if err != nil {
-				return nil, ErrWrongUser
+				return nil, err
 			}
-			c.ID = uID
 		}
 		replyMarkup.Text = TEMPLATE_USER_WHAT_IS_NAME
 	case 2:
@@ -201,15 +192,9 @@ func (c *deleteUser) NextStep(answer string) (*ReplyMarkup, error) {
 		}
 		replyMarkup.Text = TEMPLATE_CHOOSE_USER
 	case 1:
-		regexpLectionID := regexp.MustCompile(`^(\d+)?\:`)
-		matches := regexpLectionID.FindStringSubmatch(answer)
-		if len(matches) < 2 {
-			replyMarkup.Text = TEMPLATE_USER_ERROR_WRONG_ID
-			return replyMarkup, nil
-		}
-		uID, err := strconv.Atoi(matches[1])
+		uID, err := parseID(answer)
 		if err != nil {
-			return nil, ErrWrongUser
+			return nil, err
 		}
 		err = store.DeleteUser(uID)
 		if err != nil {
