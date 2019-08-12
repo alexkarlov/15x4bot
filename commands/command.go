@@ -7,209 +7,210 @@ import (
 	"strconv"
 )
 
-// ERRORS
+// ERRORS LIST
 var (
-	ErrWrongID = errors.New("wrong id: failed to parse id")
+	ErrWrongID      = errors.New("wrong id: failed to parse id")
+	MsgLocation     = "Europe/Kiev"
+	TimeLayout      = "2006-01-02 15:04"
+	regexpID        = regexp.MustCompile(`^[^\d]+?(\d+):`)
+	commandPatterns = []struct {
+		pattern     string
+		compPattern *regexp.Regexp
+		createCmd   func(cmd string) Command
+	}{
+		{
+			pattern: `Створити репетицію`,
+			createCmd: func(cmd string) Command {
+				return &addRehearsal{}
+			},
+		},
+		{
+			pattern: `Створити івент`,
+			createCmd: func(cmd string) Command {
+				return &addEvent{}
+			},
+		},
+		{
+			pattern: `Створити користувача`,
+			createCmd: func(cmd string) Command {
+				return &upsertUser{}
+			},
+		},
+		{
+			pattern: `Змінити користувача`,
+			createCmd: func(cmd string) Command {
+				return &upsertUser{
+					exists: true,
+				}
+			},
+		},
+		{
+			pattern: `Створити лекцію`,
+			createCmd: func(cmd string) Command {
+				return &upsertLection{}
+			},
+		},
+		{
+			pattern: `Змінити лекцію`,
+			createCmd: func(cmd string) Command {
+				return &upsertLection{
+					exists: true,
+				}
+			},
+		},
+		{
+			pattern: `Список лекцій\(всі\)`,
+			createCmd: func(cmd string) Command {
+				return &lectionsList{}
+			},
+		},
+		{
+			pattern: `Список лекцій\(без опису\)`,
+			createCmd: func(cmd string) Command {
+				return &lectionsList{
+					withoutDescription: true,
+				}
+			},
+		},
+		{
+			pattern: `Наступний івент`,
+			createCmd: func(cmd string) Command {
+				return &nextEvent{}
+			},
+		},
+		{
+			pattern: `Наступна репетиція`,
+			createCmd: func(cmd string) Command {
+				return &nextRep{}
+			},
+		},
+		{
+			pattern: `Документація`,
+			createCmd: func(cmd string) Command {
+				return &article{
+					name: "documentation",
+				}
+			},
+		},
+		{
+			pattern: `Хто ми`,
+			createCmd: func(cmd string) Command {
+				return &article{
+					name: "about",
+				}
+			},
+		},
+		{
+			pattern: `(?i)/start`,
+			createCmd: func(cmd string) Command {
+				return &article{
+					name: "start",
+				}
+			},
+		},
+		{
+			pattern: `(?i)/help`,
+			createCmd: func(cmd string) Command {
+				return &article{
+					name: "help",
+				}
+			},
+		},
+		{
+			pattern: `Головне меню`,
+			createCmd: func(cmd string) Command {
+				return &article{
+					name: "main_menu",
+				}
+			},
+		},
+		{
+			pattern: `(?i)101010|3\.14|advice|порада|що робити|что делать`,
+			createCmd: func(cmd string) Command {
+				return &advice{}
+			},
+		},
+		{
+			pattern: `Додати опис до лекції`,
+			createCmd: func(cmd string) Command {
+				return &addDescriptionLection{}
+			},
+		},
+		{
+			pattern: `Видалити лекцію`,
+			createCmd: func(cmd string) Command {
+				return &deleteLection{}
+			},
+		},
+		{
+			pattern: `^Лекції|Івенти|Юзери|Репетиції$`,
+			createCmd: func(cmd string) Command {
+				reply := &markup{}
+				switch cmd {
+				case "Лекції":
+					reply.buttons = LectionMarkup
+				case "Івенти":
+					reply.buttons = EventMarkup
+				case "Юзери":
+					reply.buttons = UserMarkup
+				case "Репетиції":
+					reply.buttons = RehearsalMarkup
+				}
+				return reply
+			},
+		},
+		{
+			pattern: `Список івентів`,
+			createCmd: func(cmd string) Command {
+				return &eventsList{}
+			},
+		},
+		{
+			pattern: `Видалити івент`,
+			createCmd: func(cmd string) Command {
+				return &deleteEvent{}
+			},
+		},
+		{
+			pattern: `Список користувачів`,
+			createCmd: func(cmd string) Command {
+				return &usersList{}
+			},
+		},
+		{
+			pattern: `Видалити користувача`,
+			createCmd: func(cmd string) Command {
+				return &deleteUser{}
+			},
+		},
+		{
+			pattern: `Видалити репетицію`,
+			createCmd: func(cmd string) Command {
+				return &deleteRehearsal{}
+			},
+		},
+		{
+			pattern: `Я хочу (читати лекції|волонтерити)!`,
+			createCmd: func(cmd string) Command {
+				p := regexp.MustCompile(`Я хочу (читати лекції|волонтерити)`)
+				m := p.FindStringSubmatch(cmd)
+				role := cmd
+				if len(m) > 1 {
+					role = m[1]
+				}
+				return &messenger{
+					role: role,
+				}
+			},
+		},
+		{
+			pattern: `(?i)share your knowledge`,
+			createCmd: func(cmd string) Command {
+				return &quiz{}
+			},
+		},
+	}
 )
-
-var regexpID = regexp.MustCompile(`^[^\d]+?\d+:`)
-var commandPatterns = []struct {
-	pattern     string
-	compPattern *regexp.Regexp
-	createCmd   func(cmd string) Command
-}{
-	{
-		pattern: `Створити репетицію`,
-		createCmd: func(cmd string) Command {
-			return &addRehearsal{}
-		},
-	},
-	{
-		pattern: `Створити івент`,
-		createCmd: func(cmd string) Command {
-			return &addEvent{}
-		},
-	},
-	{
-		pattern: `Створити користувача`,
-		createCmd: func(cmd string) Command {
-			return &upsertUser{}
-		},
-	},
-	{
-		pattern: `Змінити користувача`,
-		createCmd: func(cmd string) Command {
-			return &upsertUser{
-				exists: true,
-			}
-		},
-	},
-	{
-		pattern: `Створити лекцію`,
-		createCmd: func(cmd string) Command {
-			return &upsertLection{}
-		},
-	},
-	{
-		pattern: `Змінити лекцію`,
-		createCmd: func(cmd string) Command {
-			return &upsertLection{
-				exists: true,
-			}
-		},
-	},
-	{
-		pattern: `Список лекцій\(всі\)`,
-		createCmd: func(cmd string) Command {
-			return &lectionsList{}
-		},
-	},
-	{
-		pattern: `Список лекцій\(без опису\)`,
-		createCmd: func(cmd string) Command {
-			return &lectionsList{
-				withoutDescription: true,
-			}
-		},
-	},
-	{
-		pattern: `Наступний івент`,
-		createCmd: func(cmd string) Command {
-			return &nextEvent{}
-		},
-	},
-	{
-		pattern: `Наступна репетиція`,
-		createCmd: func(cmd string) Command {
-			return &nextRep{}
-		},
-	},
-	{
-		pattern: `Документація`,
-		createCmd: func(cmd string) Command {
-			return &article{
-				name: "documentation",
-			}
-		},
-	},
-	{
-		pattern: `Хто ми`,
-		createCmd: func(cmd string) Command {
-			return &article{
-				name: "about",
-			}
-		},
-	},
-	{
-		pattern: `(?i)/start`,
-		createCmd: func(cmd string) Command {
-			return &article{
-				name: "start",
-			}
-		},
-	},
-	{
-		pattern: `(?i)/help`,
-		createCmd: func(cmd string) Command {
-			return &article{
-				name: "help",
-			}
-		},
-	},
-	{
-		pattern: `Головне меню`,
-		createCmd: func(cmd string) Command {
-			return &article{
-				name: "main_menu",
-			}
-		},
-	},
-	{
-		pattern: `(?i)101010|3\.14|advice|порада|що робити|что делать`,
-		createCmd: func(cmd string) Command {
-			return &advice{}
-		},
-	},
-	{
-		pattern: `Додати опис до лекції`,
-		createCmd: func(cmd string) Command {
-			return &addDescriptionLection{}
-		},
-	},
-	{
-		pattern: `Видалити лекцію`,
-		createCmd: func(cmd string) Command {
-			return &deleteLection{}
-		},
-	},
-	{
-		pattern: `^Лекції|Івенти|Юзери|Репетиції$`,
-		createCmd: func(cmd string) Command {
-			reply := &markup{}
-			switch cmd {
-			case "Лекції":
-				reply.buttons = LectionMarkup
-			case "Івенти":
-				reply.buttons = EventMarkup
-			case "Юзери":
-				reply.buttons = UserMarkup
-			case "Репетиції":
-				reply.buttons = RehearsalMarkup
-			}
-			return reply
-		},
-	},
-	{
-		pattern: `Список івентів`,
-		createCmd: func(cmd string) Command {
-			return &eventsList{}
-		},
-	},
-	{
-		pattern: `Видалити івент`,
-		createCmd: func(cmd string) Command {
-			return &deleteEvent{}
-		},
-	},
-	{
-		pattern: `Список користувачів`,
-		createCmd: func(cmd string) Command {
-			return &usersList{}
-		},
-	},
-	{
-		pattern: `Видалити користувача`,
-		createCmd: func(cmd string) Command {
-			return &deleteUser{}
-		},
-	},
-	{
-		pattern: `Видалити репетицію`,
-		createCmd: func(cmd string) Command {
-			return &deleteRehearsal{}
-		},
-	},
-	{
-		pattern: `Я хочу (читати лекції|волонтерити)!`,
-		createCmd: func(cmd string) Command {
-			p := regexp.MustCompile(`Я хочу (читати лекції|волонтерити)`)
-			m := p.FindStringSubmatch(cmd)
-			role := cmd
-			if len(m) > 1 {
-				role = m[1]
-			}
-			return &messenger{
-				role: role,
-			}
-		},
-	},
-	{
-		pattern: `(?i)share your knowledge`,
-		createCmd: func(cmd string) Command {
-			return &quiz{}
-		},
-	},
-}
 
 func init() {
 	for i, c := range commandPatterns {

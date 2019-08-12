@@ -28,6 +28,12 @@ func AddLectionDescription(id int, d string) error {
 	return nil
 }
 
+// UpdateLection updates an existed lection
+func UpdateLection(ID int, name string, description string) error {
+	_, err := dbConn.Exec("UPDATE lections set name=$1, description=$2 WHERE id=$3", name, description, ID)
+	return err
+}
+
 // AddLection creates a lection and returns id of created lection
 func AddLection(name string, description string, userID int) (int, error) {
 	var ID int

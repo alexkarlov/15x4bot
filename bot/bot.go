@@ -116,6 +116,10 @@ func (b *Bot) Reply(msg *Message) {
 		b.SendError(msg.ChatID)
 		return
 	}
+	// hack for chats. remove buttons since it's useless for chats
+	if msg.Type != ChatPrivate {
+		replyMarkup.Buttons = nil
+	}
 	replyMsg := tgbotapi.NewMessage(msg.ChatID, replyMarkup.Text)
 	if len(replyMarkup.Buttons) > 0 {
 		replyMsg.BaseChat.ReplyMarkup = markup(replyMarkup.Buttons)

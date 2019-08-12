@@ -2,32 +2,24 @@ package commands
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"regexp"
-	"strconv"
 	"time"
 
 	"github.com/alexkarlov/15x4bot/store"
 )
 
-var (
-	ErrWrongPlace     = errors.New("wrong place id: failed to conver from string to int")
-	ErrWrongRehearsal = errors.New("wrong rehearsal id: failed to convert from string to int")
-)
-
 const (
 	ChannelUsernameInternal = "@odessa15x4_org"
-	ChatInternalID          = "-1001163442626"
+	ChatInternalID          = "-389484898"
 	RemindHourStart         = 10
 	RemindHourEnd           = 21
 
 	TEMPLATE_NEXT_REHEARSAL                  = "Де: %s, %s\nКоли: %s\nМапа:%s"
-	TEMPLATE_ADD_REHEARSAL_WHEN              = "Коли? Дата та час в форматі 2018-12-31 19:00:00"
+	TEMPLATE_ADD_REHEARSAL_WHEN              = "Коли? Дата та час в форматі 2018-12-31 19:00"
 	TEMPLATE_ADD_REHEARSAL_ERROR_DATE        = "Невірний формат дати та часу. Наприклад, якщо репетиція буде 20-ого грудня о 19:00 то треба ввести: 2018-12-20 19:00:00. Спробуй ще!"
 	TEMPLATE_ADDREHEARSAL_SUCCESS_MSG        = "Репетиція створена"
 	TEMPLATE_NEXT_REHEARSAL_UNDEFINED        = "Невідомо коли, спитай пізніше"
-	TEMPLATE_REHEARSAL_BUTTON                = "%d.Коли: %s, місце: %s"
+	TEMPLATE_REHEARSAL_BUTTON                = "Репетиція %d: коли: %s, місце: %s"
 	TEMPLATE_CHOSE_REHEARSAL                 = "Оберіть репетицію"
 	TEMPLATE_REHEARSAL_ERROR_WRONG_ID        = "Невірно вибрана репетиція"
 	TEMPLATE_DELETE_REHEARSAL_COMPLETE       = "Репетиція успішно видалена"
@@ -55,7 +47,7 @@ func (c *addRehearsal) NextStep(answer string) (*ReplyMarkup, error) {
 	case 0:
 		replyMarkup.Text = TEMPLATE_ADD_REHEARSAL_WHEN
 	case 1:
-		t, err := time.Parse("2006-01-02 15:04:05", answer)
+		t, err := time.Parse(TimeLayout, answer)
 		if err != nil {
 			replyMarkup.Text = TEMPLATE_ADD_REHEARSAL_ERROR_DATE
 			return replyMarkup, nil
@@ -69,14 +61,9 @@ func (c *addRehearsal) NextStep(answer string) (*ReplyMarkup, error) {
 		}
 		replyMarkup.Text = TEMPLATE_CHOSE_PLACE
 	case 2:
-		regexpLectionID := regexp.MustCompile(`^(\d+)?\.`)
-		matches := regexpLectionID.FindStringSubmatch(answer)
-		if len(matches) < 2 {
-			return nil, ErrWrongPlace
-		}
-		c.where, err = strconv.Atoi(matches[1])
+		c.where, err = parseID(answer)
 		if err != nil {
-			return nil, ErrWrongPlace
+			return nil, err
 		}
 		ok, err := store.DoesPlaceExist(c.where)
 		if err != nil {
@@ -192,15 +179,9 @@ func (c *deleteRehearsal) NextStep(answer string) (*ReplyMarkup, error) {
 		}
 		replyMarkup.Text = TEMPLATE_CHOSE_REHEARSAL
 	case 1:
-		regexpRehearsalID := regexp.MustCompile(`^(\d+)?\.`)
-		matches := regexpRehearsalID.FindStringSubmatch(answer)
-		if len(matches) < 2 {
-			replyMarkup.Text = TEMPLATE_REHEARSAL_ERROR_WRONG_ID
-			return replyMarkup, nil
-		}
-		rID, err := strconv.Atoi(matches[1])
+		rID, err := parseID(answer)
 		if err != nil {
-			return nil, ErrWrongRehearsal
+			return nil, err
 		}
 		err = store.DeleteRehearsal(rID)
 		if err != nil {
