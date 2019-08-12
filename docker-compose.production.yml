@@ -1,0 +1,9 @@
+version: '3.5'
+
+services:
+  bot:
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: eu-west-3
+        awslogs-group: bot-app
