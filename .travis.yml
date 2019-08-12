@@ -26,10 +26,10 @@ script:
   # Copy migrations
   - scp -o StrictHostKeyChecking=no -i "travis.pem" -r ./postgresql/migrations $SERVER_USER@$SERVER_DNS:~/postgresql
   # Copy docker compose
-  - scp -o StrictHostKeyChecking=no -i "travis.pem" ./docker-compose.yml $SERVER_USER@$SERVER_DNS:~/docker-compose.yml
+  - scp -o StrictHostKeyChecking=no -i "travis.pem" ./docker-compose.yml $SERVER_USER@$SERVER_DNS:~/docker-compose.yml ./docker-compose.production.yml $SERVER_USER@$SERVER_DNS:~/docker-compose.production.yml
   # Upload images
   - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "docker load -i bot.tar"
   # Run containers
-  - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "docker-compose up --force-recreate -d"
+  - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "docker-compose -f docker-compose.yml -f docker-compose.production.yml up --force-recreate -d"
   # Run migrations
   - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "docker run -v /home/ec2-user/postgresql/migrations:/migrations --network=15x4  migrate/migrate -path=/migrations/ -database postgres://bot:@bot-db:5432/bot?sslmode=disable up"
