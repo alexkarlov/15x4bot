@@ -8,9 +8,36 @@ import (
 	"github.com/alexkarlov/15x4bot/store"
 )
 
+var (
+	weekdays = map[string]string{
+		"Monday":    "Понеділок",
+		"Tuesday":   "Вівторок",
+		"Wednesday": "Середа",
+		"Thursday":  "Четвер",
+		"Friday":    "П'ятниця",
+		"Saturday":  "Субота",
+		"Sunday":    "Неділя",
+	}
+	months = map[string]string{
+		"January":   "Січень",
+		"February":  "Лютий",
+		"March":     "Березень",
+		"April":     "Квітень",
+		"May":       "Травень",
+		"June":      "Червень",
+		"July":      "Липень",
+		"August":    "Серпень",
+		"September": "Вересень",
+		"October":   "Жовтень",
+		"November":  "Листопад",
+		"December":  "Грудень",
+	}
+)
+
 const (
 	ChannelUsernameInternal = "@odessa15x4_org"
 	ChatInternalID          = "-389484898"
+	ChatGrammarNazi         = "-389484898"
 	RemindHourStart         = 10
 	RemindHourEnd           = 21
 
@@ -24,6 +51,8 @@ const (
 	TEMPLATE_REHEARSAL_ERROR_WRONG_ID        = "Невірно вибрана репетиція"
 	TEMPLATE_DELETE_REHEARSAL_COMPLETE       = "Репетиція успішно видалена"
 	TEMPLATE_ADDREHEARSAL_ERROR_REMINDER_MSG = "Репетиція створена, але якась фігня скоїлась при створенні нагадувань. Звернись пліз до @alex_karlov"
+
+	TEMPLATE_REHEARSAL_MSG_TO_CHANNEL = "Привіт! Нова репетиція\nДе: %s\nКоли: %s, %d %s, %s\nАдреса: %s\nМапа: %s\n"
 )
 
 type addRehearsal struct {
@@ -83,7 +112,6 @@ func (c *addRehearsal) NextStep(answer string) (*ReplyMarkup, error) {
 			replyMarkup.Text = TEMPLATE_ADDREHEARSAL_ERROR_REMINDER_MSG
 			break
 		}
-
 		replyMarkup.Text = TEMPLATE_ADDREHEARSAL_SUCCESS_MSG
 		replyMarkup.Buttons = StandardMarkup(c.u.Role)
 	}
@@ -91,13 +119,20 @@ func (c *addRehearsal) NextStep(answer string) (*ReplyMarkup, error) {
 	return replyMarkup, nil
 }
 
-func addRehearsalReminder(id int) error {
+func addRehearsalReminder(ID int) error {
 	// create chat reminder
-	r := &store.RemindRehearsalChannel{
-		RehearsalID:     id,
+	r, err := store.LoadRehearsal(ID)
+	if err != nil {
+		return err
+	}
+	wd := weekdays[r.Time.Weekday().String()]
+	m := months[r.Time.Month().String()]
+	msg := fmt.Sprintf(TEMPLATE_REHEARSAL_MSG_TO_CHANNEL, r.PlaceName, wd, r.Time.Day(), m, r.Time.Format(TimeLayout), r.Address, r.MapUrl)
+	rh := &store.RemindChannel{
+		Msg:             msg,
 		ChannelUsername: ChatInternalID,
 	}
-	details, err := json.Marshal(r)
+	details, err := json.Marshal(rh)
 	if err != nil {
 		return err
 	}
@@ -107,8 +142,8 @@ func addRehearsalReminder(id int) error {
 		return err
 	}
 	// create channel reminder
-	r.ChannelUsername = ChannelUsernameInternal
-	details, err = json.Marshal(r)
+	rh.ChannelUsername = ChannelUsernameInternal
+	details, err = json.Marshal(rh)
 	if err != nil {
 		return err
 	}

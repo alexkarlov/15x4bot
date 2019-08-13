@@ -173,14 +173,14 @@ func (t *Task) LoadMessenger() (*Messenger, error) {
 	return m, err
 }
 
-type RemindRehearsalChannel struct {
-	RehearsalID     int
+type RemindChannel struct {
+	Msg             string
 	ChannelUsername string
 }
 
-// LoadRemindRehearsalChannel loads RemindRehearsalChannel from task details
-func (t *Task) LoadRemindRehearsalChannel() (*RemindRehearsalChannel, error) {
-	m := &RemindRehearsalChannel{}
+// LoadRemindChannel loads RemindRehearsalChannel from task details
+func (t *Task) LoadRemindChannel() (*RemindChannel, error) {
+	m := &RemindChannel{}
 	err := json.Unmarshal([]byte(t.Details), m)
 	return m, err
 }

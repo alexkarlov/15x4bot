@@ -15,20 +15,22 @@ const (
 	TEMPLATE_CREATE_LECTION_STEP_SPEAKER_DETAILS     = "%d - %s, %s\n"
 	TEMPLATE_CREATE_LECTION_STEP_SPEAKER             = "Хто лектор?\n%s"
 	TEMPLATE_CREATE_LECTION_STEP_LECTION_NAME        = "Назва лекції"
-	TEMPLATE_CREATE_LECTION_STEP_LECTION_DESCRIPTION = "Опис лекції"
+	TEMPLATE_CREATE_LECTION_STEP_LECTION_DESCRIPTION = "Опис лекції. Цей опис буде відправлений в чат редакторам, тому бажано відправляти остаточний варіант"
 	TEMPLATE_CREATE_LECTION_SUCCESS_MSG              = "Лекцію створено"
 	TEMPLATE_UPDATE_LECTION_SUCCESS_MSG              = "Лекцію змінено"
 	TEMPLATE_LECTION_NAME                            = "Лекція %d: %s"
 	TEMPLATE_ADD_LECTION_DESCIRPTION_CHOSE_LECTION   = "Оберіть лекцію"
 	TEMPLATE_ADD_LECTION_DESCRIPTION_COMPLETE        = "Опис лекції створено"
 
-	TEMPLATE_ADD_LECTION_DESCIRPTION_ERROR_NOT_YOUR = "Це не твоя лекція!"
-	TEMPLATE_LECTION_ERROR_WRONG_ID                 = "Невірно вибрана лекція"
-	TEMPLATE_WRONG_USER_ID                          = "Невідомий користувач"
-	TEMPLATE_LECTION_LIST_ITEM                      = "Лекція %d: %s\nОпис: %s\nЛектор: @%s,  %s"
-	TEMPLATE_LECTION_LIST_EMPTY                     = "Поки лекцій немає"
-	TEMPLATE_DELETE_LECTION_COMPLETE                = "Лекцію успішно видалено"
-	TEMPLATE_I_WILL_REMIND                          = "Так як в лекції немає опису, я нагадаю про необхідність додати опис %s"
+	TEMPLATE_ADD_LECTION_DESCIRPTION_ERROR_NOT_YOUR     = "Це не твоя лекція!"
+	TEMPLATE_LECTION_ERROR_WRONG_ID                     = "Невірно вибрана лекція"
+	TEMPLATE_WRONG_USER_ID                              = "Невідомий користувач"
+	TEMPLATE_LECTION_LIST_ITEM                          = "Лекція %d: %s\nОпис: %s\nЛектор: @%s,  %s"
+	TEMPLATE_LECTION_LIST_EMPTY                         = "Поки лекцій немає"
+	TEMPLATE_DELETE_LECTION_COMPLETE                    = "Лекцію успішно видалено"
+	TEMPLATE_I_WILL_REMIND                              = "Так як в лекції немає опису, я нагадаю про необхідність додати опис %s"
+	TEMPLATE_LECTION_DESCRIPTION_GRAMMAR_NAZI           = "Лекція %s\nОпис: %s"
+	TEMPLATE_ADD_LECTION_DESCRIPTION_ERROR_REMINDER_MSG = "Опис лекції створено, але якась фігня скоїлась при створенні нагадувань в чат граммар-наці. Звернись пліз до @alex_karlov"
 )
 
 func nextDay(hour int) time.Time {
@@ -183,10 +185,34 @@ func (c *addDescriptionLection) NextStep(answer string) (*ReplyMarkup, error) {
 		if err != nil {
 			return nil, err
 		}
+		// send to the grammar-nazi chat
+		err = sendTextToGrammarNazi(c.lectionID)
+		if err != nil {
+			replyMarkup.Text = TEMPLATE_ADD_LECTION_DESCRIPTION_ERROR_REMINDER_MSG
+			break
+		}
 		replyMarkup.Text = TEMPLATE_ADD_LECTION_DESCRIPTION_COMPLETE
 	}
 	c.step++
 	return replyMarkup, err
+}
+
+func sendTextToGrammarNazi(ID int) error {
+	l, err := store.LoadLection(ID)
+	if err != nil {
+		return err
+	}
+	msg := fmt.Sprintf(TEMPLATE_LECTION_DESCRIPTION_GRAMMAR_NAZI, l.Name, l.Description)
+	rh := &store.RemindChannel{
+		Msg:             msg,
+		ChannelUsername: ChatGrammarNazi,
+	}
+	details, err := json.Marshal(rh)
+	if err != nil {
+		return err
+	}
+	execTime := asSoonAsPossible()
+	return store.AddTask(store.TASK_TYPE_REMINDER_TG_CHANNEL, execTime, string(details))
 }
 
 func lections(u *store.User, onlyNew bool, withoutDescription bool) (*ReplyMarkup, error) {

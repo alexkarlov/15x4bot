@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/alexkarlov/15x4bot/store"
+	"strings"
 	"time"
 )
 
@@ -79,7 +80,7 @@ func (c *upsertUser) NextStep(answer string) (*ReplyMarkup, error) {
 		}
 	case 3:
 		if answer != TEMPLATE_I_DONT_KNOW {
-			c.username = answer
+			c.username = strings.Trim(answer, "@")
 		}
 		replyMarkup.Text = "Аккаунт в Фейсбуці"
 		replyMarkup.Buttons = append(replyMarkup.Buttons, TEMPLATE_I_DONT_KNOW)
