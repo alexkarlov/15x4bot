@@ -2,17 +2,13 @@ package commands
 
 import (
 	"fmt"
+	"github.com/alexkarlov/15x4bot/lang"
 	"github.com/alexkarlov/15x4bot/store"
 	"math"
 	"regexp"
 )
 
-const (
-	TEMPLATE_QUIZ_RESULT = "Твій результат %d вірних відповідей та %d не вірних"
-	TEMPLATE_15X4_GURU   = "Ти отримуєш знання з комосу!"
-	TEMPLATE_15X4_MID    = "Завдяки таким, як ти, в нас є 15x4!"
-	TEMPLATE_15X4_LOW    = "Здається, ти щойно почав своє падіння в кролячу нору, тож усе попереду!"
-)
+const ()
 
 type quizItem struct {
 	question    string
@@ -21,6 +17,7 @@ type quizItem struct {
 	wrongResp   string
 }
 
+// quiz is a hidden command for users whom knows secrets of 15x4
 type quiz struct {
 	correctAnswers int
 	wrongAnswers   int
@@ -153,14 +150,14 @@ func (c *quiz) Evaluation() string {
 		w = 1
 	}
 	ind := math.Round(float64(c.correctAnswers) / float64(c.wrongAnswers))
-	resp := fmt.Sprintf(TEMPLATE_QUIZ_RESULT, c.correctAnswers, c.wrongAnswers) + ". "
+	resp := fmt.Sprintf(lang.QUIZ_RESULT, c.correctAnswers, c.wrongAnswers) + ". "
 	switch true {
 	case ind > 2:
-		resp += TEMPLATE_15X4_GURU
+		resp += lang.QUIZ_15X4_GURU
 	case ind == 1:
-		resp += TEMPLATE_15X4_MID
+		resp += lang.QUIZ_15X4_MID
 	default:
-		resp += TEMPLATE_15X4_LOW
+		resp += lang.QUIZ_15X4_LOW
 	}
 	return resp
 }

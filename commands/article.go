@@ -4,6 +4,7 @@ import (
 	"github.com/alexkarlov/15x4bot/store"
 )
 
+// article is the command for serving static pages (like documentation, about us, etc)
 type article struct {
 	name string
 	u    *store.User

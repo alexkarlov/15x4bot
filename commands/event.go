@@ -2,27 +2,10 @@ package commands
 
 import (
 	"fmt"
+	"github.com/alexkarlov/15x4bot/lang"
 	"time"
 
 	"github.com/alexkarlov/15x4bot/store"
-)
-
-const (
-	END_PHRASE                    = "Кінець"
-	TEMPLATE_LECTIONS_LIST        = "Лекція %d: %s.%s"
-	TEMPLATE_INTRO_LECTIONS_LIST  = "Виберіть лекцію. Для закінчення натисніть " + END_PHRASE
-	TEMPLATE_PLACES_LIST_BUTTONS  = "Місце %d: %s\n"
-	TEMPLATE_CHOSE_PLACE          = "Оберіть місце"
-	TEMPLATE_NEXT_EVENT           = "Де: %s, %s\nПочаток: %s\nКінець: %s"
-	TEMPLATE_NEXT_EVENT_UNDEFINED = "Невідомо коли, спитай пізніше"
-
-	TEMPLATE_WRONG_PLACE_ID        = "Невідоме місце"
-	TEMPLATE_EVENTS_LIST_EMPTY     = "Поки івентів немає"
-	TEMPLATE_EVENT_LIST_ITEM       = "Івент %d. Початок о %s, кінець о %s, місце: %s, %s\n\n"
-	TEMPLATE_EVENT_ITEM            = "Івент %d, %s"
-	TEMPLATE_CHOSE_EVENT           = "Оберіть івент"
-	TEMPLATE_EVENT_ERROR_WRONG_ID  = "Невірно вибраний івент"
-	TEMPLATE_DELETE_EVENT_COMPLETE = "Івент успішно видалено"
 )
 
 type addEvent struct {
@@ -47,19 +30,19 @@ func (c *addEvent) NextStep(answer string) (*ReplyMarkup, error) {
 	var err error
 	switch c.step {
 	case 0:
-		replyMarkup.Text = "Коли починається? Дата та час в форматі 2018-12-31 19:00:00"
+		replyMarkup.Text = lang.ADD_EVENT_WHEN_START
 	case 1:
-		t, err := time.Parse("2006-01-02 15:04:05", answer)
+		t, err := time.Parse(Conf.TimeLayout, answer)
 		if err != nil {
-			replyMarkup.Text = "Невірний формат дати та часу. Наприклад, якщо івент буде 20-ого грудня о 19:00 то треба ввести: 2018-12-20 19:00:00. Спробуй ще!"
+			replyMarkup.Text = lang.ADD_EVENT_WRONG_DATE
 			return replyMarkup, nil
 		}
 		c.whenStart = t
-		replyMarkup.Text = "Коли закінчується? Дата та час в форматі 2018-12-31 19:00:00"
+		replyMarkup.Text = lang.ADD_EVENT_WHEN_END
 	case 2:
-		c.whenEnd, err = time.Parse("2006-01-02 15:04:05", answer)
+		c.whenEnd, err = time.Parse(Conf.TimeLayout, answer)
 		if err != nil {
-			replyMarkup.Text = "Невірний формат дати та часу. Наприклад, якщо івент буде 20-ого грудня о 19:00 то треба ввести: 2018-12-20 19:00:00. Спробуй ще!"
+			replyMarkup.Text = lang.ADD_EVENT_WRONG_DATE
 			return replyMarkup, nil
 		}
 		places, err := store.Places(store.PlaceTypes{store.PLACE_TYPE_FOR_EVENT, store.PLACE_TYPE_FOR_ALL})
@@ -68,10 +51,10 @@ func (c *addEvent) NextStep(answer string) (*ReplyMarkup, error) {
 		}
 		replyMarkup.Buttons = nil
 		for _, p := range places {
-			b := fmt.Sprintf(TEMPLATE_PLACES_LIST_BUTTONS, p.ID, p.Name)
+			b := fmt.Sprintf(lang.PLACES_LIST_BUTTONS, p.ID, p.Name)
 			replyMarkup.Buttons = append(replyMarkup.Buttons, b)
 		}
-		replyMarkup.Text = TEMPLATE_CHOSE_PLACE
+		replyMarkup.Text = lang.PLACES_CHOSE_PLACE
 	case 3:
 		c.where, err = parseID(answer)
 		if err != nil {
@@ -82,7 +65,7 @@ func (c *addEvent) NextStep(answer string) (*ReplyMarkup, error) {
 			return nil, err
 		}
 		if !ok {
-			replyMarkup.Text = TEMPLATE_WRONG_PLACE_ID
+			replyMarkup.Text = lang.WRONG_PLACE_ID
 			return replyMarkup, nil
 		}
 		replyMarkup.Text = "Текст івенту"
@@ -93,13 +76,13 @@ func (c *addEvent) NextStep(answer string) (*ReplyMarkup, error) {
 			return nil, err
 		}
 		for _, l := range lections {
-			lText := fmt.Sprintf(TEMPLATE_LECTIONS_LIST, l.ID, l.Name, l.Lector.Name)
+			lText := fmt.Sprintf(lang.ADD_EVENT_LECTIONS_LIST, l.ID, l.Name, l.Lector.Name)
 			replyMarkup.Buttons = append(replyMarkup.Buttons, lText)
 		}
-		replyMarkup.Buttons = append(replyMarkup.Buttons, END_PHRASE)
-		replyMarkup.Text = TEMPLATE_INTRO_LECTIONS_LIST
+		replyMarkup.Buttons = append(replyMarkup.Buttons, lang.ADD_EVENT_END_PHRASE)
+		replyMarkup.Text = lang.ADD_EVENT_INTRO_LECTIONS_LIST
 	case 5:
-		if answer == END_PHRASE {
+		if answer == lang.ADD_EVENT_END_PHRASE {
 			_, err := store.AddEvent(c.whenStart, c.whenEnd, c.where, c.description, c.lections)
 			if err != nil {
 				return nil, err
@@ -144,12 +127,12 @@ func (c *nextEvent) NextStep(answer string) (*ReplyMarkup, error) {
 	e, err := store.NextEvent()
 	if err != nil {
 		if err == store.ErrUndefinedNextEvent {
-			replyMarkup.Text = TEMPLATE_NEXT_EVENT_UNDEFINED
+			replyMarkup.Text = lang.NEXT_EVENT_UNDEFINED
 			return replyMarkup, nil
 		}
 		return nil, err
 	}
-	replyMarkup.Text = fmt.Sprintf(TEMPLATE_NEXT_EVENT, e.PlaceName, e.Address, e.StartTime.Format("2006-01-02 15:04:05"), e.EndTime.Format("2006-01-02 15:04:05"))
+	replyMarkup.Text = fmt.Sprintf(lang.NEXT_EVENT, e.PlaceName, e.Address, e.StartTime.Format(Conf.TimeLayout), e.EndTime.Format(Conf.TimeLayout))
 	return replyMarkup, nil
 }
 
@@ -175,11 +158,11 @@ func (c *eventsList) NextStep(answer string) (*ReplyMarkup, error) {
 		return nil, err
 	}
 	if len(list) == 0 {
-		replyMarkup.Text = TEMPLATE_EVENTS_LIST_EMPTY
+		replyMarkup.Text = lang.EVENTS_LIST_EMPTY
 		return replyMarkup, nil
 	}
 	for _, event := range list {
-		replyMarkup.Text += fmt.Sprintf(TEMPLATE_EVENT_LIST_ITEM, event.ID, event.StartTime, event.EndTime, event.PlaceName, event.Address)
+		replyMarkup.Text += fmt.Sprintf(lang.EVENTS_LIST_ITEM, event.ID, event.StartTime, event.EndTime, event.PlaceName, event.Address)
 	}
 	return replyMarkup, nil
 }
@@ -210,10 +193,10 @@ func (c *deleteEvent) NextStep(answer string) (*ReplyMarkup, error) {
 			return nil, err
 		}
 		for _, event := range events {
-			eText := fmt.Sprintf(TEMPLATE_EVENT_ITEM, event.ID, event.StartTime)
+			eText := fmt.Sprintf(lang.DELETE_EVENT_ITEM, event.ID, event.StartTime)
 			replyMarkup.Buttons = append(replyMarkup.Buttons, eText)
 		}
-		replyMarkup.Text = TEMPLATE_CHOSE_EVENT
+		replyMarkup.Text = lang.EVENTS_CHOSE_EVENT
 	case 1:
 		eID, err := parseID(answer)
 		if err != nil {
@@ -224,7 +207,7 @@ func (c *deleteEvent) NextStep(answer string) (*ReplyMarkup, error) {
 			return nil, err
 		}
 		replyMarkup.Buttons = StandardMarkup(c.u.Role)
-		replyMarkup.Text = TEMPLATE_DELETE_EVENT_COMPLETE
+		replyMarkup.Text = lang.DELETE_EVENT_COMPLETE
 	}
 	c.step++
 	return replyMarkup, nil

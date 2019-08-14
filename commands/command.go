@@ -2,17 +2,20 @@ package commands
 
 import (
 	"errors"
+	"github.com/alexkarlov/15x4bot/config"
 	"github.com/alexkarlov/15x4bot/store"
 	"regexp"
 	"strconv"
 )
 
-// ERRORS LIST
 var (
-	ErrWrongID      = errors.New("wrong id: failed to parse id")
-	MsgLocation     = "Europe/Kiev"
-	TimeLayout      = "2006-01-02 15:04"
-	regexpID        = regexp.MustCompile(`^[^\d]+?(\d+):`)
+	// Conf contains configuration for all chats
+	Conf config.Chat
+	// ErrWrongID happens when command can't parse id of any entity (lection, user, etc)
+	ErrWrongID = errors.New("wrong id: failed to parse id")
+	// regexpID is a pattern for parsing id of any entity (lection, user, etc)
+	regexpID = regexp.MustCompile(`^[^\d]+?(\d+):`)
+	// commandPatterns contains all available commands
 	commandPatterns = []struct {
 		pattern     string
 		compPattern *regexp.Regexp
@@ -190,19 +193,22 @@ var (
 			},
 		},
 		{
-			pattern: `Я хочу (читати лекції|волонтерити)!`,
+			pattern: `Я хочу читати лекції!`,
 			createCmd: func(cmd string) Command {
-				p := regexp.MustCompile(`Я хочу (читати лекції|волонтерити)`)
-				m := p.FindStringSubmatch(cmd)
-				role := cmd
-				if len(m) > 1 {
-					role = m[1]
-				}
 				return &messenger{
-					role: role,
+					role: "читати лекції",
 				}
 			},
 		},
+		{
+			pattern: `Я хочу волонтерити!`,
+			createCmd: func(cmd string) Command {
+				return &messenger{
+					role: "волонтерити",
+				}
+			},
+		},
+		// hidden menu
 		{
 			pattern: `(?i)share your knowledge`,
 			createCmd: func(cmd string) Command {
@@ -224,9 +230,14 @@ type ReplyMarkup struct {
 	Buttons []string
 }
 
+// Command represents a command which can used by a user
 type Command interface {
+	// IsAllow receives a user and performs checks whether this command is allow by the user
 	IsAllow(*store.User) bool
+	// NextStep receives an user answer and replies tg markup (text + buttons) and error
+	// If err is not nil, that means that command failed and need to send a general error text for the user
 	NextStep(answer string) (reply *ReplyMarkup, err error)
+	// IsEnd determines whether the command has been finished (last iteration)
 	IsEnd() bool
 }
 
@@ -235,6 +246,9 @@ func IsMainMenu(m string) bool {
 	return m == "Головне меню"
 }
 
+// NewCommand creates a new command by user anwser
+// It checks whether requested command is allow for the user
+// If there is no appropriate command - it returns "unknown" command
 func NewCommand(cmdName string, u *store.User) Command {
 	for _, cp := range commandPatterns {
 		if cp.compPattern.MatchString(cmdName) {

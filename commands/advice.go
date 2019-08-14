@@ -13,6 +13,7 @@ type adviceResp struct {
 	Sound string `json:"sound"`
 }
 
+// advice provides fun advices from the site fucking-great-advice.ru
 type advice struct {
 	Resp adviceResp
 	u    *store.User

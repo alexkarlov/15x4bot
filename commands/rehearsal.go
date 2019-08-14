@@ -3,35 +3,10 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/alexkarlov/15x4bot/lang"
 	"time"
 
 	"github.com/alexkarlov/15x4bot/store"
-)
-
-var (
-	weekdays = map[string]string{
-		"Monday":    "Понеділок",
-		"Tuesday":   "Вівторок",
-		"Wednesday": "Середа",
-		"Thursday":  "Четвер",
-		"Friday":    "П'ятниця",
-		"Saturday":  "Субота",
-		"Sunday":    "Неділя",
-	}
-	months = map[string]string{
-		"January":   "Січень",
-		"February":  "Лютий",
-		"March":     "Березень",
-		"April":     "Квітень",
-		"May":       "Травень",
-		"June":      "Червень",
-		"July":      "Липень",
-		"August":    "Серпень",
-		"September": "Вересень",
-		"October":   "Жовтень",
-		"November":  "Листопад",
-		"December":  "Грудень",
-	}
 )
 
 const (
@@ -40,19 +15,6 @@ const (
 	ChatGrammarNazi         = "-376155419"
 	RemindHourStart         = 10
 	RemindHourEnd           = 21
-
-	TEMPLATE_NEXT_REHEARSAL                  = "Де: %s, %s\nКоли: %s\nМапа:%s"
-	TEMPLATE_ADD_REHEARSAL_WHEN              = "Коли? Дата та час в форматі 2018-12-31 19:00"
-	TEMPLATE_ADD_REHEARSAL_ERROR_DATE        = "Невірний формат дати та часу. Наприклад, якщо репетиція буде 20-ого грудня о 19:00 то треба ввести: 2018-12-20 19:00:00. Спробуй ще!"
-	TEMPLATE_ADDREHEARSAL_SUCCESS_MSG        = "Репетиція створена"
-	TEMPLATE_NEXT_REHEARSAL_UNDEFINED        = "Невідомо коли, спитай пізніше"
-	TEMPLATE_REHEARSAL_BUTTON                = "Репетиція %d: коли: %s, місце: %s"
-	TEMPLATE_CHOSE_REHEARSAL                 = "Оберіть репетицію"
-	TEMPLATE_REHEARSAL_ERROR_WRONG_ID        = "Невірно вибрана репетиція"
-	TEMPLATE_DELETE_REHEARSAL_COMPLETE       = "Репетиція успішно видалена"
-	TEMPLATE_ADDREHEARSAL_ERROR_REMINDER_MSG = "Репетиція створена, але якась фігня скоїлась при створенні нагадувань. Звернись пліз до @alex_karlov"
-
-	TEMPLATE_REHEARSAL_MSG_TO_CHANNEL = "Привіт! Нова репетиція\nДе: %s\nКоли: %s, %d %s, %s\nАдреса: %s\nМапа: %s\n"
 )
 
 type addRehearsal struct {
@@ -74,21 +36,21 @@ func (c *addRehearsal) NextStep(answer string) (*ReplyMarkup, error) {
 	var err error
 	switch c.step {
 	case 0:
-		replyMarkup.Text = TEMPLATE_ADD_REHEARSAL_WHEN
+		replyMarkup.Text = lang.ADD_REHEARSAL_WHEN
 	case 1:
-		t, err := time.Parse(TimeLayout, answer)
+		t, err := time.Parse(Conf.TimeLayout, answer)
 		if err != nil {
-			replyMarkup.Text = TEMPLATE_ADD_REHEARSAL_ERROR_DATE
+			replyMarkup.Text = lang.ADD_REHEARSAL_ERROR_DATE
 			return replyMarkup, nil
 		}
 		c.when = t
 		places, err := store.Places(store.PlaceTypes{store.PLACE_TYPE_FOR_REHEARSAL, store.PLACE_TYPE_FOR_ALL})
 		replyMarkup.Buttons = nil
 		for _, p := range places {
-			b := fmt.Sprintf(TEMPLATE_PLACES_LIST_BUTTONS, p.ID, p.Name)
+			b := fmt.Sprintf(lang.PLACES_LIST_BUTTONS, p.ID, p.Name)
 			replyMarkup.Buttons = append(replyMarkup.Buttons, b)
 		}
-		replyMarkup.Text = TEMPLATE_CHOSE_PLACE
+		replyMarkup.Text = lang.PLACES_CHOSE_PLACE
 	case 2:
 		c.where, err = parseID(answer)
 		if err != nil {
@@ -99,7 +61,7 @@ func (c *addRehearsal) NextStep(answer string) (*ReplyMarkup, error) {
 			return nil, err
 		}
 		if !ok {
-			replyMarkup.Text = TEMPLATE_WRONG_PLACE_ID
+			replyMarkup.Text = lang.WRONG_PLACE_ID
 			return replyMarkup, nil
 		}
 		id, err := store.AddRehearsal(c.when, c.where)
@@ -109,10 +71,10 @@ func (c *addRehearsal) NextStep(answer string) (*ReplyMarkup, error) {
 		}
 		err = addRehearsalReminder(id)
 		if err != nil {
-			replyMarkup.Text = TEMPLATE_ADDREHEARSAL_ERROR_REMINDER_MSG
+			replyMarkup.Text = lang.ADD_REHEARSAL_ERROR_REMINDER_MSG
 			break
 		}
-		replyMarkup.Text = TEMPLATE_ADDREHEARSAL_SUCCESS_MSG
+		replyMarkup.Text = lang.ADD_REHEARSAL_SUCCESS_MSG
 		replyMarkup.Buttons = StandardMarkup(c.u.Role)
 	}
 	c.step++
@@ -125,9 +87,9 @@ func addRehearsalReminder(ID int) error {
 	if err != nil {
 		return err
 	}
-	wd := weekdays[r.Time.Weekday().String()]
-	m := months[r.Time.Month().String()]
-	msg := fmt.Sprintf(TEMPLATE_REHEARSAL_MSG_TO_CHANNEL, r.PlaceName, wd, r.Time.Day(), m, r.Time.Format(TimeLayout), r.Address, r.MapUrl)
+	wd := lang.Weekdays[r.Time.Weekday().String()]
+	m := lang.Months[r.Time.Month().String()]
+	msg := fmt.Sprintf(lang.REHEARSAL_MSG_TO_CHANNEL, r.PlaceName, wd, r.Time.Day(), m, r.Time.Format(Conf.TimeLayout), r.Address, r.MapUrl)
 	rh := &store.RemindChannel{
 		Msg:             msg,
 		ChannelUsername: ChatInternalID,
@@ -174,12 +136,12 @@ func (c *nextRep) NextStep(answer string) (*ReplyMarkup, error) {
 	r, err := store.NextRehearsal()
 	if err != nil {
 		if err == store.ErrUndefinedNextRehearsal {
-			replyMarkup.Text = TEMPLATE_NEXT_REHEARSAL_UNDEFINED
+			replyMarkup.Text = lang.NEXT_REHEARSAL_UNDEFINED
 			return replyMarkup, nil
 		}
 		return nil, err
 	}
-	replyMarkup.Text = fmt.Sprintf(TEMPLATE_NEXT_REHEARSAL, r.PlaceName, r.Address, r.Time.Format("2006-01-02 15:04:05"), r.MapUrl)
+	replyMarkup.Text = fmt.Sprintf(lang.NEXT_REHEARSAL, r.PlaceName, r.Address, r.Time.Format("2006-01-02 15:04:05"), r.MapUrl)
 	return replyMarkup, nil
 }
 
@@ -209,10 +171,10 @@ func (c *deleteRehearsal) NextStep(answer string) (*ReplyMarkup, error) {
 			return nil, err
 		}
 		for _, r := range rehearsals {
-			lText := fmt.Sprintf(TEMPLATE_REHEARSAL_BUTTON, r.ID, r.Time, r.PlaceName)
+			lText := fmt.Sprintf(lang.REHEARSAL_ITEM, r.ID, r.Time, r.PlaceName)
 			replyMarkup.Buttons = append(replyMarkup.Buttons, lText)
 		}
-		replyMarkup.Text = TEMPLATE_CHOSE_REHEARSAL
+		replyMarkup.Text = lang.REHEARSAL_CHOSE_REHEARSAL
 	case 1:
 		rID, err := parseID(answer)
 		if err != nil {
@@ -223,7 +185,7 @@ func (c *deleteRehearsal) NextStep(answer string) (*ReplyMarkup, error) {
 			return nil, err
 		}
 		replyMarkup.Buttons = StandardMarkup(c.u.Role)
-		replyMarkup.Text = TEMPLATE_DELETE_REHEARSAL_COMPLETE
+		replyMarkup.Text = lang.DELETE_REHEARSAL_COMPLETE
 	}
 	c.step++
 	return replyMarkup, nil
@@ -238,7 +200,7 @@ func (c *deleteRehearsal) NextStep(answer string) (*ReplyMarkup, error) {
 // if current time = 2019-01-01 22:00:00
 // asSoonAsPossible returns 2019-01-02 10:00:00
 func asSoonAsPossible() time.Time {
-	loc, _ := time.LoadLocation(MsgLocation)
+	loc, _ := time.LoadLocation(Conf.Location)
 	curr := time.Now().In(loc)
 	y, m, d := curr.Date()
 	currH := curr.Hour()

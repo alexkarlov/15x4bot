@@ -3,6 +3,7 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/alexkarlov/15x4bot/lang"
 	"github.com/alexkarlov/15x4bot/store"
 	"strconv"
 	"strings"
@@ -11,32 +12,12 @@ import (
 
 const (
 	UserRemindHour = 19
-
-	TEMPLATE_CREATE_LECTION_STEP_SPEAKER_DETAILS     = "%d - %s, %s\n"
-	TEMPLATE_CREATE_LECTION_STEP_SPEAKER             = "Хто лектор?\n%s"
-	TEMPLATE_CREATE_LECTION_STEP_LECTION_NAME        = "Назва лекції"
-	TEMPLATE_CREATE_LECTION_STEP_LECTION_DESCRIPTION = "Опис лекції. Цей опис буде відправлений в чат редакторам, тому бажано відправляти остаточний варіант"
-	TEMPLATE_CREATE_LECTION_SUCCESS_MSG              = "Лекцію створено"
-	TEMPLATE_UPDATE_LECTION_SUCCESS_MSG              = "Лекцію змінено"
-	TEMPLATE_LECTION_NAME                            = "Лекція %d: %s"
-	TEMPLATE_ADD_LECTION_DESCIRPTION_CHOSE_LECTION   = "Оберіть лекцію"
-	TEMPLATE_ADD_LECTION_DESCRIPTION_COMPLETE        = "Опис лекції створено"
-
-	TEMPLATE_ADD_LECTION_DESCIRPTION_ERROR_NOT_YOUR     = "Це не твоя лекція!"
-	TEMPLATE_LECTION_ERROR_WRONG_ID                     = "Невірно вибрана лекція"
-	TEMPLATE_WRONG_USER_ID                              = "Невідомий користувач"
-	TEMPLATE_LECTION_LIST_ITEM                          = "Лекція %d: %s\nОпис: %s\nЛектор: @%s,  %s"
-	TEMPLATE_LECTION_LIST_EMPTY                         = "Поки лекцій немає"
-	TEMPLATE_DELETE_LECTION_COMPLETE                    = "Лекцію успішно видалено"
-	TEMPLATE_I_WILL_REMIND                              = "Так як в лекції немає опису, я нагадаю про необхідність додати опис %s"
-	TEMPLATE_LECTION_DESCRIPTION_GRAMMAR_NAZI           = "Лекція %s\nОпис: %s"
-	TEMPLATE_ADD_LECTION_DESCRIPTION_ERROR_REMINDER_MSG = "Опис лекції створено, але якась фігня скоїлась при створенні нагадувань в чат граммар-наці. Звернись пліз до @alex_karlov"
 )
 
 func nextDay(hour int) time.Time {
 	curr := time.Now()
 	y, m, d := curr.Date()
-	loc, _ := time.LoadLocation(MsgLocation)
+	loc, _ := time.LoadLocation(Conf.Location)
 	rTime := time.Date(y, m, d, hour, 0, 0, 0, loc).AddDate(0, 0, 1)
 	return rTime
 }
@@ -70,7 +51,7 @@ func (c *upsertLection) NextStep(answer string) (*ReplyMarkup, error) {
 		// if the user is a lector = add him as an lection owner and skip the next step
 		if c.u.Role == store.USER_ROLE_LECTOR {
 			c.userID = c.u.ID
-			replyMarkup.Text = TEMPLATE_CREATE_LECTION_STEP_LECTION_NAME
+			replyMarkup.Text = lang.UPSERT_LECTURE_STEP_LECTURE_NAME
 			c.step++
 			break
 		}
@@ -80,11 +61,11 @@ func (c *upsertLection) NextStep(answer string) (*ReplyMarkup, error) {
 		}
 		speakerText := ""
 		for _, u := range users {
-			speakerText += fmt.Sprintf(TEMPLATE_CREATE_LECTION_STEP_SPEAKER_DETAILS, u.ID, u.Username, u.Name)
+			speakerText += fmt.Sprintf(lang.UPSERT_LECTURE_STEP_SPEAKER_DETAILS, u.ID, u.Username, u.Name)
 		}
-		replyMarkup.Text = fmt.Sprintf(TEMPLATE_CREATE_LECTION_STEP_SPEAKER, speakerText)
+		replyMarkup.Text = fmt.Sprintf(lang.UPSERT_LECTURE_STEP_SPEAKER, speakerText)
 	case 1:
-		replyMarkup.Text = TEMPLATE_CREATE_LECTION_STEP_LECTION_NAME
+		replyMarkup.Text = lang.UPSERT_LECTURE_STEP_LECTURE_NAME
 		if c.exists {
 			lID, err := parseID(answer)
 			if err != nil {
@@ -102,13 +83,13 @@ func (c *upsertLection) NextStep(answer string) (*ReplyMarkup, error) {
 			return nil, err
 		}
 		if !ok {
-			replyMarkup.Text = TEMPLATE_WRONG_USER_ID
+			replyMarkup.Text = lang.WRONG_USER_ID
 			return replyMarkup, nil
 		}
 		c.userID = userID
 	case 2:
 		c.name = answer
-		replyMarkup.Text = TEMPLATE_CREATE_LECTION_STEP_LECTION_DESCRIPTION
+		replyMarkup.Text = lang.UPSERT_LECTURE_STEP_LECTURE_DESCRIPTION
 		replyMarkup.Buttons = append(replyMarkup.Buttons, TEMPLATE_I_DONT_KNOW)
 	case 3:
 		if answer != TEMPLATE_I_DONT_KNOW {
@@ -126,9 +107,9 @@ func (c *upsertLection) NextStep(answer string) (*ReplyMarkup, error) {
 			return nil, err
 		}
 		if c.exists {
-			replyMarkup.Text = TEMPLATE_UPDATE_LECTION_SUCCESS_MSG
+			replyMarkup.Text = lang.UPSERT_LECTURE_SUCCESS_UPDATE_MSG
 		} else {
-			replyMarkup.Text = TEMPLATE_CREATE_LECTION_SUCCESS_MSG
+			replyMarkup.Text = lang.UPSERT_LECTURE_SUCCESS_CREATE_MSG
 		}
 		if answer == TEMPLATE_I_DONT_KNOW {
 			execTime := nextDay(UserRemindHour)
@@ -140,7 +121,7 @@ func (c *upsertLection) NextStep(answer string) (*ReplyMarkup, error) {
 				return nil, err
 			}
 			store.AddTask(store.TASK_TYPE_REMINDER_LECTOR, execTime, string(details))
-			replyMarkup.Text += "\n" + fmt.Sprintf(TEMPLATE_I_WILL_REMIND, execTime.Format(TimeLayout))
+			replyMarkup.Text += "\n" + fmt.Sprintf(lang.UPSERT_LECTURE_I_WILL_REMIND, execTime.Format(Conf.TimeLayout))
 		}
 	}
 	c.step++
@@ -175,11 +156,11 @@ func (c *addDescriptionLection) NextStep(answer string) (*ReplyMarkup, error) {
 			return nil, err
 		}
 		if c.u.Role != store.USER_ROLE_ADMIN && l.Lector.Username != c.u.Username {
-			replyMarkup.Text = TEMPLATE_ADD_LECTION_DESCIRPTION_ERROR_NOT_YOUR
+			replyMarkup.Text = lang.LECTURES_ERROR_NOT_YOUR
 			return replyMarkup, nil
 		}
 		c.lectionID = lID
-		replyMarkup.Text = TEMPLATE_CREATE_LECTION_STEP_LECTION_DESCRIPTION
+		replyMarkup.Text = lang.UPSERT_LECTURE_STEP_LECTURE_DESCRIPTION
 	case 2:
 		err := store.AddLectionDescription(c.lectionID, answer)
 		if err != nil {
@@ -188,10 +169,10 @@ func (c *addDescriptionLection) NextStep(answer string) (*ReplyMarkup, error) {
 		// send to the grammar-nazi chat
 		err = sendTextToGrammarNazi(c.lectionID)
 		if err != nil {
-			replyMarkup.Text = TEMPLATE_ADD_LECTION_DESCRIPTION_ERROR_REMINDER_MSG
+			replyMarkup.Text = lang.ADD_LECTURE_DESCRIPTION_ERROR_REMINDER_MSG
 			break
 		}
-		replyMarkup.Text = TEMPLATE_ADD_LECTION_DESCRIPTION_COMPLETE
+		replyMarkup.Text = lang.ADD_LECTURE_DESCRIPTION_COMPLETE
 	}
 	c.step++
 	return replyMarkup, err
@@ -202,7 +183,7 @@ func sendTextToGrammarNazi(ID int) error {
 	if err != nil {
 		return err
 	}
-	msg := fmt.Sprintf(TEMPLATE_LECTION_DESCRIPTION_GRAMMAR_NAZI, l.Name, l.Description)
+	msg := fmt.Sprintf(lang.ADD_LECTURE_DESCRIPTION_MSG_TO_GRAMMAR_NAZI, l.Name, l.Description)
 	rh := &store.RemindChannel{
 		Msg:             msg,
 		ChannelUsername: ChatGrammarNazi,
@@ -229,15 +210,15 @@ func lections(u *store.User, onlyNew bool, withoutDescription bool) (*ReplyMarku
 			// skip lections which doesn't belong to user (if he isn't admin) or it has description
 			continue
 		}
-		l = append(l, fmt.Sprintf(TEMPLATE_LECTION_NAME, lection.ID, lection.Name))
+		l = append(l, fmt.Sprintf(lang.UPSERT_LECTURE_ITEM, lection.ID, lection.Name))
 	}
 	// if there are no appropriate lections - send special response
 	if len(l) == 0 {
-		reply.Text = TEMPLATE_LECTION_LIST_EMPTY
+		reply.Text = lang.LECTURE_LIST_EMPTY
 		return reply, nil
 	}
 	reply.Buttons = append(reply.Buttons, l...)
-	reply.Text = TEMPLATE_ADD_LECTION_DESCIRPTION_CHOSE_LECTION
+	reply.Text = lang.ADD_LECTURE_DESCIRPTION_CHOSE_LECTURE
 	return reply, nil
 }
 
@@ -282,11 +263,11 @@ func (c *lectionsList) NextStep(answer string) (*ReplyMarkup, error) {
 			// skip lections which doesn't belong to user (if he isn't admin)
 			continue
 		}
-		l = append(l, fmt.Sprintf(TEMPLATE_LECTION_LIST_ITEM, lection.ID, lection.Name, lection.Description, lection.Lector.Username, lection.Lector.Name))
+		l = append(l, fmt.Sprintf(lang.LECTURE_LIST_ITEM, lection.ID, lection.Name, lection.Description, lection.Lector.Username, lection.Lector.Name))
 	}
 	// if there are no appropriate lections - send special response
 	if len(l) == 0 {
-		replyMarkup.Text = TEMPLATE_LECTION_LIST_EMPTY
+		replyMarkup.Text = lang.LECTURE_LIST_EMPTY
 		return replyMarkup, nil
 	}
 	replyMarkup.Text = strings.Join(l, "\n\n")
@@ -326,7 +307,7 @@ func (c *deleteLection) NextStep(answer string) (*ReplyMarkup, error) {
 			return nil, err
 		}
 		if c.u.Role != store.USER_ROLE_ADMIN && c.u.ID != l.Lector.ID {
-			replyMarkup.Text = TEMPLATE_ADD_LECTION_DESCIRPTION_ERROR_NOT_YOUR
+			replyMarkup.Text = lang.LECTURES_ERROR_NOT_YOUR
 			return replyMarkup, nil
 		}
 		err = store.DeleteLection(lID)
@@ -334,7 +315,7 @@ func (c *deleteLection) NextStep(answer string) (*ReplyMarkup, error) {
 			return nil, err
 		}
 		replyMarkup.Buttons = StandardMarkup(c.u.Role)
-		replyMarkup.Text = TEMPLATE_DELETE_LECTION_COMPLETE
+		replyMarkup.Text = lang.DELETE_LECTURE_COMPLETE
 	}
 	c.step++
 	return replyMarkup, err

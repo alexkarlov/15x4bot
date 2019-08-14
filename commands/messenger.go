@@ -2,16 +2,13 @@ package commands
 
 import (
 	"encoding/json"
+	"github.com/alexkarlov/15x4bot/lang"
 	"github.com/alexkarlov/15x4bot/store"
 	"github.com/alexkarlov/simplelog"
 	"time"
 )
 
-const (
-	TEMPLATE_MESSENGER_THANKS         = "Дякую! Я передав інформацію організаторам"
-	TEMPLATE_MESSENGER_USERNAME_EMPTY = "Напиши, будь ласка, @alex_karlov ! Він розповість що робити далі)"
-)
-
+// messenger fires when a new user wants to become a speaker or volunteer
 type messenger struct {
 	u    *store.User
 	role string
@@ -31,10 +28,10 @@ func (c *messenger) NextStep(answer string) (*ReplyMarkup, error) {
 		Buttons: StandardMarkup(c.u.Role),
 	}
 	if c.u.Username == "" {
-		reply.Text = TEMPLATE_MESSENGER_USERNAME_EMPTY
+		reply.Text = lang.MESSENGER_USERNAME_EMPTY
 		return reply, nil
 	}
-	loc, err := time.LoadLocation(MsgLocation)
+	loc, err := time.LoadLocation(Conf.Location)
 	if err != nil {
 		log.Error(err)
 	}
@@ -48,6 +45,6 @@ func (c *messenger) NextStep(answer string) (*ReplyMarkup, error) {
 		return nil, err
 	}
 	store.AddTask(store.TASK_TYPE_MESSENGER, execTime, string(details))
-	reply.Text = TEMPLATE_MESSENGER_THANKS
+	reply.Text = lang.MESSENGER_THANKS
 	return reply, nil
 }

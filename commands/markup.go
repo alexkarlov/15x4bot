@@ -1,68 +1,77 @@
 package commands
 
 import (
+	"github.com/alexkarlov/15x4bot/lang"
 	"github.com/alexkarlov/15x4bot/store"
 )
 
+// MessageButtons needs for me nu buttons
 type MessageButtons []string
 
-const (
-	TEMPLATE_CHOSE_MENU = "Оберіть пункт"
-)
-
 var (
+	// AdminMarkup contains buttons for admins
 	AdminMarkup = MessageButtons{
-		"Лекції",
-		"Івенти",
-		"Юзери",
-		"Репетиції",
-		"Хто ми",
-		"Документація",
+		lang.MARKUP_BUTTON_LECTURES,
+		lang.MARKUP_BUTTON_EVENTS,
+		lang.MARKUP_BUTTON_USERS,
+		lang.MARKUP_BUTTON_REHEARSALS,
+		lang.MARKUP_BUTTON_WHO_WE_ARE,
+		lang.MARKUP_BUTTON_DOCUMENTATION,
 	}
 
+	// SpeakerMarkup contains buttons for speakers
 	SpeakerMarkup = MessageButtons{
-		"Лекції",
-		"Наступний івент",
-		"Наступна репетиція",
-		"Хто ми",
+		lang.MARKUP_BUTTON_LECTURES,
+		lang.MARKUP_BUTTON_NEXT_EVENT,
+		lang.MARKUP_BUTTON_NEXT_REHEARSAL,
+		lang.MARKUP_BUTTON_DOCUMENTATION,
 	}
 
+	// GuestMarkup contains buttons for guests (users without any special permissions)
 	GuestMarkup = MessageButtons{
-		"Я хочу читати лекції!",
-		"Я хочу волонтерити!",
-		"Наступний івент",
-		"Наступна репетиція",
-		"Хто ми",
+		lang.MARKUP_BUTTON_I_WANT_TO_READ_LECTURES,
+		lang.MARKUP_BUTTON_I_WANT_TO_BE_A_VOLUNTEER,
+		lang.MARKUP_BUTTON_NEXT_EVENT,
+		lang.MARKUP_BUTTON_NEXT_REHEARSAL,
+		lang.MARKUP_BUTTON_WHO_WE_ARE,
 	}
 
+	// MainMarkup contains buttons for come back to main manu
 	MainMarkup = MessageButtons{
-		"Головне меню",
+		lang.MARKUP_BUTTON_MAIN_MENU,
 	}
 
+	// LectionMarkup contains buttons for admins (lectures submenu)
 	LectionMarkup = MessageButtons{
-		"Створити лекцію",
-		"Змінити лекцію",
-		"Додати опис до лекції",
-		"Список лекцій(всі)",
-		"Список лекцій(без опису)",
-		"Видалити лекцію",
+		lang.MARKUP_BUTTON_CREATE_LECTURE,
+		lang.MARKUP_BUTTON_UPDATE_LECTURE,
+		lang.MARKUP_BUTTON_ADD_DESCRIPTION,
+		lang.MARKUP_BUTTON_LECTURES_LIST_ALL,
+		lang.MARKUP_BUTTON_LECTURES_LIST_WITHOUT_DESCRIPTION,
+		lang.MARKUP_BUTTON_DELETE_LECTURE,
 	}
+
+	// EventMarkup contains buttons for admins (events submenu)
 	EventMarkup = MessageButtons{
-		"Наступний івент",
-		"Створити івент",
-		"Список івентів",
-		"Видалити івент",
+		lang.MARKUP_BUTTON_NEXT_EVENT,
+		lang.MARKUP_BUTTON_CREATE_EVENT,
+		lang.MARKUP_BUTTON_LIST_EVENTS,
+		lang.MARKUP_BUTTON_DELETE_EVENT,
 	}
+
+	// UserMarkup contains buttons for admins (users submenu)
 	UserMarkup = MessageButtons{
-		"Створити користувача",
-		"Змінити користувача",
-		"Список користувачів",
-		"Видалити користувача",
+		lang.MARKUP_BUTTON_CREATE_USER,
+		lang.MARKUP_BUTTON_UPDATE_USER,
+		lang.MARKUP_BUTTON_LIST_USERS,
+		lang.MARKUP_BUTTON_DELETE_USER,
 	}
+
+	// RehearsalMarkup contains buttons for admins (rehearsals submenu)
 	RehearsalMarkup = MessageButtons{
-		"Наступна репетиція",
-		"Створити репетицію",
-		"Видалити репетицію",
+		lang.MARKUP_BUTTON_NEXT_REHEARSAL,
+		lang.MARKUP_BUTTON_CREATE_REHEARSAL,
+		lang.MARKUP_BUTTON_DELETE_REHEARSAL,
 	}
 )
 
@@ -78,6 +87,7 @@ func StandardMarkup(role store.UserRole) MessageButtons {
 	return buttons
 }
 
+// markup is a simple command for send menu buttons
 type markup struct {
 	buttons MessageButtons
 }
@@ -93,7 +103,7 @@ func (c *markup) IsAllow(u *store.User) bool {
 func (c *markup) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: c.buttons,
-		Text:    TEMPLATE_CHOSE_MENU,
+		Text:    lang.CHOSE_MENU,
 	}
 	replyMarkup.Buttons = append(replyMarkup.Buttons, MainMarkup...)
 	return replyMarkup, nil

@@ -11,8 +11,14 @@ type TG struct {
 	Debug         bool   `env:"TG_DEBUG"`
 }
 
+type Chat struct {
+	Location   string `env:"TIMEZONE" default:"Europe/Kiev"`
+	TimeLayout string `env:"TIMELAYOUT" default:"2006-01-02 15:04"`
+}
+
 type Config struct {
 	LogLevel int `env:"LOG_LEVEL"`
 	DB       DB
 	TG       TG
+	Chat     Chat
 }
