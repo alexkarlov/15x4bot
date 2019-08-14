@@ -37,7 +37,7 @@ var (
 const (
 	ChannelUsernameInternal = "@odessa15x4_org"
 	ChatInternalID          = "-389484898"
-	ChatGrammarNazi         = "-389484898"
+	ChatGrammarNazi         = "-376155419"
 	RemindHourStart         = 10
 	RemindHourEnd           = 21
 
