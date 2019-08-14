@@ -3,26 +3,14 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"github.com/alexkarlov/15x4bot/lang"
 	"github.com/alexkarlov/15x4bot/store"
 	"strings"
 	"time"
 )
 
+// ErrEmptyUserTGAccount happens when admin doesn't provide tg account for a new/old user
 var ErrEmptyUserTGAccount = errors.New("empty user tg account")
-
-const (
-	TEMPLATE_I_DONT_KNOW          = "Не знаю"
-	TEMPLATE_USERS_LIST_ITEM      = "Юзер %d: %s, role: %s, telegram: @%s\n\n"
-	TEMPLATE_USER_BUTTON          = "Юзер %d: %s"
-	TEMPLATE_USER_ERROR_WRONG_ID  = "Невірно вибраний юзер"
-	TEMPLATE_DELETE_USER_COMPLETE = "Юзер успішно видалений"
-	TEMPLATE_CHOOSE_USER          = "Оберіть юзера"
-
-	TEMPLATE_USER_WHAT_IS_NAME        = "Як звуть лектора/лекторку?"
-	TEMPLATE_USER_SUCCESSFULY_UPDATED = "Користувач успішно змінений"
-	TEMPLATE_USER_SUCCESSFULY_CREATED = "Користувач успішно створений"
-	TEMPLATE_USER_IS_ALREADY_EXIST    = "Користувач з таким телеграм аккаунтом вже існує! Якщо хочеш змінити дані юзера - вибери змінити юзера з меню Юзери"
-)
 
 type upsertUser struct {
 	exists   bool
@@ -49,7 +37,7 @@ func (c *upsertUser) NextStep(answer string) (*ReplyMarkup, error) {
 	case 0:
 		// if we try to insert a user
 		if !c.exists {
-			replyMarkup.Text = TEMPLATE_USER_WHAT_IS_NAME
+			replyMarkup.Text = lang.USER_UPSERT_WHAT_IS_NAME
 			c.step++
 			break
 		}
@@ -59,10 +47,10 @@ func (c *upsertUser) NextStep(answer string) (*ReplyMarkup, error) {
 			return nil, err
 		}
 		for _, l := range users {
-			lText := fmt.Sprintf(TEMPLATE_USER_BUTTON, l.ID, l.Name)
+			lText := fmt.Sprintf(lang.USER_UPSERT_ITEM, l.ID, l.Name)
 			replyMarkup.Buttons = append(replyMarkup.Buttons, lText)
 		}
-		replyMarkup.Text = TEMPLATE_CHOOSE_USER
+		replyMarkup.Text = lang.CHOOSE_USER
 	case 1:
 		// if we try to update a user - catch user ID
 		if c.exists {
@@ -71,33 +59,33 @@ func (c *upsertUser) NextStep(answer string) (*ReplyMarkup, error) {
 				return nil, err
 			}
 		}
-		replyMarkup.Text = TEMPLATE_USER_WHAT_IS_NAME
+		replyMarkup.Text = lang.USER_UPSERT_WHAT_IS_NAME
 	case 2:
 		c.name = answer
 		replyMarkup.Text = "Аккаунт в телеграмі"
 		if c.exists {
-			replyMarkup.Buttons = append(replyMarkup.Buttons, TEMPLATE_I_DONT_KNOW)
+			replyMarkup.Buttons = append(replyMarkup.Buttons, lang.I_DONT_KNOW)
 		}
 	case 3:
-		if answer != TEMPLATE_I_DONT_KNOW {
+		if answer != lang.I_DONT_KNOW {
 			c.username = strings.Trim(answer, "@")
 		}
 		replyMarkup.Text = "Аккаунт в Фейсбуці"
-		replyMarkup.Buttons = append(replyMarkup.Buttons, TEMPLATE_I_DONT_KNOW)
+		replyMarkup.Buttons = append(replyMarkup.Buttons, lang.I_DONT_KNOW)
 	case 4:
-		if answer != TEMPLATE_I_DONT_KNOW {
+		if answer != lang.I_DONT_KNOW {
 			c.fb = answer
 		}
 		replyMarkup.Text = "Аккаунт в ВК"
-		replyMarkup.Buttons = append(replyMarkup.Buttons, TEMPLATE_I_DONT_KNOW)
+		replyMarkup.Buttons = append(replyMarkup.Buttons, lang.I_DONT_KNOW)
 	case 5:
-		if answer != TEMPLATE_I_DONT_KNOW {
+		if answer != lang.I_DONT_KNOW {
 			c.vk = answer
 		}
 		replyMarkup.Text = "Дата народження в форматі 2006-01-02"
-		replyMarkup.Buttons = append(replyMarkup.Buttons, TEMPLATE_I_DONT_KNOW)
+		replyMarkup.Buttons = append(replyMarkup.Buttons, lang.I_DONT_KNOW)
 	case 6:
-		if answer != TEMPLATE_I_DONT_KNOW {
+		if answer != lang.I_DONT_KNOW {
 			t, err := time.Parse("2006-01-02", answer)
 			if err != nil {
 				replyMarkup.Text = "Невірний формат дати та часу. Спробуй ще!"
@@ -113,14 +101,14 @@ func (c *upsertUser) NextStep(answer string) (*ReplyMarkup, error) {
 		var err error
 		if c.exists {
 			err = store.UpdateUser(c.ID, c.username, role, c.name, c.fb, c.vk, c.bdate)
-			replyMarkup.Text = TEMPLATE_USER_SUCCESSFULY_UPDATED
+			replyMarkup.Text = lang.USER_UPSERT_SUCCESSFULY_UPDATED
 		} else {
 			err = store.AddUserByAdmin(c.username, role, c.name, c.fb, c.vk, c.bdate)
 			if err == store.ErrNoUser {
-				replyMarkup.Text = TEMPLATE_USER_IS_ALREADY_EXIST
+				replyMarkup.Text = lang.USER_UPSERT_USER_ALREADY_EXISTS
 				return replyMarkup, nil
 			}
-			replyMarkup.Text = TEMPLATE_USER_SUCCESSFULY_CREATED
+			replyMarkup.Text = lang.USER_UPSERT_SUCCESSFULY_CREATED
 		}
 
 		if err != nil {
@@ -157,7 +145,7 @@ func (c *usersList) NextStep(answer string) (*ReplyMarkup, error) {
 		return nil, err
 	}
 	for _, l := range list {
-		replyMarkup.Text += fmt.Sprintf(TEMPLATE_USERS_LIST_ITEM, l.ID, l.Name, l.Role, l.Username)
+		replyMarkup.Text += fmt.Sprintf(lang.USER_UPSERT_LIST_ITEM, l.ID, l.Name, l.Role, l.Username)
 	}
 	return replyMarkup, nil
 }
@@ -188,10 +176,10 @@ func (c *deleteUser) NextStep(answer string) (*ReplyMarkup, error) {
 			return nil, err
 		}
 		for _, l := range users {
-			lText := fmt.Sprintf(TEMPLATE_USER_BUTTON, l.ID, l.Name)
+			lText := fmt.Sprintf(lang.USER_UPSERT_ITEM, l.ID, l.Name)
 			replyMarkup.Buttons = append(replyMarkup.Buttons, lText)
 		}
-		replyMarkup.Text = TEMPLATE_CHOOSE_USER
+		replyMarkup.Text = lang.CHOOSE_USER
 	case 1:
 		uID, err := parseID(answer)
 		if err != nil {
@@ -202,7 +190,7 @@ func (c *deleteUser) NextStep(answer string) (*ReplyMarkup, error) {
 			return nil, err
 		}
 		replyMarkup.Buttons = StandardMarkup(c.u.Role)
-		replyMarkup.Text = TEMPLATE_DELETE_USER_COMPLETE
+		replyMarkup.Text = lang.USER_DELETE_COMPLETE
 	}
 	c.step++
 	return replyMarkup, nil

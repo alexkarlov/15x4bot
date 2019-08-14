@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/alexkarlov/15x4bot/bot"
+	"github.com/alexkarlov/15x4bot/commands"
 	"github.com/alexkarlov/15x4bot/scheduler"
 	"github.com/alexkarlov/simplelog"
 	"os"
@@ -36,6 +37,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	// setup commands config
+	commands.Conf = conf.Chat
 	// start listening updates
 	go bot.ListenUpdates()
 	// start background job manager

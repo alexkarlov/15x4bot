@@ -9,14 +9,6 @@ import (
 	"github.com/alexkarlov/15x4bot/store"
 )
 
-const (
-	ChannelUsernameInternal = "@odessa15x4_org"
-	ChatInternalID          = "-389484898"
-	ChatGrammarNazi         = "-376155419"
-	RemindHourStart         = 10
-	RemindHourEnd           = 21
-)
-
 type addRehearsal struct {
 	step  int
 	when  time.Time
@@ -92,7 +84,7 @@ func addRehearsalReminder(ID int) error {
 	msg := fmt.Sprintf(lang.REHEARSAL_MSG_TO_CHANNEL, r.PlaceName, wd, r.Time.Day(), m, r.Time.Format(Conf.TimeLayout), r.Address, r.MapUrl)
 	rh := &store.RemindChannel{
 		Msg:             msg,
-		ChannelUsername: ChatInternalID,
+		ChannelUsername: Conf.InternalChannelUsername,
 	}
 	details, err := json.Marshal(rh)
 	if err != nil {
@@ -104,7 +96,7 @@ func addRehearsalReminder(ID int) error {
 		return err
 	}
 	// create channel reminder
-	rh.ChannelUsername = ChannelUsernameInternal
+	rh.ChannelUsername = Conf.InternalChannelUsername
 	details, err = json.Marshal(rh)
 	if err != nil {
 		return err
@@ -204,11 +196,11 @@ func asSoonAsPossible() time.Time {
 	curr := time.Now().In(loc)
 	y, m, d := curr.Date()
 	currH := curr.Hour()
-	if currH < RemindHourStart {
-		return time.Date(y, m, d, RemindHourStart, 0, 0, 0, loc)
-	} else if currH > RemindHourEnd {
+	if currH < Conf.RemindHourStart {
+		return time.Date(y, m, d, Conf.RemindHourStart, 0, 0, 0, loc)
+	} else if currH > Conf.RemindHourEnd {
 		// next day at as early as possible
-		return time.Date(y, m, d, RemindHourStart, 0, 0, 0, loc).AddDate(0, 0, 1)
+		return time.Date(y, m, d, Conf.RemindHourStart, 0, 0, 0, loc).AddDate(0, 0, 1)
 	}
 	return curr
 }

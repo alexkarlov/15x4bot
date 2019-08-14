@@ -8,8 +8,6 @@ import (
 	"regexp"
 )
 
-const ()
-
 type quizItem struct {
 	question    string
 	answer      *regexp.Regexp

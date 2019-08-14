@@ -11,6 +11,8 @@ const (
 	ADD_EVENT_END_PHRASE          = "Кінець"
 	ADD_EVENT_INTRO_LECTIONS_LIST = "Виберіть лекцію. Для закінчення натисніть " + ADD_EVENT_END_PHRASE
 	ADD_EVENT_LECTIONS_LIST       = "Лекція %d: %s.%s"
+	ADD_EVENT_TEXT_EVENT          = "Текст івенту"
+	ADD_EVENT_SUCCESS_MSG         = "Івент створено"
 
 	// ========================== Command: nextEvent (sends info about the next event) ==========================
 	NEXT_EVENT           = "Де: %s, %s\nПочаток: %s\nКінець: %s"
@@ -127,6 +129,18 @@ const (
 	// ==========================  Command: deleteRehearsal ==========================
 	DELETE_REHEARSAL_COMPLETE = "Репетиція успішно видалена"
 
+	// ========================== USER SECTION ==========================
+	// ========================== Command: upsertUser ==========================
+	USER_UPSERT_LIST_ITEM           = "Юзер %d: %s, role: %s, telegram: @%s\n\n"
+	USER_UPSERT_ITEM                = "Юзер %d: %s"
+	USER_UPSERT_WHAT_IS_NAME        = "Як звуть лектора/лекторку?"
+	USER_UPSERT_SUCCESSFULY_UPDATED = "Користувач успішно змінений"
+	USER_UPSERT_SUCCESSFULY_CREATED = "Користувач успішно створений"
+	USER_UPSERT_USER_ALREADY_EXISTS = "Користувач з таким телеграм аккаунтом вже існує! Якщо хочеш змінити дані юзера - вибери змінити юзера з меню Юзери"
+
+	// ========================== Command: upsertUser ==========================
+	USER_DELETE_COMPLETE = "Юзер успішно видалений"
+
 	// ========================= GENERAL MESSAGES ========================================
 	WRONG_PLACE_ID     = "Невідоме місце"
 	WRONG_EVENT_ID     = "Невірно вибраний івент"
@@ -134,6 +148,8 @@ const (
 	WRONG_USER_ID      = "Невідомий користувач"
 	WRONG_REHEARSAL_ID = "Невірно вибрана репетиція"
 	CHOSE_MENU         = "Оберіть пункт"
+	I_DONT_KNOW        = "Не знаю"
+	CHOOSE_USER        = "Оберіть юзера"
 )
 
 var (
@@ -160,4 +176,5 @@ var (
 		"November":  "Листопад",
 		"December":  "Грудень",
 	}
+	UnknownMsgs = []string{"Вибач, я не розумію тебе", "Ніпанятна", "Шта?"}
 )

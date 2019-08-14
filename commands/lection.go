@@ -90,9 +90,9 @@ func (c *upsertLection) NextStep(answer string) (*ReplyMarkup, error) {
 	case 2:
 		c.name = answer
 		replyMarkup.Text = lang.UPSERT_LECTURE_STEP_LECTURE_DESCRIPTION
-		replyMarkup.Buttons = append(replyMarkup.Buttons, TEMPLATE_I_DONT_KNOW)
+		replyMarkup.Buttons = append(replyMarkup.Buttons, lang.I_DONT_KNOW)
 	case 3:
-		if answer != TEMPLATE_I_DONT_KNOW {
+		if answer != lang.I_DONT_KNOW {
 			c.description = answer
 		}
 		var err error
@@ -111,7 +111,7 @@ func (c *upsertLection) NextStep(answer string) (*ReplyMarkup, error) {
 		} else {
 			replyMarkup.Text = lang.UPSERT_LECTURE_SUCCESS_CREATE_MSG
 		}
-		if answer == TEMPLATE_I_DONT_KNOW {
+		if answer == lang.I_DONT_KNOW {
 			execTime := nextDay(UserRemindHour)
 			r := &store.RemindLection{
 				ID: lectionID,
@@ -186,7 +186,7 @@ func sendTextToGrammarNazi(ID int) error {
 	msg := fmt.Sprintf(lang.ADD_LECTURE_DESCRIPTION_MSG_TO_GRAMMAR_NAZI, l.Name, l.Description)
 	rh := &store.RemindChannel{
 		Msg:             msg,
-		ChannelUsername: ChatGrammarNazi,
+		ChannelUsername: Conf.GrammarNaziChatID,
 	}
 	details, err := json.Marshal(rh)
 	if err != nil {
