@@ -30,10 +30,9 @@ script:
   - scp -o StrictHostKeyChecking=no -i "travis.pem" ./docker-compose.production.yml $SERVER_USER@$SERVER_DNS:~/docker-compose.production.yml
   # Copy postgresql postgresql updater
   - scp -o StrictHostKeyChecking=no -i "travis.pem" ./deploy/postgresql_updater.sh $SERVER_USER@$SERVER_DNS:~/postgresql_updater.sh
-  - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "chmod 555 ~/postgresql_updater.sh"
   # Upload images
   - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "docker load -i bot.tar"
   # Run containers
   - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "docker-compose -f docker-compose.yml -f docker-compose.production.yml up --force-recreate -d bot"
   # Run postgresql
-  - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "./postgresql_updater.sh"
+  - ./postgresql_updater.sh
