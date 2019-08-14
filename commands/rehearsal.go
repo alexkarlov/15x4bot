@@ -22,54 +22,75 @@ func (c *addRehearsal) IsAllow(u *store.User) bool {
 }
 
 func (c *addRehearsal) NextStep(answer string) (*ReplyMarkup, error) {
-	replyMarkup := &ReplyMarkup{
-		Buttons: MainMarkup,
-	}
+	var replyMarkup *ReplyMarkup
 	var err error
 	switch c.step {
 	case 0:
 		replyMarkup.Text = lang.ADD_REHEARSAL_WHEN
 	case 1:
-		t, err := time.Parse(Conf.TimeLayout, answer)
-		if err != nil {
-			replyMarkup.Text = lang.ADD_REHEARSAL_ERROR_DATE
-			return replyMarkup, nil
-		}
-		c.when = t
-		places, err := store.Places(store.PlaceTypes{store.PLACE_TYPE_FOR_REHEARSAL, store.PLACE_TYPE_FOR_ALL})
-		replyMarkup.Buttons = nil
-		for _, p := range places {
-			b := fmt.Sprintf(lang.PLACES_LIST_BUTTONS, p.ID, p.Name)
-			replyMarkup.Buttons = append(replyMarkup.Buttons, b)
-		}
-		replyMarkup.Text = lang.PLACES_CHOSE_PLACE
+		replyMarkup, err = c.secondStep(answer)
 	case 2:
-		c.where, err = parseID(answer)
-		if err != nil {
-			return nil, err
-		}
-		ok, err := store.DoesPlaceExist(c.where)
-		if err != nil {
-			return nil, err
-		}
-		if !ok {
-			replyMarkup.Text = lang.WRONG_PLACE_ID
-			return replyMarkup, nil
-		}
-		id, err := store.AddRehearsal(c.when, c.where)
-		// create a task for sending post in the internal channel
-		if err != nil {
-			return nil, err
-		}
-		err = addRehearsalReminder(id)
-		if err != nil {
-			replyMarkup.Text = lang.ADD_REHEARSAL_ERROR_REMINDER_MSG
-			break
-		}
-		replyMarkup.Text = lang.ADD_REHEARSAL_SUCCESS_MSG
-		replyMarkup.Buttons = StandardMarkup(c.u.Role)
+		replyMarkup, err = c.thirdStep(answer)
+	}
+	if err != nil {
+		return nil, err
 	}
 	c.step++
+	return replyMarkup, nil
+}
+
+// secondStep sends a list of places and asks a place for rehearsal
+func (c *addRehearsal) secondStep(answer string) (*ReplyMarkup, error) {
+	replyMarkup := &ReplyMarkup{
+		Buttons: MainMarkup,
+	}
+	t, err := time.Parse(Conf.TimeLayout, answer)
+	if err != nil {
+		replyMarkup.Text = lang.ADD_REHEARSAL_ERROR_DATE
+		return replyMarkup, nil
+	}
+	c.when = t
+	places, err := store.Places(store.PlaceTypes{store.PLACE_TYPE_FOR_REHEARSAL, store.PLACE_TYPE_FOR_ALL})
+	replyMarkup.Buttons = nil
+	for _, p := range places {
+		b := fmt.Sprintf(lang.PLACES_LIST_BUTTONS, p.ID, p.Name)
+		replyMarkup.Buttons = append(replyMarkup.Buttons, b)
+	}
+	replyMarkup.Text = lang.PLACES_CHOSE_PLACE
+	return replyMarkup, nil
+}
+
+// thirdStep parses place and saves rehearsal into db
+// also, it adds reminder for sending notification in the chat
+func (c *addRehearsal) thirdStep(answer string) (*ReplyMarkup, error) {
+	replyMarkup := &ReplyMarkup{
+		Buttons: MainMarkup,
+	}
+	var err error
+	c.where, err = parseID(answer)
+	if err != nil {
+		return nil, err
+	}
+	ok, err := store.DoesPlaceExist(c.where)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		replyMarkup.Text = lang.WRONG_PLACE_ID
+		return replyMarkup, nil
+	}
+	id, err := store.AddRehearsal(c.when, c.where)
+	// create a task for sending post in the internal channel
+	if err != nil {
+		return nil, err
+	}
+	err = addRehearsalReminder(id)
+	if err != nil {
+		replyMarkup.Text = lang.ADD_REHEARSAL_ERROR_REMINDER_MSG
+		return replyMarkup, nil
+	}
+	replyMarkup.Text = lang.ADD_REHEARSAL_SUCCESS_MSG
+	replyMarkup.Buttons = StandardMarkup(c.u.Role)
 	return replyMarkup, nil
 }
 
@@ -153,33 +174,52 @@ func (c *deleteRehearsal) IsAllow(u *store.User) bool {
 }
 
 func (c *deleteRehearsal) NextStep(answer string) (*ReplyMarkup, error) {
+	var replyMarkup *ReplyMarkup
+	var err error
+	switch c.step {
+	case 0:
+		replyMarkup, err = c.firstStep(answer)
+	case 1:
+		replyMarkup, err = c.secondStep(answer)
+	}
+	if err != nil {
+		return nil, err
+	}
+	c.step++
+	return replyMarkup, nil
+}
+
+// firstStep shows list of all rehearsals for further selecting and deleting
+func (c *deleteRehearsal) firstStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
 	}
-	switch c.step {
-	case 0:
-		rehearsals, err := store.Rehearsals()
-		if err != nil {
-			return nil, err
-		}
-		for _, r := range rehearsals {
-			lText := fmt.Sprintf(lang.REHEARSAL_ITEM, r.ID, r.Time, r.PlaceName)
-			replyMarkup.Buttons = append(replyMarkup.Buttons, lText)
-		}
-		replyMarkup.Text = lang.REHEARSAL_CHOSE_REHEARSAL
-	case 1:
-		rID, err := parseID(answer)
-		if err != nil {
-			return nil, err
-		}
-		err = store.DeleteRehearsal(rID)
-		if err != nil {
-			return nil, err
-		}
-		replyMarkup.Buttons = StandardMarkup(c.u.Role)
-		replyMarkup.Text = lang.DELETE_REHEARSAL_COMPLETE
+	rehearsals, err := store.Rehearsals()
+	if err != nil {
+		return nil, err
 	}
-	c.step++
+	for _, r := range rehearsals {
+		lText := fmt.Sprintf(lang.REHEARSAL_ITEM, r.ID, r.Time, r.PlaceName)
+		replyMarkup.Buttons = append(replyMarkup.Buttons, lText)
+	}
+	replyMarkup.Text = lang.REHEARSAL_CHOSE_REHEARSAL
+	return replyMarkup, nil
+}
+
+// secondStep deletes rehearsal from db
+func (c *deleteRehearsal) secondStep(answer string) (*ReplyMarkup, error) {
+	rID, err := parseID(answer)
+	if err != nil {
+		return nil, err
+	}
+	err = store.DeleteRehearsal(rID)
+	if err != nil {
+		return nil, err
+	}
+	replyMarkup := &ReplyMarkup{
+		Buttons: StandardMarkup(c.u.Role),
+		Text:    lang.DELETE_REHEARSAL_COMPLETE,
+	}
 	return replyMarkup, nil
 }
 

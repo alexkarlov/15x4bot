@@ -31,19 +31,14 @@ func (c *addEvent) NextStep(answer string) (*ReplyMarkup, error) {
 		// asks start date of event
 		replyMarkup.Text = lang.ADD_EVENT_WHEN_START
 	case 1:
-		// at this step we save start date and ask end date
 		replyMarkup, err = c.secondStep(answer)
 	case 2:
-		// at this step we save end date and ask place for the event
 		replyMarkup, err = c.thirdStep(answer)
 	case 3:
-		// at this step we save place for the event and ask for text of the event
 		replyMarkup, err = c.fourthStep(answer)
 	case 4:
-		// at this step we save text of the event and ask for lectures of the event
 		replyMarkup, err = c.fifthStep(answer)
 	case 5:
-		// at this step we saves the event in the db and sends final message
 		replyMarkup, err = c.sixthStep(answer)
 	}
 	if err != nil {
@@ -57,6 +52,7 @@ func (c *addEvent) IsEnd() bool {
 	return c.step == 6
 }
 
+// secondStep saves start date and asks end date
 func (c *addEvent) secondStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
@@ -71,6 +67,7 @@ func (c *addEvent) secondStep(answer string) (*ReplyMarkup, error) {
 	return replyMarkup, nil
 }
 
+// thirdStep saves end date and asks place for the event
 func (c *addEvent) thirdStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
@@ -94,6 +91,7 @@ func (c *addEvent) thirdStep(answer string) (*ReplyMarkup, error) {
 	return replyMarkup, nil
 }
 
+// fourthStep saves place for the event and asks for text of the event
 func (c *addEvent) fourthStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
@@ -115,6 +113,7 @@ func (c *addEvent) fourthStep(answer string) (*ReplyMarkup, error) {
 	return replyMarkup, nil
 }
 
+// fifthStep saves text of the event and asks for lectures of the event
 func (c *addEvent) fifthStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
@@ -134,6 +133,7 @@ func (c *addEvent) fifthStep(answer string) (*ReplyMarkup, error) {
 	return replyMarkup, nil
 }
 
+// sixthStep saves the event in the db and sends final message
 func (c *addEvent) sixthStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
@@ -240,10 +240,8 @@ func (c *deleteEvent) NextStep(answer string) (*ReplyMarkup, error) {
 	var err error
 	switch c.step {
 	case 0:
-		// first step - send list of all events and ask a user to chose an event to delete
 		replyMarkup, err = c.firstStep()
 	case 1:
-		// second step - delete the event by user's answers
 		replyMarkup, err = c.secondStep(answer)
 	}
 	if err != nil {

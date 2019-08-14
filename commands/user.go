@@ -29,94 +29,164 @@ func (c *upsertUser) IsAllow(u *store.User) bool {
 }
 
 func (c *upsertUser) NextStep(answer string) (*ReplyMarkup, error) {
+	var replyMarkup *ReplyMarkup
+	var err error
+	switch c.step {
+	case 0:
+		replyMarkup, err = c.firstStep(answer)
+	case 1:
+		replyMarkup, err = c.secondStep(answer)
+	case 2:
+		replyMarkup, err = c.thirdStep(answer)
+	case 3:
+		replyMarkup, err = c.fourthStep(answer)
+	case 4:
+		replyMarkup, err = c.fifthStep(answer)
+	case 5:
+		replyMarkup, err = c.sixthStep(answer)
+	case 6:
+		replyMarkup, err = c.seventhStep(answer)
+	case 7:
+		replyMarkup, err = c.eighthStep(answer)
+	}
+	if err != nil {
+		return nil, err
+	}
+	c.step++
+	return replyMarkup, nil
+}
+
+// firstStep asks speaker name (if we create a new user)
+// or sends users list for further chosing and manipulation
+func (c *upsertUser) firstStep(answer string) (*ReplyMarkup, error) {
+	replyMarkup := &ReplyMarkup{
+		Buttons: MainMarkup,
+	}
+	// if we try to insert a user
+	if !c.exists {
+		replyMarkup.Text = lang.USER_UPSERT_WHAT_IS_NAME
+		c.step++
+		return replyMarkup, nil
+	}
+	// if we try to update a user
+	users, err := store.Users(nil)
+	if err != nil {
+		return nil, err
+	}
+	for _, l := range users {
+		lText := fmt.Sprintf(lang.USER_UPSERT_ITEM, l.ID, l.Name)
+		replyMarkup.Buttons = append(replyMarkup.Buttons, lText)
+	}
+	replyMarkup.Text = lang.CHOOSE_USER
+	return replyMarkup, nil
+}
+
+// secondStep asks speaker name or parses user id from user's answer
+// or asks user's name
+// TODO: refactor skiping steps
+func (c *upsertUser) secondStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
 	}
 	var err error
-	switch c.step {
-	case 0:
-		// if we try to insert a user
-		if !c.exists {
-			replyMarkup.Text = lang.USER_UPSERT_WHAT_IS_NAME
-			c.step++
-			break
-		}
-		// if we try to update a user
-		users, err := store.Users(nil)
-		if err != nil {
-			return nil, err
-		}
-		for _, l := range users {
-			lText := fmt.Sprintf(lang.USER_UPSERT_ITEM, l.ID, l.Name)
-			replyMarkup.Buttons = append(replyMarkup.Buttons, lText)
-		}
-		replyMarkup.Text = lang.CHOOSE_USER
-	case 1:
-		// if we try to update a user - catch user ID
-		if c.exists {
-			c.ID, err = parseID(answer)
-			if err != nil {
-				return nil, err
-			}
-		}
-		replyMarkup.Text = lang.USER_UPSERT_WHAT_IS_NAME
-	case 2:
-		c.name = answer
-		replyMarkup.Text = "Аккаунт в телеграмі"
-		if c.exists {
-			replyMarkup.Buttons = append(replyMarkup.Buttons, lang.I_DONT_KNOW)
-		}
-	case 3:
-		if answer != lang.I_DONT_KNOW {
-			c.username = strings.Trim(answer, "@")
-		}
-		replyMarkup.Text = "Аккаунт в Фейсбуці"
-		replyMarkup.Buttons = append(replyMarkup.Buttons, lang.I_DONT_KNOW)
-	case 4:
-		if answer != lang.I_DONT_KNOW {
-			c.fb = answer
-		}
-		replyMarkup.Text = "Аккаунт в ВК"
-		replyMarkup.Buttons = append(replyMarkup.Buttons, lang.I_DONT_KNOW)
-	case 5:
-		if answer != lang.I_DONT_KNOW {
-			c.vk = answer
-		}
-		replyMarkup.Text = "Дата народження в форматі 2006-01-02"
-		replyMarkup.Buttons = append(replyMarkup.Buttons, lang.I_DONT_KNOW)
-	case 6:
-		if answer != lang.I_DONT_KNOW {
-			t, err := time.Parse("2006-01-02", answer)
-			if err != nil {
-				replyMarkup.Text = "Невірний формат дати та часу. Спробуй ще!"
-				return replyMarkup, nil
-			}
-			c.bdate = t
-		}
-		replyMarkup.Text = "Роль в проекті"
-		roles := MessageButtons{string(store.USER_ROLE_ADMIN), string(store.USER_ROLE_LECTOR), string(store.USER_ROLE_GUEST)}
-		replyMarkup.Buttons = append(replyMarkup.Buttons, roles...)
-	case 7:
-		role := store.NewUserRole(answer)
-		var err error
-		if c.exists {
-			err = store.UpdateUser(c.ID, c.username, role, c.name, c.fb, c.vk, c.bdate)
-			replyMarkup.Text = lang.USER_UPSERT_SUCCESSFULY_UPDATED
-		} else {
-			err = store.AddUserByAdmin(c.username, role, c.name, c.fb, c.vk, c.bdate)
-			if err == store.ErrNoUser {
-				replyMarkup.Text = lang.USER_UPSERT_USER_ALREADY_EXISTS
-				return replyMarkup, nil
-			}
-			replyMarkup.Text = lang.USER_UPSERT_SUCCESSFULY_CREATED
-		}
-
+	// if we try to update a user - catch user ID
+	if c.exists {
+		c.ID, err = parseID(answer)
 		if err != nil {
 			return nil, err
 		}
 	}
-	c.step++
+	replyMarkup.Text = lang.USER_UPSERT_WHAT_IS_NAME
 	return replyMarkup, nil
+}
+
+// thirdStep saves users name and asks users's tg account
+func (c *upsertUser) thirdStep(answer string) (*ReplyMarkup, error) {
+	replyMarkup := &ReplyMarkup{
+		Buttons: MainMarkup,
+	}
+	c.name = answer
+	replyMarkup.Text = "Аккаунт в телеграмі"
+	if c.exists {
+		replyMarkup.Buttons = append(replyMarkup.Buttons, lang.I_DONT_KNOW)
+	}
+	return replyMarkup, nil
+}
+
+// fourthStep saves username and asks user's facebook account
+func (c *upsertUser) fourthStep(answer string) (*ReplyMarkup, error) {
+	if answer != lang.I_DONT_KNOW {
+		c.username = strings.Trim(answer, "@")
+	}
+	replyMarkup := &ReplyMarkup{
+		Buttons: append(MainMarkup, lang.I_DONT_KNOW),
+		Text:    "Аккаунт в Фейсбуці",
+	}
+	return replyMarkup, nil
+}
+
+// fifthStep saves fb account and asks user's vk account
+func (c *upsertUser) fifthStep(answer string) (*ReplyMarkup, error) {
+	if answer != lang.I_DONT_KNOW {
+		c.fb = answer
+	}
+	replyMarkup := &ReplyMarkup{
+		Text:    "Аккаунт в ВК",
+		Buttons: append(MainMarkup, lang.I_DONT_KNOW),
+	}
+	return replyMarkup, nil
+}
+
+// sixthStep saves vk coount and asks birthday
+func (c *upsertUser) sixthStep(answer string) (*ReplyMarkup, error) {
+	if answer != lang.I_DONT_KNOW {
+		c.vk = answer
+	}
+	replyMarkup := &ReplyMarkup{
+		Text:    "Дата народження в форматі 2006-01-02",
+		Buttons: append(MainMarkup, lang.I_DONT_KNOW),
+	}
+	return replyMarkup, nil
+}
+
+// seventhStep saves birthday and asks user's role
+func (c *upsertUser) seventhStep(answer string) (*ReplyMarkup, error) {
+	replyMarkup := &ReplyMarkup{
+		Buttons: MainMarkup,
+	}
+	if answer != lang.I_DONT_KNOW {
+		t, err := time.Parse("2006-01-02", answer)
+		if err != nil {
+			replyMarkup.Text = "Невірний формат дати та часу. Спробуй ще!"
+			return replyMarkup, nil
+		}
+		c.bdate = t
+	}
+	replyMarkup.Text = "Роль в проекті"
+	roles := MessageButtons{string(store.USER_ROLE_ADMIN), string(store.USER_ROLE_LECTOR), string(store.USER_ROLE_GUEST)}
+	replyMarkup.Buttons = append(replyMarkup.Buttons, roles...)
+	return replyMarkup, nil
+}
+
+// eighthStep saves user's and sends success message or fail message
+func (c *upsertUser) eighthStep(answer string) (*ReplyMarkup, error) {
+	replyMarkup := &ReplyMarkup{
+		Buttons: MainMarkup,
+	}
+	role := store.NewUserRole(answer)
+	var err error
+	if c.exists {
+		err = store.UpdateUser(c.ID, c.username, role, c.name, c.fb, c.vk, c.bdate)
+		replyMarkup.Text = lang.USER_UPSERT_SUCCESSFULY_UPDATED
+	} else {
+		err = store.AddUserByAdmin(c.username, role, c.name, c.fb, c.vk, c.bdate)
+		if err == store.ErrNoUser {
+			replyMarkup.Text = lang.USER_UPSERT_USER_ALREADY_EXISTS
+			return replyMarkup, nil
+		}
+		replyMarkup.Text = lang.USER_UPSERT_SUCCESSFULY_CREATED
+	}
+	return replyMarkup, err
 }
 
 func (c *upsertUser) IsEnd() bool {
@@ -169,29 +239,50 @@ func (c *deleteUser) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
 	}
+	var err error
 	switch c.step {
 	case 0:
-		users, err := store.Users(nil)
-		if err != nil {
-			return nil, err
-		}
-		for _, l := range users {
-			lText := fmt.Sprintf(lang.USER_UPSERT_ITEM, l.ID, l.Name)
-			replyMarkup.Buttons = append(replyMarkup.Buttons, lText)
-		}
-		replyMarkup.Text = lang.CHOOSE_USER
+		replyMarkup, err = c.firstStep()
 	case 1:
-		uID, err := parseID(answer)
-		if err != nil {
-			return nil, err
-		}
-		err = store.DeleteUser(uID)
-		if err != nil {
-			return nil, err
-		}
-		replyMarkup.Buttons = StandardMarkup(c.u.Role)
-		replyMarkup.Text = lang.USER_DELETE_COMPLETE
+		replyMarkup, err = c.secondStep(answer)
+	}
+	if err != nil {
+		return nil, err
 	}
 	c.step++
+	return replyMarkup, nil
+}
+
+// firstStep sends users list for further deleting
+func (c *deleteUser) firstStep() (*ReplyMarkup, error) {
+	replyMarkup := &ReplyMarkup{
+		Buttons: MainMarkup,
+	}
+	users, err := store.Users(nil)
+	if err != nil {
+		return nil, err
+	}
+	for _, l := range users {
+		lText := fmt.Sprintf(lang.USER_UPSERT_ITEM, l.ID, l.Name)
+		replyMarkup.Buttons = append(replyMarkup.Buttons, lText)
+	}
+	replyMarkup.Text = lang.CHOOSE_USER
+	return replyMarkup, nil
+}
+
+// secondStep deletes user from db
+func (c *deleteUser) secondStep(answer string) (*ReplyMarkup, error) {
+	uID, err := parseID(answer)
+	if err != nil {
+		return nil, err
+	}
+	err = store.DeleteUser(uID)
+	if err != nil {
+		return nil, err
+	}
+	replyMarkup := &ReplyMarkup{
+		Buttons: StandardMarkup(c.u.Role),
+		Text:    lang.USER_DELETE_COMPLETE,
+	}
 	return replyMarkup, nil
 }
