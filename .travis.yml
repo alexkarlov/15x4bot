@@ -28,9 +28,11 @@ script:
   # Copy docker compose
   - scp -o StrictHostKeyChecking=no -i "travis.pem" ./docker-compose.yml $SERVER_USER@$SERVER_DNS:~/docker-compose.yml 
   - scp -o StrictHostKeyChecking=no -i "travis.pem" ./docker-compose.production.yml $SERVER_USER@$SERVER_DNS:~/docker-compose.production.yml
+  # Copy postgresql postgresql updater
+  - scp -o StrictHostKeyChecking=no -i "travis.pem" ./deploy/postgresql_updater.sh $SERVER_USER@$SERVER_DNS:~/postgresql_updater.sh
   # Upload images
   - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "docker load -i bot.tar"
   # Run containers
-  - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "docker-compose -f docker-compose.yml -f docker-compose.production.yml up --force-recreate -d"
-  # Run migrations
-  - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "docker run -v /home/ec2-user/postgresql/migrations:/migrations --network=15x4  migrate/migrate -path=/migrations/ -database postgres://bot:@bot-db:5432/bot?sslmode=disable up"
+  - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "docker-compose -f docker-compose.yml -f docker-compose.production.yml up bot-app --force-recreate -d"
+  # Run postgresql
+  - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "./postgresql_updater.sh"
