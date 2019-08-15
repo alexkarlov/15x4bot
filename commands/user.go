@@ -15,45 +15,27 @@ var ErrEmptyUserTGAccount = errors.New("empty user tg account")
 type upsertUser struct {
 	exists   bool
 	ID       int
-	step     int
 	name     string
 	username string
 	fb       string
 	vk       string
 	bdate    time.Time
 	role     string
+	stepConstructor
+}
+
+// newUpsertUser creates upsertUser and registers all steps
+// it receives argument whether user exists or no
+func newUpsertUser(e bool) *upsertUser {
+	c := &upsertUser{
+		exists: e,
+	}
+	c.RegisterSteps(c.firstStep, c.secondStep, c.thirdStep, c.fourthStep, c.fifthStep, c.sixthStep, c.seventhStep, c.eighthStep)
+	return c
 }
 
 func (c *upsertUser) IsAllow(u *store.User) bool {
 	return u.Role == store.USER_ROLE_ADMIN
-}
-
-func (c *upsertUser) NextStep(answer string) (*ReplyMarkup, error) {
-	var replyMarkup *ReplyMarkup
-	var err error
-	switch c.step {
-	case 0:
-		replyMarkup, err = c.firstStep(answer)
-	case 1:
-		replyMarkup, err = c.secondStep(answer)
-	case 2:
-		replyMarkup, err = c.thirdStep(answer)
-	case 3:
-		replyMarkup, err = c.fourthStep(answer)
-	case 4:
-		replyMarkup, err = c.fifthStep(answer)
-	case 5:
-		replyMarkup, err = c.sixthStep(answer)
-	case 6:
-		replyMarkup, err = c.seventhStep(answer)
-	case 7:
-		replyMarkup, err = c.eighthStep(answer)
-	}
-	if err != nil {
-		return nil, err
-	}
-	c.step++
-	return replyMarkup, nil
 }
 
 // firstStep asks speaker name (if we create a new user)
@@ -64,9 +46,7 @@ func (c *upsertUser) firstStep(answer string) (*ReplyMarkup, error) {
 	}
 	// if we try to insert a user
 	if !c.exists {
-		replyMarkup.Text = lang.USER_UPSERT_WHAT_IS_NAME
-		c.step++
-		return replyMarkup, nil
+		return c.SkipStep(answer)
 	}
 	// if we try to update a user
 	users, err := store.Users(nil)
@@ -189,10 +169,6 @@ func (c *upsertUser) eighthStep(answer string) (*ReplyMarkup, error) {
 	return replyMarkup, err
 }
 
-func (c *upsertUser) IsEnd() bool {
-	return c.step == 8
-}
-
 type usersList struct {
 	u *store.User
 }
@@ -224,10 +200,14 @@ type deleteUser struct {
 	step   int
 	userID int
 	u      *store.User
+	stepConstructor
 }
 
-func (c *deleteUser) IsEnd() bool {
-	return c.step == 2
+// newDeleteUser creates deleteUser and registers all steps
+func newDeleteUser() *deleteUser {
+	c := &deleteUser{}
+	c.RegisterSteps(c.firstStep, c.secondStep)
+	return c
 }
 
 func (c *deleteUser) IsAllow(u *store.User) bool {
@@ -235,26 +215,8 @@ func (c *deleteUser) IsAllow(u *store.User) bool {
 	return u.Role == store.USER_ROLE_ADMIN
 }
 
-func (c *deleteUser) NextStep(answer string) (*ReplyMarkup, error) {
-	replyMarkup := &ReplyMarkup{
-		Buttons: MainMarkup,
-	}
-	var err error
-	switch c.step {
-	case 0:
-		replyMarkup, err = c.firstStep()
-	case 1:
-		replyMarkup, err = c.secondStep(answer)
-	}
-	if err != nil {
-		return nil, err
-	}
-	c.step++
-	return replyMarkup, nil
-}
-
 // firstStep sends users list for further deleting
-func (c *deleteUser) firstStep() (*ReplyMarkup, error) {
+func (c *deleteUser) firstStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
 	}

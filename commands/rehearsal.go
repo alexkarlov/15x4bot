@@ -10,10 +10,17 @@ import (
 )
 
 type addRehearsal struct {
-	step  int
 	when  time.Time
 	where int
 	u     *store.User
+	stepConstructor
+}
+
+// newAddRehearsal creates addRehearsal and registers all steps
+func newAddRehearsal() *addRehearsal {
+	c := &addRehearsal{}
+	c.RegisterSteps(c.firstStep, c.secondStep, c.thirdStep)
+	return c
 }
 
 func (c *addRehearsal) IsAllow(u *store.User) bool {
@@ -21,21 +28,11 @@ func (c *addRehearsal) IsAllow(u *store.User) bool {
 	return u.Role == store.USER_ROLE_ADMIN
 }
 
-func (c *addRehearsal) NextStep(answer string) (*ReplyMarkup, error) {
-	var replyMarkup *ReplyMarkup
-	var err error
-	switch c.step {
-	case 0:
-		replyMarkup.Text = lang.ADD_REHEARSAL_WHEN
-	case 1:
-		replyMarkup, err = c.secondStep(answer)
-	case 2:
-		replyMarkup, err = c.thirdStep(answer)
+func (c *addRehearsal) firstStep(answer string) (*ReplyMarkup, error) {
+	replyMarkup := &ReplyMarkup{
+		Buttons: MainMarkup,
+		Text:    lang.ADD_REHEARSAL_WHEN,
 	}
-	if err != nil {
-		return nil, err
-	}
-	c.step++
 	return replyMarkup, nil
 }
 
@@ -125,10 +122,6 @@ func addRehearsalReminder(ID int) error {
 	return store.AddTask(store.TASK_TYPE_REMINDER_TG_CHANNEL, execTime, string(details))
 }
 
-func (c *addRehearsal) IsEnd() bool {
-	return c.step == 3
-}
-
 type nextRep struct {
 	u *store.User
 }
@@ -159,34 +152,21 @@ func (c *nextRep) NextStep(answer string) (*ReplyMarkup, error) {
 }
 
 type deleteRehearsal struct {
-	step        int
 	rehearsalID int
 	u           *store.User
+	stepConstructor
 }
 
-func (c *deleteRehearsal) IsEnd() bool {
-	return c.step == 2
+// newDeleteRehearsal creates deleteRehearsal and registers all steps
+func newDeleteRehearsal() *deleteRehearsal {
+	c := &deleteRehearsal{}
+	c.RegisterSteps(c.firstStep, c.secondStep)
+	return c
 }
 
 func (c *deleteRehearsal) IsAllow(u *store.User) bool {
 	c.u = u
 	return u.Role == store.USER_ROLE_ADMIN
-}
-
-func (c *deleteRehearsal) NextStep(answer string) (*ReplyMarkup, error) {
-	var replyMarkup *ReplyMarkup
-	var err error
-	switch c.step {
-	case 0:
-		replyMarkup, err = c.firstStep(answer)
-	case 1:
-		replyMarkup, err = c.secondStep(answer)
-	}
-	if err != nil {
-		return nil, err
-	}
-	c.step++
-	return replyMarkup, nil
 }
 
 // firstStep shows list of all rehearsals for further selecting and deleting

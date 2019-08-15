@@ -9,13 +9,20 @@ import (
 )
 
 type addEvent struct {
-	step        int
 	whenStart   time.Time
 	whenEnd     time.Time
 	where       int
 	description string
 	lections    []int
 	u           *store.User
+	stepConstructor
+}
+
+// newAddEvent creates addEvent and registers all steps
+func newAddEvent() *addEvent {
+	c := &addEvent{}
+	c.RegisterSteps(c.firstStep, c.secondStep, c.thirdStep, c.fourthStep, c.fifthStep, c.sixthStep)
+	return c
 }
 
 func (c *addEvent) IsAllow(u *store.User) bool {
@@ -23,33 +30,13 @@ func (c *addEvent) IsAllow(u *store.User) bool {
 	return u.Role == store.USER_ROLE_ADMIN
 }
 
-func (c *addEvent) NextStep(answer string) (*ReplyMarkup, error) {
-	var replyMarkup *ReplyMarkup
-	var err error
-	switch c.step {
-	case 0:
-		// asks start date of event
-		replyMarkup.Text = lang.ADD_EVENT_WHEN_START
-	case 1:
-		replyMarkup, err = c.secondStep(answer)
-	case 2:
-		replyMarkup, err = c.thirdStep(answer)
-	case 3:
-		replyMarkup, err = c.fourthStep(answer)
-	case 4:
-		replyMarkup, err = c.fifthStep(answer)
-	case 5:
-		replyMarkup, err = c.sixthStep(answer)
+// firstStep saves start date and asks end date
+func (c *addEvent) firstStep(answer string) (*ReplyMarkup, error) {
+	replyMarkup := &ReplyMarkup{
+		Buttons: MainMarkup,
+		Text:    lang.ADD_EVENT_WHEN_START,
 	}
-	if err != nil {
-		return nil, err
-	}
-	c.step++
 	return replyMarkup, nil
-}
-
-func (c *addEvent) IsEnd() bool {
-	return c.step == 6
 }
 
 // secondStep saves start date and asks end date
@@ -153,7 +140,7 @@ func (c *addEvent) sixthStep(answer string) (*ReplyMarkup, error) {
 	}
 	c.lections = append(c.lections, lID)
 	// desrese step counter for returning on the next iteration to the same step
-	c.step--
+	c.RepeatStep()
 	return replyMarkup, nil
 }
 
@@ -221,13 +208,9 @@ func (c *eventsList) NextStep(answer string) (*ReplyMarkup, error) {
 
 // deleteEvent is a command for deleting events
 type deleteEvent struct {
-	step    int
 	eventID int
 	u       *store.User
-}
-
-func (c *deleteEvent) IsEnd() bool {
-	return c.step == 2
+	stepConstructor
 }
 
 func (c *deleteEvent) IsAllow(u *store.User) bool {
@@ -235,24 +218,15 @@ func (c *deleteEvent) IsAllow(u *store.User) bool {
 	return u.Role == store.USER_ROLE_ADMIN
 }
 
-func (c *deleteEvent) NextStep(answer string) (*ReplyMarkup, error) {
-	var replyMarkup *ReplyMarkup
-	var err error
-	switch c.step {
-	case 0:
-		replyMarkup, err = c.firstStep()
-	case 1:
-		replyMarkup, err = c.secondStep(answer)
-	}
-	if err != nil {
-		return nil, err
-	}
-	c.step++
-	return replyMarkup, nil
+// newDeleteEvent creates deleteEvent and registers all steps
+func newDeleteEvent() *deleteEvent {
+	c := &deleteEvent{}
+	c.RegisterSteps(c.firstStep, c.secondStep)
+	return c
 }
 
 // firstStepDeleteEvent sends list of all events and asks a user to chose an event to delete
-func (c *deleteEvent) firstStep() (*ReplyMarkup, error) {
+func (c *deleteEvent) firstStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
 	}

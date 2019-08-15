@@ -24,41 +24,37 @@ var (
 		{
 			pattern: `Створити репетицію`,
 			createCmd: func(cmd string) Command {
-				return &addRehearsal{}
+				return newAddRehearsal()
 			},
 		},
 		{
 			pattern: `Створити івент`,
 			createCmd: func(cmd string) Command {
-				return &addEvent{}
+				return newAddEvent()
 			},
 		},
 		{
 			pattern: `Створити користувача`,
 			createCmd: func(cmd string) Command {
-				return &upsertUser{}
+				return newUpsertUser(false)
 			},
 		},
 		{
 			pattern: `Змінити користувача`,
 			createCmd: func(cmd string) Command {
-				return &upsertUser{
-					exists: true,
-				}
+				return newUpsertUser(true)
 			},
 		},
 		{
 			pattern: `Створити лекцію`,
 			createCmd: func(cmd string) Command {
-				return &upsertLection{}
+				return newUpsertLection(false)
 			},
 		},
 		{
 			pattern: `Змінити лекцію`,
 			createCmd: func(cmd string) Command {
-				return &upsertLection{
-					exists: true,
-				}
+				return newUpsertLection(true)
 			},
 		},
 		{
@@ -136,13 +132,13 @@ var (
 		{
 			pattern: `Додати опис до лекції`,
 			createCmd: func(cmd string) Command {
-				return &addDescriptionLection{}
+				return newAddDescriptionLection()
 			},
 		},
 		{
 			pattern: `Видалити лекцію`,
 			createCmd: func(cmd string) Command {
-				return &deleteLection{}
+				return newDeleteLection()
 			},
 		},
 		{
@@ -171,7 +167,7 @@ var (
 		{
 			pattern: `Видалити івент`,
 			createCmd: func(cmd string) Command {
-				return &deleteEvent{}
+				return newDeleteEvent()
 			},
 		},
 		{
@@ -183,13 +179,13 @@ var (
 		{
 			pattern: `Видалити користувача`,
 			createCmd: func(cmd string) Command {
-				return &deleteUser{}
+				return newDeleteUser()
 			},
 		},
 		{
 			pattern: `Видалити репетицію`,
 			createCmd: func(cmd string) Command {
-				return &deleteRehearsal{}
+				return newDeleteRehearsal()
 			},
 		},
 		{
@@ -222,6 +218,49 @@ func init() {
 	for i, c := range commandPatterns {
 		commandPatterns[i].compPattern = regexp.MustCompile(c.pattern)
 	}
+}
+
+// stepCallback callback which will be run when NextStep got run
+type stepCallback func(string) (*ReplyMarkup, error)
+
+// stepConstructor is a base structure for real commands
+type stepConstructor struct {
+	CurrentStep int
+	steps       []stepCallback
+}
+
+// RegisterSteps saves steps for further call in NextStep
+func (s *stepConstructor) RegisterSteps(sc ...stepCallback) {
+	s.steps = sc
+}
+
+// RepeatStep decrease current step (for repeating this step in the next iteration)
+func (s *stepConstructor) RepeatStep() {
+	s.CurrentStep--
+}
+
+// SkipStep call next step of current command
+func (s *stepConstructor) SkipStep(answer string) (*ReplyMarkup, error) {
+	s.CurrentStep++
+	defer func() {
+		s.CurrentStep--
+	}()
+	return s.NextStep(answer)
+}
+
+// NextStep call next callback from steps according to the current step
+func (s *stepConstructor) NextStep(answer string) (*ReplyMarkup, error) {
+	replyMarkup, err := s.steps[s.CurrentStep](answer)
+	if err != nil {
+		return nil, err
+	}
+	s.CurrentStep++
+	return replyMarkup, err
+}
+
+// IsEnd determines whether the command has been finished
+func (s *stepConstructor) IsEnd() bool {
+	return s.CurrentStep == len(s.steps)
 }
 
 // ReplyMarkup contains text answer of the bot and (optional) special command buttons

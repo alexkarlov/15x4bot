@@ -26,10 +26,10 @@ type upsertLection struct {
 	exists      bool
 	ID          int
 	u           *store.User
-	step        int
 	name        string
 	description string
 	userID      int
+	stepConstructor
 }
 
 func (c *upsertLection) IsAllow(u *store.User) bool {
@@ -37,28 +37,14 @@ func (c *upsertLection) IsAllow(u *store.User) bool {
 	return (u.Role == store.USER_ROLE_ADMIN || u.Role == store.USER_ROLE_LECTOR)
 }
 
-func (c *upsertLection) NextStep(answer string) (*ReplyMarkup, error) {
-	var replyMarkup *ReplyMarkup
-	var err error
-	switch c.step {
-	case 0:
-		replyMarkup, err = c.firstStep()
-	case 1:
-		replyMarkup, err = c.secondStep(answer)
-	case 2:
-		replyMarkup, err = c.thirdStep(answer)
-	case 3:
-		replyMarkup, err = c.fourthStep(answer)
+// newUpsertLection creates upsertLection and registers all steps
+// it receives argument whether lection exists or no
+func newUpsertLection(e bool) *upsertLection {
+	c := &upsertLection{
+		exists: e,
 	}
-	if err != nil {
-		return nil, err
-	}
-	c.step++
-	return replyMarkup, err
-}
-
-func (c *upsertLection) IsEnd() bool {
-	return c.step == 4
+	c.RegisterSteps(c.firstStep, c.secondStep, c.thirdStep, c.fourthStep)
+	return c
 }
 
 // firstStep depends on the type of operation
@@ -68,19 +54,17 @@ func (c *upsertLection) IsEnd() bool {
 // if we create a new lecture and the current user is NOT admin
 // this command saves id (as owner of lecture) of the current user
 // and asks lecture name
-func (c *upsertLection) firstStep() (*ReplyMarkup, error) {
+func (c *upsertLection) firstStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
 	}
 	if c.exists {
 		return lections(c.u, false, false)
 	}
-	// if the user is a lector = add him as an lection owner and skip the next step
+	// if the user is a lector = add him as an lection owner and skip step
 	if c.u.Role == store.USER_ROLE_LECTOR {
 		c.userID = c.u.ID
-		replyMarkup.Text = lang.UPSERT_LECTURE_STEP_LECTURE_NAME
-		c.step++
-		return replyMarkup, nil
+		return c.SkipStep(answer)
 	}
 	users, err := store.Users([]store.UserRole{store.USER_ROLE_ADMIN, store.USER_ROLE_LECTOR})
 	if err != nil {
@@ -180,25 +164,18 @@ func (c *upsertLection) fourthStep(answer string) (*ReplyMarkup, error) {
 type addDescriptionLection struct {
 	u         *store.User
 	lectionID int
-	step      int
+	stepConstructor
 }
 
-func (c *addDescriptionLection) NextStep(answer string) (*ReplyMarkup, error) {
-	var replyMarkup *ReplyMarkup
-	var err error
-	switch c.step {
-	case 0:
-		replyMarkup, err = lections(c.u, true, true)
-	case 1:
-		replyMarkup, err = c.secondStep(answer)
-	case 2:
-		replyMarkup, err = c.thirdStep(answer)
-	}
-	if err != nil {
-		return nil, err
-	}
-	c.step++
-	return replyMarkup, err
+// newAddDescriptionLection creates addDescriptionLection and registers all steps
+func newAddDescriptionLection() *addDescriptionLection {
+	c := &addDescriptionLection{}
+	c.RegisterSteps(c.firstStep, c.secondStep, c.thirdStep)
+	return c
+}
+
+func (c *addDescriptionLection) firstStep(answer string) (*ReplyMarkup, error) {
+	return lections(c.u, true, true)
 }
 
 // secondStep asks lecture description
@@ -292,10 +269,6 @@ func (c *addDescriptionLection) IsAllow(u *store.User) bool {
 	return u.Role == store.USER_ROLE_ADMIN || u.Role == store.USER_ROLE_LECTOR
 }
 
-func (c *addDescriptionLection) IsEnd() bool {
-	return c.step == 3
-}
-
 type lectionsList struct {
 	u                  *store.User
 	withoutDescription bool
@@ -340,13 +313,16 @@ func (c *lectionsList) NextStep(answer string) (*ReplyMarkup, error) {
 }
 
 type deleteLection struct {
-	step      int
 	lectionID int
 	u         *store.User
+	stepConstructor
 }
 
-func (c *deleteLection) IsEnd() bool {
-	return c.step == 2
+// newDeleteLection creates deleteLection and registers all steps
+func newDeleteLection() *deleteLection {
+	c := &deleteLection{}
+	c.RegisterSteps(c.firstStep, c.secondStep)
+	return c
 }
 
 func (c *deleteLection) IsAllow(u *store.User) bool {
@@ -354,20 +330,8 @@ func (c *deleteLection) IsAllow(u *store.User) bool {
 	return u.Role == store.USER_ROLE_ADMIN || u.Role == store.USER_ROLE_LECTOR
 }
 
-func (c *deleteLection) NextStep(answer string) (*ReplyMarkup, error) {
-	var replyMarkup *ReplyMarkup
-	var err error
-	switch c.step {
-	case 0:
-		replyMarkup, err = lections(c.u, false, false)
-	case 1:
-		replyMarkup, err = c.secondStep(answer)
-	}
-	if err != nil {
-		return nil, err
-	}
-	c.step++
-	return replyMarkup, err
+func (c *deleteLection) firstStep(answer string) (*ReplyMarkup, error) {
+	return lections(c.u, false, false)
 }
 
 // secondStep deletes particular lecture
