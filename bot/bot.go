@@ -59,15 +59,19 @@ func (b *Bot) ListenUpdates() {
 	}
 
 	for update := range updates {
-		if update.Message == nil || update.Message.Text == "" {
+		if (update.Message == nil || update.Message.Text == "") && update.Message.Photo == nil {
 			continue
+		}
+		msgT := update.Message.Text
+		if update.Message.Photo != nil && len(*update.Message.Photo) > 0 {
+			msgT = (*update.Message.Photo)[0].FileID
 		}
 		log.Infof("got new msg from [%d:%s]: %s, chatID: %d", update.Message.From.ID, update.Message.From.UserName, string(update.Message.Text), update.Message.Chat.ID)
 		// TODO: add new record to history table
 
 		msg := &Message{
 			Type:     ChatType(update.Message.Chat.Type),
-			Text:     update.Message.Text,
+			Text:     msgT,
 			Username: update.Message.From.UserName,
 			UserID:   update.Message.From.ID,
 			ChatID:   update.Message.Chat.ID,
@@ -121,10 +125,13 @@ func (b *Bot) Reply(msg *Message) {
 		replyMarkup.Buttons = nil
 	}
 	replyMsg := tgbotapi.NewMessage(msg.ChatID, replyMarkup.Text)
+	replyMsg.BaseChat.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	if len(replyMarkup.Buttons) > 0 {
 		replyMsg.BaseChat.ReplyMarkup = markup(replyMarkup.Buttons)
-	} else {
-		replyMsg.BaseChat.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+	}
+	if replyMarkup.FileID != "" {
+		pc := tgbotapi.NewPhotoShare(msg.ChatID, replyMarkup.FileID)
+		b.bot.Send(pc)
 	}
 	b.bot.Send(replyMsg)
 }

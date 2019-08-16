@@ -11,6 +11,7 @@ type MessageButtons []string
 var (
 	// AdminMarkup contains buttons for admins
 	AdminMarkup = MessageButtons{
+		lang.MARKUP_BUTTON_PROFILE,
 		lang.MARKUP_BUTTON_LECTURES,
 		lang.MARKUP_BUTTON_EVENTS,
 		lang.MARKUP_BUTTON_USERS,
@@ -21,6 +22,7 @@ var (
 
 	// SpeakerMarkup contains buttons for speakers
 	SpeakerMarkup = MessageButtons{
+		lang.MARKUP_BUTTON_PROFILE,
 		lang.MARKUP_BUTTON_LECTURES,
 		lang.MARKUP_BUTTON_NEXT_EVENT,
 		lang.MARKUP_BUTTON_NEXT_REHEARSAL,
@@ -72,6 +74,15 @@ var (
 		lang.MARKUP_BUTTON_NEXT_REHEARSAL,
 		lang.MARKUP_BUTTON_CREATE_REHEARSAL,
 		lang.MARKUP_BUTTON_DELETE_REHEARSAL,
+	}
+
+	// ProfileMarkup contains buttons for speakers and admins
+	ProfileMarkup = MessageButtons{
+		lang.MARKUP_BUTTON_PROFILE_NAME,
+		lang.MARKUP_BUTTON_PROFILE_BIRTHDAY,
+		lang.MARKUP_BUTTON_PROFILE_FB_ACCOUNT,
+		lang.MARKUP_BUTTON_PROFILE_VK_ACCOUNT,
+		lang.MARKUP_BUTTON_PROFILE_PICTURE,
 	}
 )
 

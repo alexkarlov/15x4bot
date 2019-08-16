@@ -41,11 +41,15 @@ func NewUserRole(r string) UserRole {
 
 // User represents a user entity in DB
 type User struct {
-	ID       int
-	TGUserID int
-	Username string
-	Name     string
-	Role     UserRole
+	ID        int
+	TGUserID  int
+	Username  string
+	Name      string
+	FB        string
+	VK        string
+	PictureID string
+	BDate     time.Time
+	Role      UserRole
 }
 
 // DoesUserExist returns whether user exists by provided id or no
@@ -64,8 +68,8 @@ func DoesUserExist(id int) (bool, error) {
 // LoadUserByUsername returns a user loaded by username
 func LoadUserByUsername(username string) (*User, error) {
 	u := &User{}
-	q := "SELECT u.id, u.role, u.tg_id, u.username FROM users u WHERE u.username=$1"
-	err := dbConn.QueryRow(q, username).Scan(&u.ID, &u.Role, &u.TGUserID, &u.Username)
+	q := "SELECT id, role, tg_id, username, name, fb, vk, picture_id, bdate FROM users WHERE username=$1"
+	err := dbConn.QueryRow(q, username).Scan(&u.ID, &u.Role, &u.TGUserID, &u.Username, &u.Name, &u.FB, &u.VK, &u.PictureID, &u.BDate)
 	if err == sql.ErrNoRows {
 		return nil, ErrNoUser
 	}
@@ -75,8 +79,8 @@ func LoadUserByUsername(username string) (*User, error) {
 // LoadUserByTGID returns a user loaded by username
 func LoadUserByTGID(tgID int) (*User, error) {
 	u := &User{}
-	q := "SELECT u.id, u.role, u.tg_id, u.username FROM users u WHERE u.tg_id=$1"
-	err := dbConn.QueryRow(q, tgID).Scan(&u.ID, &u.Role, &u.TGUserID, &u.Username)
+	q := "SELECT id, role, tg_id, username, name, fb, vk, picture_id, bdate FROM users WHERE tg_id=$1"
+	err := dbConn.QueryRow(q, tgID).Scan(&u.ID, &u.Role, &u.TGUserID, &u.Username, &u.Name, &u.FB, &u.VK, &u.PictureID, &u.BDate)
 	if err == sql.ErrNoRows {
 		return nil, ErrNoUser
 	}
@@ -85,6 +89,31 @@ func LoadUserByTGID(tgID int) (*User, error) {
 
 func UpdateTGIDUser(ID int, TGID int) error {
 	_, err := dbConn.Exec("UPDATE users SET tg_id=$1, udate=NOW() WHERE id=$2", TGID, ID)
+	return err
+}
+
+func UpdateNameUser(ID int, name string) error {
+	_, err := dbConn.Exec("UPDATE users SET name=$1, udate=NOW() WHERE id=$2", name, ID)
+	return err
+}
+
+func UpdateFBUser(ID int, fb string) error {
+	_, err := dbConn.Exec("UPDATE users SET fb=$1, udate=NOW() WHERE id=$2", fb, ID)
+	return err
+}
+
+func UpdateVKUser(ID int, vk string) error {
+	_, err := dbConn.Exec("UPDATE users SET vk=$1, udate=NOW() WHERE id=$2", vk, ID)
+	return err
+}
+
+func UpdateBDateUser(ID int, bdate time.Time) error {
+	_, err := dbConn.Exec("UPDATE users SET bdate=$1, udate=NOW() WHERE id=$2", bdate, ID)
+	return err
+}
+
+func UpdatePictureUser(ID int, picture string) error {
+	_, err := dbConn.Exec("UPDATE users SET picture_id=$1, udate=NOW() WHERE id=$2", picture, ID)
 	return err
 }
 

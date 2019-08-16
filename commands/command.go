@@ -159,6 +159,12 @@ var (
 			},
 		},
 		{
+			pattern: `Профіль`,
+			createCmd: func(cmd string) Command {
+				return newProfile()
+			},
+		},
+		{
 			pattern: `Список івентів`,
 			createCmd: func(cmd string) Command {
 				return &eventsList{}
@@ -266,6 +272,7 @@ func (s *stepConstructor) IsEnd() bool {
 // ReplyMarkup contains text answer of the bot and (optional) special command buttons
 type ReplyMarkup struct {
 	Text    string
+	FileID  string
 	Buttons []string
 }
 

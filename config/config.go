@@ -15,6 +15,7 @@ type TG struct {
 type Chat struct {
 	Location                string `env:"TIMEZONE" default:"Europe/Kiev"`
 	TimeLayout              string `env:"TIMELAYOUT" default:"2006-01-02 15:04"`
+	DateLayout              string `env:"DATELAYOUT" default:"2006-01-02"`
 	InternalChannelUsername string `env:"INTERNAL_CHANNEL_USERNAME"`
 	InternalChatID          string `env:"INTERNAL_CHAT_ID"`
 	GrammarNaziChatID       string `env:"GRAMMER_NAZI_CHAT_ID"`

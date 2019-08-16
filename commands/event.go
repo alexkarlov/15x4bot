@@ -46,7 +46,7 @@ func (c *addEvent) secondStep(answer string) (*ReplyMarkup, error) {
 	}
 	t, err := time.Parse(Conf.TimeLayout, answer)
 	if err != nil {
-		replyMarkup.Text = lang.ADD_EVENT_WRONG_DATE
+		replyMarkup.Text = lang.ADD_EVENT_WRONG_DATETIME
 		return replyMarkup, nil
 	}
 	c.whenStart = t
@@ -62,7 +62,7 @@ func (c *addEvent) thirdStep(answer string) (*ReplyMarkup, error) {
 	var err error
 	c.whenEnd, err = time.Parse(Conf.TimeLayout, answer)
 	if err != nil {
-		replyMarkup.Text = lang.ADD_EVENT_WRONG_DATE
+		replyMarkup.Text = lang.ADD_EVENT_WRONG_DATETIME
 		return replyMarkup, nil
 	}
 	places, err := store.Places(store.PlaceTypes{store.PLACE_TYPE_FOR_EVENT, store.PLACE_TYPE_FOR_ALL})
