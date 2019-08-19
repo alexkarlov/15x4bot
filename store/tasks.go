@@ -110,19 +110,19 @@ func AddTask(t TaskType, execTime time.Time, details string) error {
 	return nil
 }
 
-// RemindLection contains details (ID) about the lection to ask description from user
-type RemindLection struct {
+// RemindLecture contains details (ID) about the lecture to ask description from user
+type RemindLecture struct {
 	ID       int
 	Attempts int
 }
 
-// LoadLection loads lection by ID
-func (r *RemindLection) LoadLection() (*Lection, error) {
-	return LoadLection(r.ID)
+// LoadLecture loads lecture by ID
+func (r *RemindLecture) LoadLecture() (*Lecture, error) {
+	return LoadLecture(r.ID)
 }
 
 // PostponeTask increases attempts and increases execution time
-func (r *RemindLection) PostponeTask(id int) error {
+func (r *RemindLecture) PostponeTask(id int) error {
 	r.Attempts++
 	postponeTime := math.Exp(float64(r.Attempts))
 	postponeInterval := fmt.Sprintf(string(POSTPONE_PERIOD_ONE_DAY), int(postponeTime))
@@ -135,9 +135,9 @@ func (r *RemindLection) PostponeTask(id int) error {
 	return err
 }
 
-// LoadReminderLection loads lection remind from task details
-func (t *Task) LoadReminderLection() (*RemindLection, error) {
-	r := &RemindLection{}
+// LoadReminderLecture loads lecture remind from task details
+func (t *Task) LoadReminderLecture() (*RemindLecture, error) {
+	r := &RemindLecture{}
 	err := json.Unmarshal([]byte(t.Details), r)
 	return r, err
 }

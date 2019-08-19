@@ -1,26 +1,26 @@
 package store
 
-// Lection represents a 15x4 lection and contains information about a lector
-type Lection struct {
+// Lecture represents a 15x4 lecture and contains information about a lector
+type Lecture struct {
 	ID          int
 	Description string
 	Name        string
 	Lector      *User
 }
 
-// LoadLection loads a lection and lector details
-func LoadLection(ID int) (*Lection, error) {
-	q := "SELECT l.id, l.name, l.description, u.id, u.username, u.tg_id, u.role FROM lections l LEFT JOIN users u ON u.id=l.user_id WHERE l.id=$1"
-	l := &Lection{
+// LoadLecture loads a lecture and lector details
+func LoadLecture(ID int) (*Lecture, error) {
+	q := "SELECT l.id, l.name, l.description, u.id, u.username, u.tg_id, u.role FROM lectures l LEFT JOIN users u ON u.id=l.user_id WHERE l.id=$1"
+	l := &Lecture{
 		Lector: &User{},
 	}
 	err := dbConn.QueryRow(q, ID).Scan(&l.ID, &l.Name, &l.Description, &l.Lector.ID, &l.Lector.Username, &l.Lector.TGUserID, &l.Lector.Role)
 	return l, err
 }
 
-// AddLectionDescription adds description for the provided lection
-func AddLectionDescription(id int, d string) error {
-	q := "UPDATE lections SET description=$1 WHERE id=$2"
+// AddLectureDescription adds description for the provided lecture
+func AddLectureDescription(id int, d string) error {
+	q := "UPDATE lectures SET description=$1 WHERE id=$2"
 	_, err := dbConn.Exec(q, d, id)
 	if err != nil {
 		return err
@@ -28,51 +28,51 @@ func AddLectionDescription(id int, d string) error {
 	return nil
 }
 
-// UpdateLection updates an existed lection
-func UpdateLection(ID int, name string, description string) error {
-	_, err := dbConn.Exec("UPDATE lections set name=$1, description=$2 WHERE id=$3", name, description, ID)
+// UpdateLecture updates an existed lecture
+func UpdateLecture(ID int, name string, description string) error {
+	_, err := dbConn.Exec("UPDATE lectures set name=$1, description=$2 WHERE id=$3", name, description, ID)
 	return err
 }
 
-// AddLection creates a lection and returns id of created lection
-func AddLection(name string, description string, userID int) (int, error) {
+// AddLecture creates a lecture and returns id of created lecture
+func AddLecture(name string, description string, userID int) (int, error) {
 	var ID int
-	err := dbConn.QueryRow("INSERT INTO lections (name, description, user_id) VALUES ($1, $2, $3) RETURNING id", name, description, userID).Scan(&ID)
+	err := dbConn.QueryRow("INSERT INTO lectures (name, description, user_id) VALUES ($1, $2, $3) RETURNING id", name, description, userID).Scan(&ID)
 	return ID, err
 }
 
-// Lections return list of lections. New lections can be useful for creation of event
-func Lections(newOnly bool) ([]*Lection, error) {
+// Lectures return list of lectures. New lectures can be useful for creation of event
+func Lectures(newOnly bool) ([]*Lecture, error) {
 	typeFilter := "WHERE 1=1 "
 	if newOnly {
-		typeFilter = " AND l.id NOT IN (SELECT id_lection FROM event_lections)"
+		typeFilter = " AND l.id NOT IN (SELECT id_lecture FROM event_lectures)"
 	}
-	baseQuery := "SELECT l.id, l.name, l.description, u.name, u.username, u.tg_id, u.id, u.role FROM lections l "
+	baseQuery := "SELECT l.id, l.name, l.description, u.name, u.username, u.tg_id, u.id, u.role FROM lectures l "
 	baseQuery += " INNER JOIN users u ON u.id = user_id " + typeFilter
 	rows, err := dbConn.Query(baseQuery)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	lections := make([]*Lection, 0)
+	lectures := make([]*Lecture, 0)
 	for rows.Next() {
-		lection := &Lection{
+		lecture := &Lecture{
 			Lector: &User{},
 		}
-		if err := rows.Scan(&lection.ID, &lection.Name, &lection.Description, &lection.Lector.Name, &lection.Lector.Username, &lection.Lector.TGUserID, &lection.Lector.ID, &lection.Lector.Role); err != nil {
+		if err := rows.Scan(&lecture.ID, &lecture.Name, &lecture.Description, &lecture.Lector.Name, &lecture.Lector.Username, &lecture.Lector.TGUserID, &lecture.Lector.ID, &lecture.Lector.Role); err != nil {
 			return nil, err
 		}
-		lections = append(lections, lection)
+		lectures = append(lectures, lecture)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	return lections, err
+	return lectures, err
 }
 
-// DeleteLection deletes lection by provided id
-func DeleteLection(id int) error {
-	q := "DELETE FROM lections WHERE id=$1"
+// DeleteLecture deletes lecture by provided id
+func DeleteLecture(id int) error {
+	q := "DELETE FROM lectures WHERE id=$1"
 	_, err := dbConn.Exec(q, id)
 	return err
 }

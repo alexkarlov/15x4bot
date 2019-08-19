@@ -10,8 +10,8 @@ const (
 	ADD_EVENT_WRONG_DATE          = "Невірний формат дати. Приклад: 2018-12-20"
 	ADD_EVENT_WHEN_END            = "Коли закінчується? Дата та час в форматі 2018-12-31 19:00"
 	ADD_EVENT_END_PHRASE          = "Кінець"
-	ADD_EVENT_INTRO_LECTIONS_LIST = "Виберіть лекцію. Для закінчення натисніть " + ADD_EVENT_END_PHRASE
-	ADD_EVENT_LECTIONS_LIST       = "Лекція %d: %s.%s"
+	ADD_EVENT_INTRO_LECTURES_LIST = "Виберіть лекцію. Для закінчення натисніть " + ADD_EVENT_END_PHRASE
+	ADD_EVENT_LECTURES_LIST       = "Лекція %d: %s.%s"
 	ADD_EVENT_TEXT_EVENT          = "Текст івенту"
 	ADD_EVENT_SUCCESS_MSG         = "Івент створено"
 
@@ -34,7 +34,7 @@ const (
 	// ========================== LECTURES SECTION ===============================================================
 	LECTURES_ERROR_NOT_YOUR = "Це не твоя лекція!"
 
-	// ========================== Command: upsertLection (create or update lecture) ==============================
+	// ========================== Command: upsertLecture (create or update lecture) ==============================
 	UPSERT_LECTURE_STEP_SPEAKER_DETAILS     = "%d - %s, %s\n"
 	UPSERT_LECTURE_STEP_SPEAKER             = "Хто лектор?\n%s"
 	UPSERT_LECTURE_STEP_LECTURE_NAME        = "Назва лекції"

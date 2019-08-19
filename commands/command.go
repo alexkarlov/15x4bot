@@ -11,9 +11,9 @@ import (
 var (
 	// Conf contains configuration for all chats
 	Conf config.Chat
-	// ErrWrongID happens when command can't parse id of any entity (lection, user, etc)
+	// ErrWrongID happens when command can't parse id of any entity (lecture, user, etc)
 	ErrWrongID = errors.New("wrong id: failed to parse id")
-	// regexpID is a pattern for parsing id of any entity (lection, user, etc)
+	// regexpID is a pattern for parsing id of any entity (lecture, user, etc)
 	regexpID = regexp.MustCompile(`^[^\d]+?(\d+):`)
 	// commandPatterns contains all available commands
 	commandPatterns = []struct {
@@ -48,25 +48,25 @@ var (
 		{
 			pattern: `Створити лекцію`,
 			createCmd: func(cmd string) Command {
-				return newUpsertLection(false)
+				return newUpsertLecture(false)
 			},
 		},
 		{
 			pattern: `Змінити лекцію`,
 			createCmd: func(cmd string) Command {
-				return newUpsertLection(true)
+				return newUpsertLecture(true)
 			},
 		},
 		{
 			pattern: `Список лекцій\(всі\)`,
 			createCmd: func(cmd string) Command {
-				return &lectionsList{}
+				return &lecturesList{}
 			},
 		},
 		{
 			pattern: `Список лекцій\(без опису\)`,
 			createCmd: func(cmd string) Command {
-				return &lectionsList{
+				return &lecturesList{
 					withoutDescription: true,
 				}
 			},
@@ -132,13 +132,13 @@ var (
 		{
 			pattern: `Додати опис до лекції`,
 			createCmd: func(cmd string) Command {
-				return newAddDescriptionLection()
+				return newAddDescriptionLecture()
 			},
 		},
 		{
 			pattern: `Видалити лекцію`,
 			createCmd: func(cmd string) Command {
-				return newDeleteLection()
+				return newDeleteLecture()
 			},
 		},
 		{
@@ -147,7 +147,7 @@ var (
 				reply := &markup{}
 				switch cmd {
 				case "Лекції":
-					reply.buttons = LectionMarkup
+					reply.buttons = LectureMarkup
 				case "Івенти":
 					reply.buttons = EventMarkup
 				case "Юзери":

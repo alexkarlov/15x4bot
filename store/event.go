@@ -9,7 +9,7 @@ import (
 // ErrUndefinedNextEvent needs for determining case where there is no next event
 var ErrUndefinedNextEvent = errors.New("Next event is undeffined")
 
-// Event represents an event with general information and lections
+// Event represents an event with general information and lectures
 type Event struct {
 	ID          int
 	StartTime   time.Time
@@ -20,8 +20,8 @@ type Event struct {
 	Letions     []int
 }
 
-// AddEvent creates a new event and adds lections to it
-func AddEvent(startTime time.Time, endTime time.Time, place int, description string, lections []int) (int, error) {
+// AddEvent creates a new event and adds lectures to it
+func AddEvent(startTime time.Time, endTime time.Time, place int, description string, lectures []int) (int, error) {
 	tx, err := dbConn.Begin()
 	if err != nil {
 		return 0, err
@@ -33,8 +33,8 @@ func AddEvent(startTime time.Time, endTime time.Time, place int, description str
 		tx.Rollback()
 		return 0, err
 	}
-	for _, lection := range lections {
-		_, err = tx.Exec("INSERT INTO event_lections (id_event, id_lection) VALUES ($1, $2)", eventID, lection)
+	for _, lecture := range lectures {
+		_, err = tx.Exec("INSERT INTO event_lectures (id_event, id_lecture) VALUES ($1, $2)", eventID, lecture)
 		if err != nil {
 			tx.Rollback()
 			return 0, err

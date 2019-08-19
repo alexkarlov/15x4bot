@@ -43,8 +43,8 @@ var (
 		lang.MARKUP_BUTTON_MAIN_MENU,
 	}
 
-	// LectionMarkup contains buttons for admins (lectures submenu)
-	LectionMarkup = MessageButtons{
+	// LectureMarkup contains buttons for admins (lectures submenu)
+	LectureMarkup = MessageButtons{
 		lang.MARKUP_BUTTON_CREATE_LECTURE,
 		lang.MARKUP_BUTTON_UPDATE_LECTURE,
 		lang.MARKUP_BUTTON_ADD_DESCRIPTION,

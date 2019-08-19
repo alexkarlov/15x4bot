@@ -13,7 +13,7 @@ type addEvent struct {
 	whenEnd     time.Time
 	where       int
 	description string
-	lections    []int
+	lectures    []int
 	u           *store.User
 	stepConstructor
 }
@@ -107,16 +107,16 @@ func (c *addEvent) fifthStep(answer string) (*ReplyMarkup, error) {
 	}
 	var err error
 	c.description = answer
-	lections, err := store.Lections(true)
+	lectures, err := store.Lectures(true)
 	if err != nil {
 		return nil, err
 	}
-	for _, l := range lections {
-		lText := fmt.Sprintf(lang.ADD_EVENT_LECTIONS_LIST, l.ID, l.Name, l.Lector.Name)
+	for _, l := range lectures {
+		lText := fmt.Sprintf(lang.ADD_EVENT_LECTURES_LIST, l.ID, l.Name, l.Lector.Name)
 		replyMarkup.Buttons = append(replyMarkup.Buttons, lText)
 	}
 	replyMarkup.Buttons = append(replyMarkup.Buttons, lang.ADD_EVENT_END_PHRASE)
-	replyMarkup.Text = lang.ADD_EVENT_INTRO_LECTIONS_LIST
+	replyMarkup.Text = lang.ADD_EVENT_INTRO_LECTURES_LIST
 	return replyMarkup, nil
 }
 
@@ -126,7 +126,7 @@ func (c *addEvent) sixthStep(answer string) (*ReplyMarkup, error) {
 		Buttons: MainMarkup,
 	}
 	if answer == lang.ADD_EVENT_END_PHRASE {
-		_, err := store.AddEvent(c.whenStart, c.whenEnd, c.where, c.description, c.lections)
+		_, err := store.AddEvent(c.whenStart, c.whenEnd, c.where, c.description, c.lectures)
 		if err != nil {
 			return nil, err
 		}
@@ -138,7 +138,7 @@ func (c *addEvent) sixthStep(answer string) (*ReplyMarkup, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.lections = append(c.lections, lID)
+	c.lectures = append(c.lectures, lID)
 	// desrese step counter for returning on the next iteration to the same step
 	c.RepeatStep()
 	return replyMarkup, nil

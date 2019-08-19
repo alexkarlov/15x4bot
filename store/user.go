@@ -19,7 +19,7 @@ type UserRole string
 const (
 	// admin can do anything
 	USER_ROLE_ADMIN UserRole = "admin"
-	// lector can create lections and ask general questions
+	// lector can create lectures and ask general questions
 	USER_ROLE_LECTOR UserRole = "lector"
 	// guest can only ask general questions
 	USER_ROLE_GUEST UserRole = "guest"

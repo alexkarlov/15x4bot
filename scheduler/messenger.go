@@ -31,7 +31,7 @@ func MessageToAdmin(t *store.Task, b *bot.Bot) {
 	}
 	m, err := t.LoadMessenger()
 	if err != nil {
-		log.Errorf("failed to load reminder lection of task %d error:%s", t.ID, err)
+		log.Errorf("failed to load reminder lecture of task %d error:%s", t.ID, err)
 		if err := t.ReleaseTask(); err != nil {
 			log.Errorf("failed to release task %d error:%s", t.ID, err)
 		}
