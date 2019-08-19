@@ -42,14 +42,9 @@ func (c *chat) ReplyMarkup(m *Message) (*commands.ReplyMarkup, error) {
 	}
 
 	if c.cmd.IsEnd() {
-		cc, ok := (c.cmd).(CacheCleaner)
-		if ok {
-			uID := cc.UserID()
-			log.Infof("cleaned user cache for %d", uID)
-			err = clearUserCache(uID)
-			if err != nil {
-				log.Infof("unsuccessful clearing cache for %d: %s", uID, err)
-			}
+		err = cleanUserCache(c.cmd)
+		if err != nil {
+			log.Error("error while cleaning cache ", c.cmd)
 		}
 		log.Infof("command %#v has been finished", c.cmd)
 		c.cmd = nil
@@ -141,14 +136,24 @@ type CacheCleaner interface {
 	UserID() int
 }
 
-// clearUserCache deletes from chatsManager all data related to the user
-func clearUserCache(ID int) error {
-	chatsManager.l.Lock()
-	u, err := store.LoadUserByID(ID)
+// cleanUserCache deletes from chatsManager all data related to the user
+// only if the current command implements CacheCleaner
+func cleanUserCache(c commands.Command) error {
+	cc, ok := c.(CacheCleaner)
+	if !ok {
+		return nil
+	}
+	uID := cc.UserID()
+	if uID == 0 {
+		return nil
+	}
+	u, err := store.LoadUserByID(uID)
 	if err != nil {
 		return err
 	}
+	chatsManager.l.Lock()
 	delete(chatsManager.list, int64(u.TGUserID))
-	defer chatsManager.l.Unlock()
+	chatsManager.l.Unlock()
+	log.Infof("cleaned user cache for %d", uID)
 	return nil
 }

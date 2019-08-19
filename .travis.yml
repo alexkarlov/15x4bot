@@ -19,7 +19,6 @@ script:
   # Send tar to EC2 instances
   - scp -o StrictHostKeyChecking=no -i "travis.pem" ./bot.tar $SERVER_USER@$SERVER_DNS:~/bot.tar
   # Process env file
-  - scp -o StrictHostKeyChecking=no -i "travis.pem" ./.env $SERVER_USER@$SERVER_DNS:~/.env
   - ssh -i "travis.pem" -t $SERVER_USER@$SERVER_DNS "mkdir -p ~/postgresql/migrations"
   - scp -o StrictHostKeyChecking=no -i "travis.pem" ./postgresql/.env $SERVER_USER@$SERVER_DNS:~/postgresql/.env
   # Copy migrations
