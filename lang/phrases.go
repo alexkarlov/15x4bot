@@ -38,9 +38,10 @@ const (
 	UPSERT_LECTURE_STEP_SPEAKER_DETAILS     = "%d - %s, %s\n"
 	UPSERT_LECTURE_STEP_SPEAKER             = "Хто лектор?\n%s"
 	UPSERT_LECTURE_STEP_LECTURE_NAME        = "Назва лекції"
-	UPSERT_LECTURE_STEP_LECTURE_DESCRIPTION = "Опис лекції. Цей опис буде відправлений в чат редакторам, тому бажано відправляти остаточний варіант"
+	UPSERT_LECTURE_STEP_LECTURE_DESCRIPTION = "Опис лекції"
 	UPSERT_LECTURE_SUCCESS_CREATE_MSG       = "Лекцію створено"
 	UPSERT_LECTURE_SUCCESS_UPDATE_MSG       = "Лекцію змінено"
+	UPSERT_LECTURE_SEND_TO_GRAMMAR_NAZI     = "Відправити лекцію на перевірку нашим редакторам?"
 	UPSERT_LECTURE_ITEM                     = "Лекція %d: %s"
 	UPSERT_LECTURE_I_WILL_REMIND            = "Так як в лекції немає опису, я нагадаю про необхідність додати опис %s"
 
@@ -48,7 +49,8 @@ const (
 	ADD_LECTURE_DESCIRPTION_CHOSE_LECTURE       = "Оберіть лекцію"
 	ADD_LECTURE_DESCRIPTION_COMPLETE            = "Опис лекції створено"
 	ADD_LECTURE_DESCRIPTION_MSG_TO_GRAMMAR_NAZI = "Лекція: %s\nОпис: %s\n"
-	ADD_LECTURE_DESCRIPTION_ERROR_REMINDER_MSG  = "Опис лекції створено, але якась фігня скоїлась при створенні нагадувань в чат граммар-наці. Звернись пліз до @alex_karlov"
+	ADD_LECTURE_DESCRIPTION_ERROR_REMINDER_MSG  = "Якась фігня скоїлась при створенні нагадувань в чат граммар-наці. Звернись пліз до @alex_karlov"
+	ADD_LECTURE_DESCRIPTION_REMINDER_MSG_OK     = "Опис буде відправлено в чат граммар-наці"
 
 	// ========================== Command: lecturesList (list of all lectures) ====================================
 	LECTURE_LIST_ITEM  = "Лекція %d: %s\nОпис: %s\nЛектор: @%s,  %s"
@@ -165,15 +167,15 @@ const (
 	// ========================= PROFILE SECTION ==================================================================
 	// ========================= Command: profileName =============================================================
 	PROFILE_CURRENT_VALUE                = "Поточне значення:"
-	PROFILE_WHAT_IS_YOUR_NAME            = "Якщо бажаєте змінити, введіть своє ім'я та прізвище"
+	PROFILE_WHAT_IS_YOUR_NAME            = "Якщо бажаєш змінити, введи своє ім'я та прізвище"
 	PROFILE_NAME_SUCCESSFULY_UPDATED     = "Ім'я та прізвище успішно змінено"
-	PROFILE_WHAT_IS_YOUR_FB              = "Якщо бажаєте змінити, введіть свій fb акаунт"
+	PROFILE_WHAT_IS_YOUR_FB              = "Якщо бажаєш змінити, введи свій fb акаунт"
 	PROFILE_FB_SUCCESSFULY_UPDATED       = "fb акаунт успішно змінено"
-	PROFILE_WHAT_IS_YOUR_VK              = "Якщо бажаєте змінити, введіть свій vk акаунт"
+	PROFILE_WHAT_IS_YOUR_VK              = "Якщо бажаєш змінити, введи свій vk акаунт"
 	PROFILE_VK_SUCCESSFULY_UPDATED       = "vk успішно змінено"
-	PROFILE_WHAT_IS_YOUR_BIRTHDAY        = "Якщо бажаєте змінити, введіть свою дату народження в форматі 2018-12-31"
+	PROFILE_WHAT_IS_YOUR_BIRTHDAY        = "Якщо бажаєш змінити, введи свою дату народження в форматі 2018-12-31"
 	PROFILE_BIRTHDAY_SUCCESSFULY_UPDATED = "Дату народження успішно змінено"
-	PROFILE_WHAT_IS_YOUR_PICTURE         = "Якщо бажаєте змінити, завантажте своє фото"
+	PROFILE_WHAT_IS_YOUR_PICTURE         = "Якщо бажаєш змінити, завантаж своє фото"
 	PROFILE_PICTURE_SUCCESSFULY_UPDATED  = "Фото успішно завантажено"
 )
 

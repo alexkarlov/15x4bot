@@ -65,6 +65,17 @@ func DoesUserExist(id int) (bool, error) {
 	return true, nil
 }
 
+// LoadUserByID returns a user loaded by id
+func LoadUserByID(ID int) (*User, error) {
+	u := &User{}
+	q := "SELECT id, role, tg_id, username, name, fb, vk, picture_id, bdate FROM users WHERE id=$1"
+	err := dbConn.QueryRow(q, ID).Scan(&u.ID, &u.Role, &u.TGUserID, &u.Username, &u.Name, &u.FB, &u.VK, &u.PictureID, &u.BDate)
+	if err == sql.ErrNoRows {
+		return nil, ErrNoUser
+	}
+	return u, err
+}
+
 // LoadUserByUsername returns a user loaded by username
 func LoadUserByUsername(username string) (*User, error) {
 	u := &User{}

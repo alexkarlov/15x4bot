@@ -43,7 +43,7 @@ func newUpsertLection(e bool) *upsertLection {
 	c := &upsertLection{
 		exists: e,
 	}
-	c.RegisterSteps(c.firstStep, c.secondStep, c.thirdStep, c.fourthStep)
+	c.RegisterSteps(c.firstStep, c.secondStep, c.thirdStep, c.fourthStep, c.fifthStep)
 	return c
 }
 
@@ -135,18 +135,14 @@ func (c *upsertLection) fourthStep(answer string) (*ReplyMarkup, error) {
 		err = store.UpdateLection(c.ID, c.name, c.description)
 	} else {
 		lectionID, err = store.AddLection(c.name, c.description, c.userID)
+		c.ID = lectionID
 	}
 	if err != nil {
 		return nil, err
 	}
-	if c.exists {
-		replyMarkup.Text = lang.UPSERT_LECTURE_SUCCESS_UPDATE_MSG
-	} else {
-		replyMarkup.Text = lang.UPSERT_LECTURE_SUCCESS_CREATE_MSG
-	}
 	// if user didn't provide lecture description
 	// create a new reminder task
-	if answer == lang.I_DONT_KNOW {
+	if c.description == "" {
 		execTime := nextDay(UserRemindHour)
 		r := &store.RemindLection{
 			ID: lectionID,
@@ -157,8 +153,22 @@ func (c *upsertLection) fourthStep(answer string) (*ReplyMarkup, error) {
 		}
 		store.AddTask(store.TASK_TYPE_REMINDER_LECTOR, execTime, string(details))
 		replyMarkup.Text += "\n" + fmt.Sprintf(lang.UPSERT_LECTURE_I_WILL_REMIND, execTime.Format(Conf.TimeLayout))
+	} else {
+		replyMarkup.Text += "\n\n" + lang.UPSERT_LECTURE_SEND_TO_GRAMMAR_NAZI
+		replyMarkup.Buttons = MessageButtons{lang.MARKUP_BUTTON_NO, lang.MARKUP_BUTTON_YES}
 	}
 	return replyMarkup, nil
+}
+
+// fourthStep saves lecture into db and (if needed) creates a new task reminder
+func (c *upsertLection) fifthStep(answer string) (*ReplyMarkup, error) {
+	replyMarkup, err := stepSendToGrammarChat(c.ID, answer, c.u)
+	if c.exists {
+		replyMarkup.Text = lang.UPSERT_LECTURE_SUCCESS_UPDATE_MSG
+	} else {
+		replyMarkup.Text = lang.UPSERT_LECTURE_SUCCESS_CREATE_MSG
+	}
+	return replyMarkup, err
 }
 
 type addDescriptionLection struct {
@@ -170,7 +180,7 @@ type addDescriptionLection struct {
 // newAddDescriptionLection creates addDescriptionLection and registers all steps
 func newAddDescriptionLection() *addDescriptionLection {
 	c := &addDescriptionLection{}
-	c.RegisterSteps(c.firstStep, c.secondStep, c.thirdStep)
+	c.RegisterSteps(c.firstStep, c.secondStep, c.thirdStep, c.fourthStep)
 	return c
 }
 
@@ -202,20 +212,36 @@ func (c *addDescriptionLection) secondStep(answer string) (*ReplyMarkup, error) 
 
 // thirdStep saves description in the db and sends it to the grammar nazi chat
 func (c *addDescriptionLection) thirdStep(answer string) (*ReplyMarkup, error) {
-	replyMarkup := &ReplyMarkup{
-		Buttons: MainMarkup,
-	}
 	err := store.AddLectionDescription(c.lectionID, answer)
 	if err != nil {
 		return nil, err
 	}
-	// send to the grammar-nazi chat
-	err = sendTextToGrammarNazi(c.lectionID)
-	if err != nil {
-		replyMarkup.Text = lang.ADD_LECTURE_DESCRIPTION_ERROR_REMINDER_MSG
+	replyMarkup := &ReplyMarkup{
+		Buttons: MessageButtons{lang.MARKUP_BUTTON_YES, lang.MARKUP_BUTTON_NO},
+		Text:    lang.UPSERT_LECTURE_SEND_TO_GRAMMAR_NAZI,
+	}
+	return replyMarkup, nil
+}
+
+func (c *addDescriptionLection) fourthStep(answer string) (*ReplyMarkup, error) {
+	replyMarkup, err := stepSendToGrammarChat(c.lectionID, answer, c.u)
+	replyMarkup.Text = lang.ADD_LECTURE_DESCRIPTION_COMPLETE
+	return replyMarkup, err
+}
+
+func stepSendToGrammarChat(lID int, answer string, u *store.User) (*ReplyMarkup, error) {
+	replyMarkup := &ReplyMarkup{
+		Buttons: StandardMarkup(u.Role),
+	}
+	if answer == lang.MARKUP_BUTTON_NO {
 		return replyMarkup, nil
 	}
-	replyMarkup.Text = lang.ADD_LECTURE_DESCRIPTION_COMPLETE
+	// send to the grammar-nazi chat
+	err := sendTextToGrammarNazi(lID)
+	if err != nil {
+		return nil, err
+	}
+	replyMarkup.Text = lang.ADD_LECTURE_DESCRIPTION_REMINDER_MSG_OK
 	return replyMarkup, nil
 }
 

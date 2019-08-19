@@ -42,8 +42,18 @@ func (c *chat) ReplyMarkup(m *Message) (*commands.ReplyMarkup, error) {
 	}
 
 	if c.cmd.IsEnd() {
+		cc, ok := (c.cmd).(CacheCleaner)
+		if ok {
+			uID := cc.UserID()
+			log.Infof("cleaned user cache for %d", uID)
+			err = clearUserCache(uID)
+			if err != nil {
+				log.Infof("unsuccessful clearing cache for %d: %s", uID, err)
+			}
+		}
 		log.Infof("command %#v has been finished", c.cmd)
 		c.cmd = nil
+
 	}
 	return answer, err
 }
@@ -124,4 +134,21 @@ func loadChat(msg *Message) (*chat, error) {
 	}
 	ch.u = u
 	return ch, nil
+}
+
+// CacheCleaner is an interface for cleaning user data in the cache
+type CacheCleaner interface {
+	UserID() int
+}
+
+// clearUserCache deletes from chatsManager all data related to the user
+func clearUserCache(ID int) error {
+	chatsManager.l.Lock()
+	u, err := store.LoadUserByID(ID)
+	if err != nil {
+		return err
+	}
+	delete(chatsManager.list, int64(u.TGUserID))
+	defer chatsManager.l.Unlock()
+	return nil
 }

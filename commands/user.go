@@ -169,6 +169,10 @@ func (c *upsertUser) eighthStep(answer string) (*ReplyMarkup, error) {
 	return replyMarkup, err
 }
 
+func (c *upsertUser) UserID() int {
+	return c.ID
+}
+
 type usersList struct {
 	u *store.User
 }
