@@ -59,6 +59,9 @@ var (
 		lang.MARKUP_BUTTON_CREATE_EVENT,
 		lang.MARKUP_BUTTON_LIST_EVENTS,
 		lang.MARKUP_BUTTON_DELETE_EVENT,
+		lang.MARKUP_BUTTON_SEND_EVENT_TO_DESIGNERS,
+		lang.MARKUP_BUTTON_SEND_EVENT_TO_CHANNEL,
+		lang.MARKUP_BUTTON_SEND_EVENT_TO_CHAT,
 	}
 
 	// UserMarkup contains buttons for admins (users submenu)

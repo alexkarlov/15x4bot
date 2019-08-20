@@ -129,11 +129,11 @@ func (b *Bot) Reply(msg *Message) {
 	if len(replyMarkup.Buttons) > 0 {
 		replyMsg.BaseChat.ReplyMarkup = markup(replyMarkup.Buttons)
 	}
+	b.bot.Send(replyMsg)
 	if replyMarkup.FileID != "" {
 		pc := tgbotapi.NewPhotoShare(msg.ChatID, replyMarkup.FileID)
 		b.bot.Send(pc)
 	}
-	b.bot.Send(replyMsg)
 }
 
 func markup(b []string) tgbotapi.ReplyKeyboardMarkup {

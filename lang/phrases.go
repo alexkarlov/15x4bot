@@ -14,6 +14,11 @@ const (
 	ADD_EVENT_LECTURES_LIST       = "Лекція %d: %s.%s"
 	ADD_EVENT_TEXT_EVENT          = "Текст івенту"
 	ADD_EVENT_SUCCESS_MSG         = "Івент створено"
+	ADD_EVENT_SEND_TO_DESIGNERS   = `Привіт! У нас новий івент)
+	Коли: %s
+	Де: %s
+	Лекції: %s
+	`
 
 	// ========================== Command: nextEvent (sends info about the next event) ===========================
 	NEXT_EVENT           = "Де: %s, %s\nПочаток: %s\nКінець: %s"
@@ -81,11 +86,11 @@ const (
 	MARKUP_BUTTON_DOCUMENTATION = "Документація"
 
 	// ========================= PROFILE MARKUP ===================================================================
-	MARKUP_BUTTON_PROFILE_NAME       = "Ім'я"
-	MARKUP_BUTTON_PROFILE_BIRTHDAY   = "Дата народження"
-	MARKUP_BUTTON_PROFILE_VK_ACCOUNT = "VK акаунт"
-	MARKUP_BUTTON_PROFILE_FB_ACCOUNT = "FB акаунт"
-	MARKUP_BUTTON_PROFILE_PICTURE    = "Фото"
+	MARKUP_BUTTON_PROFILE_NAME       = "Змінити ім'я"
+	MARKUP_BUTTON_PROFILE_BIRTHDAY   = "Змінити дату народження"
+	MARKUP_BUTTON_PROFILE_VK_ACCOUNT = "Змінити VK акаунт"
+	MARKUP_BUTTON_PROFILE_FB_ACCOUNT = "Змінити FB акаунт"
+	MARKUP_BUTTON_PROFILE_PICTURE    = "Змінити фото"
 
 	// ========================= LECTURE MARKUP ===================================================================
 	MARKUP_BUTTON_CREATE_LECTURE                    = "Створити лекцію"
@@ -96,9 +101,12 @@ const (
 	MARKUP_BUTTON_DELETE_LECTURE                    = "Видалити лекцію"
 
 	// ========================= EVENT MARKUP =====================================================================
-	MARKUP_BUTTON_CREATE_EVENT = "Створити івент"
-	MARKUP_BUTTON_LIST_EVENTS  = "Список івентів"
-	MARKUP_BUTTON_DELETE_EVENT = "Видалити івент"
+	MARKUP_BUTTON_CREATE_EVENT            = "Створити івент"
+	MARKUP_BUTTON_LIST_EVENTS             = "Список івентів"
+	MARKUP_BUTTON_DELETE_EVENT            = "Видалити івент"
+	MARKUP_BUTTON_SEND_EVENT_TO_DESIGNERS = "Відправити івент в чат дизайнерів"
+	MARKUP_BUTTON_SEND_EVENT_TO_CHANNEL   = "Відправити івент в канал"
+	MARKUP_BUTTON_SEND_EVENT_TO_CHAT      = "Відправити івент в загальний чат"
 
 	// ========================= USER MARKUP ======================================================================
 	MARKUP_BUTTON_CREATE_USER = "Створити користувача"
@@ -166,6 +174,7 @@ const (
 
 	// ========================= PROFILE SECTION ==================================================================
 	// ========================= Command: profileName =============================================================
+	PROFILE_ALL_INFO                     = "Твій профіль:\nІм'я: %s\nFB: %s\nVK: %s\nДата народження: %s\n"
 	PROFILE_CURRENT_VALUE                = "Поточне значення:"
 	PROFILE_WHAT_IS_YOUR_NAME            = "Якщо бажаєш змінити, введи своє ім'я та прізвище"
 	PROFILE_NAME_SUCCESSFULY_UPDATED     = "Ім'я та прізвище успішно змінено"

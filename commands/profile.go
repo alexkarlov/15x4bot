@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"github.com/alexkarlov/15x4bot/lang"
 	"github.com/alexkarlov/15x4bot/store"
 	"time"
@@ -28,7 +29,10 @@ func (c *profile) IsAllow(u *store.User) bool {
 func (c *profile) firstStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
-		Text:    lang.CHOSE_MENU,
+		Text:    fmt.Sprintf(lang.PROFILE_ALL_INFO, c.u.Name, c.u.FB, c.u.VK, c.u.BDate.Format(Conf.DateLayout)),
+	}
+	if c.u.PictureID != "" {
+		replyMarkup.FileID = c.u.PictureID
 	}
 	replyMarkup.Buttons = append(replyMarkup.Buttons,
 		lang.MARKUP_BUTTON_PROFILE_NAME,
