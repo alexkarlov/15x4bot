@@ -31,12 +31,17 @@ func (c *profile) IsAllow(u *store.User) bool {
 }
 
 func (c *profile) firstStep(answer string) (*ReplyMarkup, error) {
+	replyMarkup := profileMarkupButtons(c.u)
+	return replyMarkup, nil
+}
+
+func profileMarkupButtons(u *store.User) *ReplyMarkup {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
-		Text:    fmt.Sprintf(lang.PROFILE_ALL_INFO, c.u.Name, c.u.FB, c.u.VK, c.u.BDate.Format(Conf.DateLayout)),
+		Text:    fmt.Sprintf(lang.PROFILE_ALL_INFO, u.Name, u.FB, u.VK, u.BDate.Format(Conf.DateLayout)),
 	}
-	if c.u.PictureID != "" {
-		replyMarkup.FileID = c.u.PictureID
+	if u.PictureID != "" {
+		replyMarkup.FileID = u.PictureID
 	}
 	replyMarkup.Buttons = append(replyMarkup.Buttons,
 		lang.MARKUP_BUTTON_PROFILE_NAME,
@@ -44,65 +49,92 @@ func (c *profile) firstStep(answer string) (*ReplyMarkup, error) {
 		lang.MARKUP_BUTTON_PROFILE_PICTURE,
 		lang.MARKUP_BUTTON_PROFILE_VK_ACCOUNT,
 		lang.MARKUP_BUTTON_PROFILE_BIRTHDAY)
-	return replyMarkup, nil
+	return replyMarkup
 }
 
 func (c *profile) secondStep(answer string) (*ReplyMarkup, error) {
+	if answer == lang.MARKUP_BUTTON_PROFILE_ROLE {
+		return &ReplyMarkup{
+			Buttons: MainMarkup,
+			Text:    lang.WRONG_PERMISSION,
+		}, nil
+	}
+	replyMarkup, f := profileMarkupField(c.u, answer)
+	c.field = f
+	return replyMarkup, nil
+}
+
+func profileMarkupField(u *store.User, answer string) (*ReplyMarkup, string) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
 	}
+	field := ""
 	switch answer {
+	case lang.MARKUP_BUTTON_PROFILE_ROLE:
+		field = "role"
+		replyMarkup.Text = lang.PROFILE_CURRENT_VALUE + "\n" + string(u.Role) + "\n" + lang.PROFILE_WHAT_IS_ROLE
+		roles := MessageButtons{string(store.USER_ROLE_ADMIN), string(store.USER_ROLE_LECTOR), string(store.USER_ROLE_GUEST)}
+		replyMarkup.Buttons = append(replyMarkup.Buttons, roles...)
 	case lang.MARKUP_BUTTON_PROFILE_NAME:
-		c.field = "name"
-		replyMarkup.Text = lang.PROFILE_CURRENT_VALUE + "\n" + c.u.Name + "\n" + lang.PROFILE_WHAT_IS_YOUR_NAME
+		field = "name"
+		replyMarkup.Text = lang.PROFILE_CURRENT_VALUE + "\n" + u.Name + "\n" + lang.PROFILE_WHAT_IS_YOUR_NAME
 	case lang.MARKUP_BUTTON_PROFILE_FB_ACCOUNT:
-		c.field = "fb"
-		replyMarkup.Text = lang.PROFILE_CURRENT_VALUE + "\n" + c.u.FB + "\n" + lang.PROFILE_WHAT_IS_YOUR_FB
+		field = "fb"
+		replyMarkup.Text = lang.PROFILE_CURRENT_VALUE + "\n" + u.FB + "\n" + lang.PROFILE_WHAT_IS_YOUR_FB
 	case lang.MARKUP_BUTTON_PROFILE_PICTURE:
-		c.field = "picture"
-		replyMarkup.FileID = c.u.PictureID
+		field = "picture"
+		replyMarkup.FileID = u.PictureID
 		replyMarkup.Text = lang.PROFILE_WHAT_IS_YOUR_PICTURE
 	case lang.MARKUP_BUTTON_PROFILE_VK_ACCOUNT:
-		c.field = "vk"
-		replyMarkup.Text = lang.PROFILE_CURRENT_VALUE + "\n" + c.u.VK + "\n" + lang.PROFILE_WHAT_IS_YOUR_VK
+		field = "vk"
+		replyMarkup.Text = lang.PROFILE_CURRENT_VALUE + "\n" + u.VK + "\n" + lang.PROFILE_WHAT_IS_YOUR_VK
 	case lang.MARKUP_BUTTON_PROFILE_BIRTHDAY:
-		c.field = "bdate"
-		replyMarkup.Text = lang.PROFILE_CURRENT_VALUE + "\n" + c.u.BDate.Format(Conf.DateLayout) + "\n" + lang.PROFILE_WHAT_IS_YOUR_BIRTHDAY
+		field = "bdate"
+		replyMarkup.Text = lang.PROFILE_CURRENT_VALUE + "\n" + u.BDate.Format(Conf.DateLayout) + "\n" + lang.PROFILE_WHAT_IS_YOUR_BIRTHDAY
 	}
-	return replyMarkup, nil
+	return replyMarkup, field
 }
 
 func (c *profile) thirdStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: StandardMarkup(c.u.Role),
 	}
-	var err error
-	switch c.field {
-	case "name":
-		replyMarkup.Text = lang.PROFILE_NAME_SUCCESSFULY_UPDATED
-		err = store.UpdateNameUser(c.u.ID, answer)
-	case "fb":
-		replyMarkup.Text = lang.PROFILE_FB_SUCCESSFULY_UPDATED
-		err = store.UpdateFBUser(c.u.ID, answer)
-	case "vk":
-		replyMarkup.Text = lang.PROFILE_VK_SUCCESSFULY_UPDATED
-		err = store.UpdateVKUser(c.u.ID, answer)
-	case "picture":
-		replyMarkup.Text = lang.PROFILE_PICTURE_SUCCESSFULY_UPDATED
-		err = store.UpdatePictureUser(c.u.ID, answer)
-	case "bdate":
-		replyMarkup.Text = lang.PROFILE_BIRTHDAY_SUCCESSFULY_UPDATED
-		var bdate time.Time
-		bdate, err = time.Parse(Conf.DateLayout, answer)
-		if err != nil {
-			replyMarkup.Text = lang.ADD_EVENT_WRONG_DATE
-			return replyMarkup, nil
-		}
-		err = store.UpdateBDateUser(c.u.ID, bdate)
-
-	}
+	resp, err := profileMarkupUpdateUser(c.field, c.u.ID, answer)
 	if err != nil {
 		return nil, err
 	}
+	replyMarkup.Text = resp
 	return replyMarkup, nil
+}
+
+func profileMarkupUpdateUser(f string, uID int, answer string) (string, error) {
+	resp := ""
+	var err error
+	switch f {
+	case "role":
+		resp = lang.PROFILE_ROLE_SUCCESSFULY_UPDATED
+		err = store.UpdateRoleUser(uID, store.NewUserRole(answer))
+	case "name":
+		resp = lang.PROFILE_NAME_SUCCESSFULY_UPDATED
+		err = store.UpdateNameUser(uID, answer)
+	case "fb":
+		resp = lang.PROFILE_FB_SUCCESSFULY_UPDATED
+		err = store.UpdateFBUser(uID, answer)
+	case "vk":
+		resp = lang.PROFILE_VK_SUCCESSFULY_UPDATED
+		err = store.UpdateVKUser(uID, answer)
+	case "picture":
+		resp = lang.PROFILE_PICTURE_SUCCESSFULY_UPDATED
+		err = store.UpdatePictureUser(uID, answer)
+	case "bdate":
+		resp = lang.PROFILE_BIRTHDAY_SUCCESSFULY_UPDATED
+		var bdate time.Time
+		bdate, err = time.Parse(Conf.DateLayout, answer)
+		if err != nil {
+			resp = lang.ADD_EVENT_WRONG_DATE
+			return resp, nil
+		}
+		err = store.UpdateBDateUser(uID, bdate)
+	}
+	return resp, err
 }

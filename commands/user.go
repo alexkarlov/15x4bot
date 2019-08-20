@@ -12,41 +12,32 @@ import (
 // ErrEmptyUserTGAccount happens when admin doesn't provide tg account for a new/old user
 var ErrEmptyUserTGAccount = errors.New("empty user tg account")
 
-type upsertUser struct {
-	exists   bool
-	ID       int
-	name     string
-	username string
-	fb       string
-	vk       string
-	bdate    time.Time
-	role     string
+type updateUser struct {
+	u           *store.User
+	updatedUser *store.User
+	field       string
 	stepConstructor
 }
 
-// newUpsertUser creates upsertUser and registers all steps
-// it receives argument whether user exists or no
-func newUpsertUser(e bool) *upsertUser {
-	c := &upsertUser{
-		exists: e,
-	}
-	c.RegisterSteps(c.firstStep, c.secondStep, c.thirdStep, c.fourthStep, c.fifthStep, c.sixthStep, c.seventhStep, c.eighthStep)
-	return c
-}
-
-func (c *upsertUser) IsAllow(u *store.User) bool {
+func (c *updateUser) IsAllow(u *store.User) bool {
+	c.u = u
 	return u.Role == store.USER_ROLE_ADMIN
 }
 
-// firstStep asks speaker name (if we create a new user)
-// or sends users list for further chosing and manipulation
-func (c *upsertUser) firstStep(answer string) (*ReplyMarkup, error) {
+func (c *updateUser) CleanUser() int {
+	return c.updatedUser.ID
+}
+
+// newUpdateUser creates updateUser and registers all steps
+func newUpdateUser() *updateUser {
+	c := &updateUser{}
+	c.RegisterSteps(c.firstStep, c.secondStep, c.thirdStep, c.fourthStep)
+	return c
+}
+
+func (c *updateUser) firstStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
-	}
-	// if we try to insert a user
-	if !c.exists {
-		return c.SkipStep(answer)
 	}
 	// if we try to update a user
 	users, err := store.Users(nil)
@@ -61,40 +52,85 @@ func (c *upsertUser) firstStep(answer string) (*ReplyMarkup, error) {
 	return replyMarkup, nil
 }
 
-// secondStep asks speaker name or parses user id from user's answer
-// or asks user's name
-// TODO: refactor skiping steps
-func (c *upsertUser) secondStep(answer string) (*ReplyMarkup, error) {
+func (c *updateUser) secondStep(answer string) (*ReplyMarkup, error) {
+	ID, err := parseID(answer)
+	if err != nil {
+		return nil, err
+	}
+	u, err := store.LoadUserByID(ID)
+	if err != nil {
+		return nil, err
+	}
+	c.updatedUser = u
+	replyMarkup := profileMarkupButtons(c.updatedUser)
+	replyMarkup.Buttons = append(replyMarkup.Buttons, lang.MARKUP_BUTTON_PROFILE_ROLE)
+	return replyMarkup, nil
+}
+
+func (c *updateUser) thirdStep(answer string) (*ReplyMarkup, error) {
+	replyMarkup, f := profileMarkupField(c.updatedUser, answer)
+	c.field = f
+	return replyMarkup, nil
+}
+
+func (c *updateUser) fourthStep(answer string) (*ReplyMarkup, error) {
+	replyMarkup := &ReplyMarkup{
+		Buttons: StandardMarkup(c.u.Role),
+	}
+	resp, err := profileMarkupUpdateUser(c.field, c.updatedUser.ID, answer)
+	if err != nil {
+		return nil, err
+	}
+	replyMarkup.Text = resp
+	return replyMarkup, nil
+}
+
+type createUser struct {
+	u        *store.User
+	exists   bool
+	ID       int
+	name     string
+	username string
+	fb       string
+	vk       string
+	bdate    time.Time
+	role     string
+	stepConstructor
+}
+
+// newCreateUser creates createUser and registers all steps
+func newCreateUser() *createUser {
+	c := &createUser{}
+	c.RegisterSteps(c.firstStep, c.secondStep, c.thirdStep, c.fourthStep, c.fifthStep, c.sixthStep, c.seventhStep)
+	return c
+}
+
+func (c *createUser) IsAllow(u *store.User) bool {
+	c.u = u
+	return u.Role == store.USER_ROLE_ADMIN
+}
+
+// firstStep asks speaker name
+func (c *createUser) firstStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
-	}
-	var err error
-	// if we try to update a user - catch user ID
-	if c.exists {
-		c.ID, err = parseID(answer)
-		if err != nil {
-			return nil, err
-		}
 	}
 	replyMarkup.Text = lang.USER_UPSERT_WHAT_IS_NAME
 	return replyMarkup, nil
 }
 
-// thirdStep saves users name and asks users's tg account
-func (c *upsertUser) thirdStep(answer string) (*ReplyMarkup, error) {
+// secondStep saves users name and asks users's tg account
+func (c *createUser) secondStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
 	}
 	c.name = answer
 	replyMarkup.Text = "Аккаунт в телеграмі"
-	if c.exists {
-		replyMarkup.Buttons = append(replyMarkup.Buttons, lang.I_DONT_KNOW)
-	}
 	return replyMarkup, nil
 }
 
-// fourthStep saves username and asks user's facebook account
-func (c *upsertUser) fourthStep(answer string) (*ReplyMarkup, error) {
+// thirdStep saves username and asks user's facebook account
+func (c *createUser) thirdStep(answer string) (*ReplyMarkup, error) {
 	if answer != lang.I_DONT_KNOW {
 		c.username = strings.Trim(answer, "@")
 	}
@@ -105,8 +141,8 @@ func (c *upsertUser) fourthStep(answer string) (*ReplyMarkup, error) {
 	return replyMarkup, nil
 }
 
-// fifthStep saves fb account and asks user's vk account
-func (c *upsertUser) fifthStep(answer string) (*ReplyMarkup, error) {
+// fourthStep saves fb account and asks user's vk account
+func (c *createUser) fourthStep(answer string) (*ReplyMarkup, error) {
 	if answer != lang.I_DONT_KNOW {
 		c.fb = answer
 	}
@@ -117,25 +153,25 @@ func (c *upsertUser) fifthStep(answer string) (*ReplyMarkup, error) {
 	return replyMarkup, nil
 }
 
-// sixthStep saves vk coount and asks birthday
-func (c *upsertUser) sixthStep(answer string) (*ReplyMarkup, error) {
+// fifthStep saves vk coount and asks birthday
+func (c *createUser) fifthStep(answer string) (*ReplyMarkup, error) {
 	if answer != lang.I_DONT_KNOW {
 		c.vk = answer
 	}
 	replyMarkup := &ReplyMarkup{
-		Text:    "Дата народження в форматі 2006-01-02",
+		Text:    "Дата народження в форматі " + Conf.DateLayout,
 		Buttons: append(MainMarkup, lang.I_DONT_KNOW),
 	}
 	return replyMarkup, nil
 }
 
-// seventhStep saves birthday and asks user's role
-func (c *upsertUser) seventhStep(answer string) (*ReplyMarkup, error) {
+// sixthStep saves birthday and asks user's role
+func (c *createUser) sixthStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
 	}
 	if answer != lang.I_DONT_KNOW {
-		t, err := time.Parse("2006-01-02", answer)
+		t, err := time.Parse(Conf.DateLayout, answer)
 		if err != nil {
 			replyMarkup.Text = "Невірний формат дати та часу. Спробуй ще!"
 			return replyMarkup, nil
@@ -148,28 +184,22 @@ func (c *upsertUser) seventhStep(answer string) (*ReplyMarkup, error) {
 	return replyMarkup, nil
 }
 
-// eighthStep saves user's and sends success message or fail message
-func (c *upsertUser) eighthStep(answer string) (*ReplyMarkup, error) {
+// seventhStep saves user's and sends success message or fail message
+func (c *createUser) seventhStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
-		Buttons: MainMarkup,
+		Buttons: StandardMarkup(c.u.Role),
 	}
 	role := store.NewUserRole(answer)
-	var err error
-	if c.exists {
-		err = store.UpdateUser(c.ID, c.username, role, c.name, c.fb, c.vk, c.bdate)
-		replyMarkup.Text = lang.USER_UPSERT_SUCCESSFULY_UPDATED
-	} else {
-		err = store.AddUserByAdmin(c.username, role, c.name, c.fb, c.vk, c.bdate)
-		if err == store.ErrNoUser {
-			replyMarkup.Text = lang.USER_UPSERT_USER_ALREADY_EXISTS
-			return replyMarkup, nil
-		}
-		replyMarkup.Text = lang.USER_UPSERT_SUCCESSFULY_CREATED
+	err := store.AddUserByAdmin(c.username, role, c.name, c.fb, c.vk, c.bdate)
+	if err == store.ErrNoUser {
+		replyMarkup.Text = lang.USER_UPSERT_USER_ALREADY_EXISTS
+		return replyMarkup, nil
 	}
+	replyMarkup.Text = lang.USER_UPSERT_SUCCESSFULY_CREATED
 	return replyMarkup, err
 }
 
-func (c *upsertUser) CleanUser() int {
+func (c *createUser) CleanUser() int {
 	return c.ID
 }
 

@@ -91,6 +91,7 @@ const (
 	MARKUP_BUTTON_PROFILE_VK_ACCOUNT = "Змінити VK акаунт"
 	MARKUP_BUTTON_PROFILE_FB_ACCOUNT = "Змінити FB акаунт"
 	MARKUP_BUTTON_PROFILE_PICTURE    = "Змінити фото"
+	MARKUP_BUTTON_PROFILE_ROLE       = "Змінити роль"
 
 	// ========================= LECTURE MARKUP ===================================================================
 	MARKUP_BUTTON_CREATE_LECTURE                    = "Створити лекцію"
@@ -171,20 +172,23 @@ const (
 	CHOOSE_USER        = "Оберіть юзера"
 	MARKUP_BUTTON_YES  = "Так"
 	MARKUP_BUTTON_NO   = "Ні"
+	WRONG_PERMISSION   = "Воу-воу, палєгче братиш"
 
 	// ========================= PROFILE SECTION ==================================================================
 	// ========================= Command: profileName =============================================================
-	PROFILE_ALL_INFO                     = "Твій профіль:\nІм'я: %s\nFB: %s\nVK: %s\nДата народження: %s\n"
+	PROFILE_ALL_INFO                     = "Профіль:\nІм'я: %s\nFB: %s\nVK: %s\nДата народження: %s\n"
 	PROFILE_CURRENT_VALUE                = "Поточне значення:"
-	PROFILE_WHAT_IS_YOUR_NAME            = "Якщо бажаєш змінити, введи своє ім'я та прізвище"
+	PROFILE_WHAT_IS_YOUR_NAME            = "Якщо бажаєш змінити, введи ім'я та прізвище"
+	PROFILE_WHAT_IS_ROLE                 = "Якщо бажаєш змінити, вибери роль"
+	PROFILE_ROLE_SUCCESSFULY_UPDATED     = "Роль успішно змінено"
 	PROFILE_NAME_SUCCESSFULY_UPDATED     = "Ім'я та прізвище успішно змінено"
-	PROFILE_WHAT_IS_YOUR_FB              = "Якщо бажаєш змінити, введи свій fb акаунт"
+	PROFILE_WHAT_IS_YOUR_FB              = "Якщо бажаєш змінити, введи fb акаунт"
 	PROFILE_FB_SUCCESSFULY_UPDATED       = "fb акаунт успішно змінено"
-	PROFILE_WHAT_IS_YOUR_VK              = "Якщо бажаєш змінити, введи свій vk акаунт"
+	PROFILE_WHAT_IS_YOUR_VK              = "Якщо бажаєш змінити, введи vk акаунт"
 	PROFILE_VK_SUCCESSFULY_UPDATED       = "vk успішно змінено"
-	PROFILE_WHAT_IS_YOUR_BIRTHDAY        = "Якщо бажаєш змінити, введи свою дату народження в форматі 2018-12-31"
+	PROFILE_WHAT_IS_YOUR_BIRTHDAY        = "Якщо бажаєш змінити, введи дату народження в форматі 2018-12-31"
 	PROFILE_BIRTHDAY_SUCCESSFULY_UPDATED = "Дату народження успішно змінено"
-	PROFILE_WHAT_IS_YOUR_PICTURE         = "Якщо бажаєш змінити, завантаж своє фото"
+	PROFILE_WHAT_IS_YOUR_PICTURE         = "Якщо бажаєш змінити, завантаж фото"
 	PROFILE_PICTURE_SUCCESSFULY_UPDATED  = "Фото успішно завантажено"
 )
 

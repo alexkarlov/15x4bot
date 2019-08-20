@@ -103,6 +103,11 @@ func UpdateTGIDUser(ID int, TGID int) error {
 	return err
 }
 
+func UpdateRoleUser(ID int, role UserRole) error {
+	_, err := dbConn.Exec("UPDATE users SET role=$1, udate=NOW() WHERE id=$2", role, ID)
+	return err
+}
+
 func UpdateNameUser(ID int, name string) error {
 	_, err := dbConn.Exec("UPDATE users SET name=$1, udate=NOW() WHERE id=$2", name, ID)
 	return err
@@ -182,7 +187,7 @@ func Users(roles []UserRole) ([]*User, error) {
 		// here used a plain string instead of prepared statment because roles aren't a 3-rd party data
 		roleFilter = fmt.Sprintf("WHERE role IN (%s)", strings.Join(roleFilters, ","))
 	}
-	q := "SELECT id, tg_id, username, name, role FROM users " + roleFilter + " ORDER BY id"
+	q := "SELECT id, tg_id, username, name, role, fb, vk, picture_id, bdate FROM users " + roleFilter + " ORDER BY id"
 	rows, err := dbConn.Query(q)
 	if err != nil {
 		return nil, err
@@ -191,7 +196,7 @@ func Users(roles []UserRole) ([]*User, error) {
 	users := make([]*User, 0)
 	for rows.Next() {
 		user := &User{}
-		if err := rows.Scan(&user.ID, &user.TGUserID, &user.Username, &user.Name, &user.Role); err != nil {
+		if err := rows.Scan(&user.ID, &user.TGUserID, &user.Username, &user.Name, &user.Role, &user.FB, &user.VK, &user.PictureID, &user.BDate); err != nil {
 			return nil, err
 		}
 		users = append(users, user)

@@ -36,13 +36,13 @@ var (
 		{
 			pattern: `Створити користувача`,
 			createCmd: func(cmd string) Command {
-				return newUpsertUser(false)
+				return newCreateUser()
 			},
 		},
 		{
 			pattern: `Змінити користувача`,
 			createCmd: func(cmd string) Command {
-				return newUpsertUser(true)
+				return newUpdateUser()
 			},
 		},
 		{
