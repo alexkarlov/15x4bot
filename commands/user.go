@@ -169,7 +169,7 @@ func (c *upsertUser) eighthStep(answer string) (*ReplyMarkup, error) {
 	return replyMarkup, err
 }
 
-func (c *upsertUser) UserID() int {
+func (c *upsertUser) CleanUser() int {
 	return c.ID
 }
 
@@ -195,7 +195,7 @@ func (c *usersList) NextStep(answer string) (*ReplyMarkup, error) {
 		return nil, err
 	}
 	for _, l := range list {
-		replyMarkup.Text += fmt.Sprintf(lang.USER_UPSERT_LIST_ITEM, l.ID, l.Name, l.Role, l.Username)
+		replyMarkup.Text += fmt.Sprintf(lang.USER_UPSERT_LIST_ITEM, l.ID, l.Name, l.Role, l.Username, l.FB, l.VK, l.BDate.Format(Conf.DateLayout))
 	}
 	return replyMarkup, nil
 }

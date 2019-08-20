@@ -150,7 +150,7 @@ const (
 
 	// ========================== USER SECTION ====================================================================
 	// ========================== Command: upsertUser =============================================================
-	USER_UPSERT_LIST_ITEM           = "Юзер %d: %s, role: %s, telegram: @%s\n\n"
+	USER_UPSERT_LIST_ITEM           = "Юзер %d\nІм'я: %s\nРоль: %s\nTelegram: @%s\nFB: %s\nVK: %s\nДата народження: %s\n \n\n"
 	USER_UPSERT_ITEM                = "Юзер %d: %s"
 	USER_UPSERT_WHAT_IS_NAME        = "Як звуть лектора/лекторку?"
 	USER_UPSERT_SUCCESSFULY_UPDATED = "Користувач успішно змінений"

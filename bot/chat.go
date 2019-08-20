@@ -133,7 +133,7 @@ func loadChat(msg *Message) (*chat, error) {
 
 // CacheCleaner is an interface for cleaning user data in the cache
 type CacheCleaner interface {
-	UserID() int
+	CleanUser() int
 }
 
 // cleanUserCache deletes from chatsManager all data related to the user
@@ -143,7 +143,7 @@ func cleanUserCache(c commands.Command) error {
 	if !ok {
 		return nil
 	}
-	uID := cc.UserID()
+	uID := cc.CleanUser()
 	if uID == 0 {
 		return nil
 	}

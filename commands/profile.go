@@ -21,6 +21,10 @@ func newProfile() *profile {
 	return c
 }
 
+func (c *profile) CleanUser() int {
+	return c.u.ID
+}
+
 func (c *profile) IsAllow(u *store.User) bool {
 	c.u = u
 	return (u.Role == store.USER_ROLE_ADMIN || u.Role == store.USER_ROLE_LECTOR)
@@ -70,7 +74,7 @@ func (c *profile) secondStep(answer string) (*ReplyMarkup, error) {
 
 func (c *profile) thirdStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
-		Buttons: MainMarkup,
+		Buttons: StandardMarkup(c.u.Role),
 	}
 	var err error
 	switch c.field {
