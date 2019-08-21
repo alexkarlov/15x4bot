@@ -10,6 +10,7 @@ import (
 )
 
 type addRehearsal struct {
+	ID    int
 	when  time.Time
 	where int
 	u     *store.User
@@ -19,7 +20,7 @@ type addRehearsal struct {
 // newAddRehearsal creates addRehearsal and registers all steps
 func newAddRehearsal() *addRehearsal {
 	c := &addRehearsal{}
-	c.RegisterSteps(c.firstStep, c.secondStep, c.thirdStep)
+	c.RegisterSteps(c.firstStep, c.secondStep, c.thirdStep, c.fourthStep)
 	return c
 }
 
@@ -58,7 +59,7 @@ func (c *addRehearsal) secondStep(answer string) (*ReplyMarkup, error) {
 }
 
 // thirdStep parses place and saves rehearsal into db
-// also, it adds reminder for sending notification in the chat
+// also, bot asks how to send notification to the internal chat and channel
 func (c *addRehearsal) thirdStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
@@ -76,22 +77,39 @@ func (c *addRehearsal) thirdStep(answer string) (*ReplyMarkup, error) {
 		replyMarkup.Text = lang.WRONG_PLACE_ID
 		return replyMarkup, nil
 	}
-	id, err := store.AddRehearsal(c.when, c.where)
-	// create a task for sending post in the internal channel
+	c.ID, err = store.AddRehearsal(c.when, c.where)
 	if err != nil {
 		return nil, err
 	}
-	err = addRehearsalReminder(id)
+	replyMarkup.Text = lang.ADD_REHEARSAL_SUCCESS_MSG
+	replyMarkup.Buttons = MessageButtons{lang.MARKUP_BUTTON_NOTIF_REHEARSAL_NOW, lang.MARKUP_BUTTON_NOTIF_BEFORE_REHEARSAL, lang.MARKUP_BUTTON_MAIN_MENU}
+	return replyMarkup, nil
+}
+
+// fourthStep adds reminder for sending notification in the chat and channel
+func (c *addRehearsal) fourthStep(answer string) (*ReplyMarkup, error) {
+	replyMarkup := &ReplyMarkup{
+		Buttons: MainMarkup,
+	}
+	var err error
+	var execTime time.Time
+	if answer == lang.MARKUP_BUTTON_NOTIF_REHEARSAL_NOW {
+		execTime = asSoonAsPossible()
+	} else {
+		execTime = c.when.AddDate(0, 0, -1)
+	}
+	// create a task for sending post in the internal channel
+	err = addRehearsalReminder(c.ID, execTime)
 	if err != nil {
 		replyMarkup.Text = lang.ADD_REHEARSAL_ERROR_REMINDER_MSG
 		return replyMarkup, nil
 	}
-	replyMarkup.Text = lang.ADD_REHEARSAL_SUCCESS_MSG
+	replyMarkup.Text = fmt.Sprintf(lang.ADD_REHEARSAL_REMINDER_OK, execTime.Format(Conf.TimeLayout))
 	replyMarkup.Buttons = StandardMarkup(c.u.Role)
 	return replyMarkup, nil
 }
 
-func addRehearsalReminder(ID int) error {
+func addRehearsalReminder(ID int, execTime time.Time) error {
 	// create chat reminder
 	r, err := store.LoadRehearsal(ID)
 	if err != nil {
@@ -108,7 +126,7 @@ func addRehearsalReminder(ID int) error {
 	if err != nil {
 		return err
 	}
-	execTime := asSoonAsPossible()
+
 	err = store.AddTask(store.TASK_TYPE_REMINDER_TG_CHANNEL, execTime, string(details))
 	if err != nil {
 		return err
