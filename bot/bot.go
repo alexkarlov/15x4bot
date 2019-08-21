@@ -59,7 +59,7 @@ func (b *Bot) ListenUpdates() {
 	}
 
 	for update := range updates {
-		if (update.Message == nil || update.Message.Text == "") && update.Message.Photo == nil {
+		if update.Message == nil || (update.Message.Text == "" && update.Message.Photo == nil) {
 			continue
 		}
 		msgT := update.Message.Text
