@@ -26,6 +26,7 @@ func main() {
 	var conf config.Config
 	envconf.Parse(&conf)
 	log.SetLevel(log.LogLevel(conf.LogLevel))
+	log.Infof("Configs: %#v", conf)
 	// setup DB config and establish connection
 	store.Conf = conf.DB
 	if err := store.Init(); err != nil {
