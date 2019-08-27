@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/alexkarlov/15x4bot/lang"
 	"time"
@@ -227,19 +228,7 @@ func newDeleteEvent() *deleteEvent {
 
 // firstStepDeleteEvent sends list of all events and asks a user to chose an event to delete
 func (c *deleteEvent) firstStep(answer string) (*ReplyMarkup, error) {
-	replyMarkup := &ReplyMarkup{
-		Buttons: MainMarkup,
-	}
-	events, err := store.Events()
-	if err != nil {
-		return nil, err
-	}
-	for _, event := range events {
-		eText := fmt.Sprintf(lang.DELETE_EVENT_ITEM, event.ID, event.StartTime)
-		replyMarkup.Buttons = append(replyMarkup.Buttons, eText)
-	}
-	replyMarkup.Text = lang.EVENTS_CHOSE_EVENT
-	return replyMarkup, nil
+	return markupEventsList()
 }
 
 // secondStepDeleteEvent deletes the event by user's answers
@@ -258,4 +247,135 @@ func (c *deleteEvent) secondStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup.Buttons = StandardMarkup(c.u.Role)
 	replyMarkup.Text = lang.DELETE_EVENT_COMPLETE
 	return replyMarkup, nil
+}
+
+func markupEventsList() (*ReplyMarkup, error) {
+	replyMarkup := &ReplyMarkup{
+		Buttons: MainMarkup,
+	}
+	events, err := store.Events()
+	if err != nil {
+		return nil, err
+	}
+	for _, event := range events {
+		eText := fmt.Sprintf(lang.DELETE_EVENT_ITEM, event.ID, event.StartTime)
+		replyMarkup.Buttons = append(replyMarkup.Buttons, eText)
+	}
+	replyMarkup.Text = lang.EVENTS_CHOSE_EVENT
+	return replyMarkup, nil
+}
+
+// sendEvent is a command for deleting events
+type sendEvent struct {
+	eventID int
+	u       *store.User
+	stepConstructor
+}
+
+func (c *sendEvent) IsAllow(u *store.User) bool {
+	c.u = u
+	return u.Role == store.USER_ROLE_ADMIN
+}
+
+// newSendEvent creates sendEvent and registers all steps
+func newSendEvent() *sendEvent {
+	c := &sendEvent{}
+	c.RegisterSteps(c.firstStep, c.secondStep)
+	return c
+}
+
+// firstStepDeleteEvent sends list of all events and asks a user to chose an event to send
+func (c *sendEvent) firstStep(answer string) (*ReplyMarkup, error) {
+	return markupEventsList()
+}
+
+// secondStepDeleteEvent send the event
+func (c *sendEvent) secondStep(answer string) (*ReplyMarkup, error) {
+	replyMarkup := &ReplyMarkup{
+		Buttons: StandardMarkup(c.u.Role),
+	}
+	eID, err := parseID(answer)
+	if err != nil {
+		return nil, err
+	}
+	e, err := store.LoadEvent(eID)
+	if err != nil {
+		return nil, err
+	}
+	switch answer {
+	case lang.MARKUP_BUTTON_SEND_EVENT_TO_DESIGNERS:
+		for _, l := range e.Lectures {
+			// check lectures descriptions
+			if l.Description == "" {
+				replyMarkup.Text = lang.ADD_EVENT_EMPTY_LECTURE_DESCRIPTION
+				return replyMarkup, nil
+			}
+			// check lectors profile pictures
+			if l.Lector.PictureID == "" {
+				replyMarkup.Text = lang.ADD_EVENT_EMPTY_PICTURE_SPEAKER
+				return replyMarkup, nil
+			}
+		}
+		// create a task for send event to designers chat
+		err = sendToDesignersChat(e)
+	case lang.MARKUP_BUTTON_SEND_EVENT_TO_CHANNEL:
+		// check event FB field
+		if e.FB == "" {
+			replyMarkup.Text = lang.ADD_EVENT_EMPTY_FB
+			return replyMarkup, nil
+		}
+		// check event poster
+		if e.Poster == "" {
+			replyMarkup.Text = lang.ADD_EVENT_EMPTY_POSTER
+			return replyMarkup, nil
+		}
+		// create a task for send event to common chat
+		err = sendToChannel(e)
+	case lang.MARKUP_BUTTON_SEND_EVENT_TO_CHAT:
+		// check event FB field
+		if e.FB == "" {
+			replyMarkup.Text = lang.ADD_EVENT_EMPTY_FB
+			return replyMarkup, nil
+		}
+		// create a task for send event to common chat
+	}
+	if err != nil {
+		return nil, err
+	}
+	replyMarkup.Buttons = StandardMarkup(c.u.Role)
+	replyMarkup.Text = lang.DONE
+	return replyMarkup, nil
+}
+
+func sendToDesignersChat(e *store.Event) error {
+	msg := fmt.Sprintf(lang.ADD_EVENT_SEND_EVENT_TO_DESIGNERS_CHAT, e.StartTime, e.EndTime, e.PlaceName)
+	msgLectures := lang.LECTURE_LIST_ITEM
+	rh := &store.RemindChannel{
+		ChannelUsername: Conf.DesignerChatID,
+	}
+	for _, l := range e.Lectures {
+		msg += "\n" + fmt.Sprintf(msgLectures, l.ID, l.Name, l.Description, l.Lector.Username, l.Lector.Name)
+		rh.FileIDs = append(rh.FileIDs, l.Lector.PictureID)
+	}
+	rh.Msg = msg
+	details, err := json.Marshal(rh)
+	if err != nil {
+		return err
+	}
+	execTime := asSoonAsPossible()
+	return store.AddTask(store.TASK_TYPE_REMINDER_TG_CHANNEL, execTime, string(details))
+}
+
+func sendToChannel(e *store.Event) error {
+	rh := &store.RemindChannel{
+		Msg:             fmt.Sprintf(lang.ADD_EVENT_SEND_EVENT_TO_CHANNEL, e.StartTime, e.EndTime, e.PlaceName),
+		ChannelUsername: Conf.MainChannelUsername,
+		FileIDs:         []string{e.Poster},
+	}
+	details, err := json.Marshal(rh)
+	if err != nil {
+		return err
+	}
+	execTime := asSoonAsPossible()
+	return store.AddTask(store.TASK_TYPE_REMINDER_TG_CHANNEL, execTime, string(details))
 }

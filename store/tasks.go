@@ -175,6 +175,7 @@ func (t *Task) LoadMessenger() (*Messenger, error) {
 
 type RemindChannel struct {
 	Msg             string
+	FileIDs         []string
 	ChannelUsername string
 }
 

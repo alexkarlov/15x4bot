@@ -5,19 +5,34 @@ const (
 	EVENTS_CHOSE_EVENT = "Оберіть івент"
 
 	// ========================== Command: addEvent (create a new event) ========================================
-	ADD_EVENT_WHEN_START          = "Коли починається? Дата та час в форматі 2018-12-31 19:00"
-	ADD_EVENT_WRONG_DATETIME      = "Невірний формат дати та часу. Наприклад, якщо івент буде 20-ого грудня о 19:00 то треба ввести: 2018-12-20 19:00. Спробуй ще!"
-	ADD_EVENT_WRONG_DATE          = "Невірний формат дати. Приклад: 2018-12-20"
-	ADD_EVENT_WHEN_END            = "Коли закінчується? Дата та час в форматі 2018-12-31 19:00"
-	ADD_EVENT_END_PHRASE          = "Кінець"
-	ADD_EVENT_INTRO_LECTURES_LIST = "Виберіть лекцію. Для закінчення натисніть " + ADD_EVENT_END_PHRASE
-	ADD_EVENT_LECTURES_LIST       = "Лекція %d: %s.%s"
-	ADD_EVENT_TEXT_EVENT          = "Текст івенту"
-	ADD_EVENT_SUCCESS_MSG         = "Івент створено"
-	ADD_EVENT_SEND_TO_DESIGNERS   = `Привіт! У нас новий івент)
+	ADD_EVENT_WHEN_START                   = "Коли починається? Дата та час в форматі 2018-12-31 19:00"
+	ADD_EVENT_WRONG_DATETIME               = "Невірний формат дати та часу. Наприклад, якщо івент буде 20-ого грудня о 19:00 то треба ввести: 2018-12-20 19:00. Спробуй ще!"
+	ADD_EVENT_WRONG_DATE                   = "Невірний формат дати. Приклад: 2018-12-20"
+	ADD_EVENT_WHEN_END                     = "Коли закінчується? Дата та час в форматі 2018-12-31 19:00"
+	ADD_EVENT_END_PHRASE                   = "Кінець"
+	ADD_EVENT_INTRO_LECTURES_LIST          = "Виберіть лекцію. Для закінчення натисніть " + ADD_EVENT_END_PHRASE
+	ADD_EVENT_LECTURES_LIST                = "Лекція %d: %s.%s"
+	ADD_EVENT_TEXT_EVENT                   = "Текст івенту"
+	ADD_EVENT_SUCCESS_MSG                  = "Івент створено"
+	ADD_EVENT_SEND_EVENT_TO_DESIGNERS_CHAT = `В нас новий івент)
+	Коли: %s - %s
+	Де: %s
+	Лекції: 
+	`
+	ADD_EVENT_EMPTY_LECTURE_DESCRIPTION = "В лекції %d:%s відсутній опис, івент не може бути відправлений дизайнерам"
+	ADD_EVENT_EMPTY_PICTURE_SPEAKER     = "В лектора %d:%s відсутнє фото, івент не може бути відправлений дизайнерам"
+	ADD_EVENT_EMPTY_FB                  = "Поле \"FB івент\" пусте, івент не може бути відправлений в канал"
+	ADD_EVENT_EMPTY_POSTER              = "Поле \"Постер\" пусте, івент не може бути відправлений в канал"
+	ADD_EVENT_SEND_EVENT_TO_CHANNEL     = `Новий івент! 
+	Коли: %s - %s
+	Де: %s
+	`
+	ADD_EVENT_SEND_EVENT_TO_COMMON_CHAT = `Новий івент!
 	Коли: %s
 	Де: %s
-	Лекції: %s
+	ФБ івент: %s
+	Ставте вподобайки, поширюйте, запрошуйте друзів!
+	Як і шо робити:
 	`
 
 	// ========================== Command: nextEvent (sends info about the next event) ===========================
@@ -176,6 +191,7 @@ const (
 	MARKUP_BUTTON_YES  = "Так"
 	MARKUP_BUTTON_NO   = "Ні"
 	WRONG_PERMISSION   = "Воу-воу, палєгче братиш"
+	DONE               = "Зроблено!"
 
 	// ========================= PROFILE SECTION ==================================================================
 	// ========================= Command: profileName =============================================================

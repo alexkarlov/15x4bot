@@ -66,7 +66,12 @@ func (b *Bot) ListenUpdates() {
 		if update.Message.Photo != nil && len(*update.Message.Photo) > 0 {
 			msgT = (*update.Message.Photo)[0].FileID
 		}
-		log.Infof("got new msg from [%d:%s]: %s, chatID: %d", update.Message.From.ID, update.Message.From.UserName, string(update.Message.Text), update.Message.Chat.ID)
+		log.Infof("got new msg from [%d:%s][%s %s]: %s, chatID: %d",
+			update.Message.From.ID,
+			update.Message.From.UserName,
+			update.Message.From.FirstName,
+			update.Message.From.LastName,
+			string(msgT), update.Message.Chat.ID)
 		// TODO: add new record to history table
 
 		msg := &Message{
@@ -100,9 +105,21 @@ func (b *Bot) SendText(chatID int64, msg string) error {
 }
 
 // SendTextToChannel sends a message to particular chat
-func (b *Bot) SendTextToChannel(channel string, msg string) error {
+func (b *Bot) SendTextToChannel(channel string, msg string, fileIDs []string) error {
 	replyMsg := tgbotapi.NewMessageToChannel(channel, msg)
 	_, err := b.bot.Send(replyMsg)
+	if err != nil {
+		return err
+	}
+	if len(fileIDs) > 0 {
+		for _, f := range fileIDs {
+			pc := tgbotapi.NewPhotoShare(replyMsg.ChatID, f)
+			_, err = b.bot.Send(pc)
+			if err != nil {
+				return err
+			}
+		}
+	}
 	return err
 }
 

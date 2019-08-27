@@ -24,7 +24,7 @@ func MessageToChannel(t *store.Task, b *bot.Bot) {
 		}
 		return
 	}
-	if err := b.SendTextToChannel(rc.ChannelUsername, rc.Msg); err != nil {
+	if err := b.SendTextToChannel(rc.ChannelUsername, rc.Msg, rc.FileIDs); err != nil {
 		log.Errorf("error while sending msg to %s. task %d error: %s", rc.ChannelUsername, t.ID, err)
 		if err := t.ReleaseTask(); err != nil {
 			log.Errorf("failed to release task %d error:%s", t.ID, err)
