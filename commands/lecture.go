@@ -79,6 +79,7 @@ func (c *upsertLecture) firstStep(answer string) (*ReplyMarkup, error) {
 }
 
 // secondStep saves the speaker id (if the current user is admin and we try to add new lecture)
+// and asks lecture name
 // if the current user is NOT admin we skip this step
 func (c *upsertLecture) secondStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
@@ -91,6 +92,10 @@ func (c *upsertLecture) secondStep(answer string) (*ReplyMarkup, error) {
 			return nil, err
 		}
 		c.ID = lID
+		return replyMarkup, nil
+	}
+	// skip this step if not admin - don't need to parse user id
+	if c.u.Role != store.USER_ROLE_ADMIN {
 		return replyMarkup, nil
 	}
 	userID, err := strconv.Atoi(answer)
@@ -123,7 +128,7 @@ func (c *upsertLecture) thirdStep(answer string) (*ReplyMarkup, error) {
 // fourthStep saves lecture into db and (if needed) creates a new task reminder
 func (c *upsertLecture) fourthStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
-		Buttons: MainMarkup,
+		Buttons: StandardMarkup(c.u.Role),
 	}
 	if answer != lang.I_DONT_KNOW {
 		c.description = answer
@@ -153,6 +158,8 @@ func (c *upsertLecture) fourthStep(answer string) (*ReplyMarkup, error) {
 		}
 		store.AddTask(store.TASK_TYPE_REMINDER_LECTOR, execTime, string(details))
 		replyMarkup.Text += "\n" + fmt.Sprintf(lang.UPSERT_LECTURE_I_WILL_REMIND, execTime.Format(Conf.TimeLayout))
+		// need to interrupt because this should be the last step
+		c.InterruptCommand()
 	} else {
 		replyMarkup.Text += "\n\n" + lang.UPSERT_LECTURE_SEND_TO_GRAMMAR_NAZI
 		replyMarkup.Buttons = MessageButtons{lang.MARKUP_BUTTON_NO, lang.MARKUP_BUTTON_YES}

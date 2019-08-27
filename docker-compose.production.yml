@@ -2,8 +2,6 @@ version: '3.5'
 
 services:
   bot:    
-    env_file:
-    - .env
     logging:
       driver: awslogs
       options:

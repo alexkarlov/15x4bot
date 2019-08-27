@@ -246,6 +246,11 @@ func (s *stepConstructor) RepeatStep() {
 }
 
 // SkipStep call next step of current command
+func (s *stepConstructor) InterruptCommand() {
+	s.CurrentStep = len(s.steps)
+}
+
+// SkipStep call next step of current command
 func (s *stepConstructor) SkipStep(answer string) (*ReplyMarkup, error) {
 	s.CurrentStep++
 	defer func() {
@@ -266,7 +271,7 @@ func (s *stepConstructor) NextStep(answer string) (*ReplyMarkup, error) {
 
 // IsEnd determines whether the command has been finished
 func (s *stepConstructor) IsEnd() bool {
-	return s.CurrentStep == len(s.steps)
+	return s.CurrentStep >= len(s.steps)
 }
 
 // ReplyMarkup contains text answer of the bot and (optional) special command buttons
