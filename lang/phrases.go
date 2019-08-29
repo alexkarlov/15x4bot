@@ -15,25 +15,38 @@ const (
 	ADD_EVENT_TEXT_EVENT                   = "Текст івенту"
 	ADD_EVENT_SUCCESS_MSG                  = "Івент створено"
 	ADD_EVENT_SEND_EVENT_TO_DESIGNERS_CHAT = `В нас новий івент)
-	Коли: %s - %s
-	Де: %s
-	Лекції: 
-	`
+Коли: %s - %s
+Де: %s
+Лекції: `
 	ADD_EVENT_EMPTY_LECTURE_DESCRIPTION = "В лекції %d:%s відсутній опис, івент не може бути відправлений дизайнерам"
 	ADD_EVENT_EMPTY_PICTURE_SPEAKER     = "В лектора %d:%s відсутнє фото, івент не може бути відправлений дизайнерам"
-	ADD_EVENT_EMPTY_FB                  = "Поле \"FB івент\" пусте, івент не може бути відправлений в канал"
-	ADD_EVENT_EMPTY_POSTER              = "Поле \"Постер\" пусте, івент не може бути відправлений в канал"
+	ADD_EVENT_EMPTY_FB                  = "Поле \"FB івент\" пусте, івент не може бути відправлений"
+	ADD_EVENT_EMPTY_POSTER              = "Поле \"Постер\" пусте, івент не може бути відправлений"
 	ADD_EVENT_SEND_EVENT_TO_CHANNEL     = `Новий івент! 
-	Коли: %s - %s
-	Де: %s
-	`
+Коли: %s - %s
+Де: %s`
 	ADD_EVENT_SEND_EVENT_TO_COMMON_CHAT = `Новий івент!
-	Коли: %s
-	Де: %s
-	ФБ івент: %s
-	Ставте вподобайки, поширюйте, запрошуйте друзів!
-	Як і шо робити:
-	`
+Коли: %s - %s
+Де: %s
+ФБ івент: %s
+Ставте вподобайки, поширюйте, запрошуйте друзів!
+Як і шо робити:`
+
+	// ========================= Command: updateEvent =============================================================
+	EVENT_CURRENT_VALUE       = "Поточне значення:"
+	EVENT_WHAT_IS_START_TIME  = "Якщо бажаєш змінити, введи дату початку"
+	EVENT_WHAT_IS_END_TIME    = "Якщо бажаєш змінити, введи дату закінчення"
+	EVENT_WHAT_IS_DESCRIPTION = "Якщо бажаєш змінити, напиши опис"
+	EVENT_WHAT_IS_PLACE       = "Якщо бажаєш змінити, вибери місце"
+	EVENT_WHAT_IS_FB          = "Якщо бажаєш змінити, введи фб івент"
+	EVENT_WHAT_IS_POSTER      = "Якщо бажаєш змінити, завантаж постер"
+
+	EVENT_START_TIME_SUCCESSFULY_UPDATED  = "Дату початку успішно змінено"
+	EVENT_END_TIME_SUCCESSFULY_UPDATED    = "Дату закінчення успішно змінено"
+	EVENT_DESCRIPTION_SUCCESSFULY_UPDATED = "Опис успішно змінено"
+	EVENT_PLACE_SUCCESSFULY_UPDATED       = "Місце успішно змінено"
+	EVENT_FB_SUCCESSFULY_UPDATED          = "ФБ успішно змінено"
+	EVENT_POSTER_SUCCESSFULY_UPDATED      = "Постер успішно змінено"
 
 	// ========================== Command: nextEvent (sends info about the next event) ===========================
 	NEXT_EVENT           = "Де: %s, %s\nПочаток: %s\nКінець: %s"
@@ -45,7 +58,7 @@ const (
 
 	// ========================== Command: deleteEvent (deleting events) =========================================
 	DELETE_EVENT_COMPLETE = "Івент успішно видалено"
-	DELETE_EVENT_ITEM     = "Івент %d, %s"
+	DELETE_EVENT_ITEM     = "Івент %d: %s"
 
 	// ========================== PLACES SECTION =================================================================
 	PLACES_LIST_BUTTONS = "Місце %d: %s\n"
@@ -117,12 +130,22 @@ const (
 	MARKUP_BUTTON_DELETE_LECTURE                    = "Видалити лекцію"
 
 	// ========================= EVENT MARKUP =====================================================================
-	MARKUP_BUTTON_CREATE_EVENT            = "Створити івент"
-	MARKUP_BUTTON_LIST_EVENTS             = "Список івентів"
-	MARKUP_BUTTON_DELETE_EVENT            = "Видалити івент"
-	MARKUP_BUTTON_SEND_EVENT_TO_DESIGNERS = "Відправити івент в чат дизайнерів"
-	MARKUP_BUTTON_SEND_EVENT_TO_CHANNEL   = "Відправити івент в канал"
-	MARKUP_BUTTON_SEND_EVENT_TO_CHAT      = "Відправити івент в загальний чат"
+	MARKUP_BUTTON_CREATE_EVENT                     = "Створити івент"
+	MARKUP_BUTTON_LIST_EVENTS                      = "Список івентів"
+	MARKUP_BUTTON_UPDATE_EVENT                     = "Змінити івент"
+	MARKUP_BUTTON_DELETE_EVENT                     = "Видалити івент"
+	MARKUP_BUTTON_SEND_EVENT_TO_DESIGNERS          = "Відправити івент в чат дизайнерів"
+	MARKUP_BUTTON_SEND_EVENT_TO_CHANNEL            = "Відправити івент в канал"
+	MARKUP_BUTTON_SEND_EVENT_TO_CHAT               = "Відправити івент в загальний чат"
+	MARKUP_BUTTON_CHANGE_PHOTO_MANUAL              = "Змінити фото інструкції"
+	MARKUP_BUTTON_EVENT_CHANGE_START_DATE          = "Змінити дату початку"
+	MARKUP_BUTTON_EVENT_CHANGE_END_DATE            = "Змінити дату закінчення"
+	MARKUP_BUTTON_EVENT_CHANGE_DESCRIPTION         = "Змінити опис"
+	MARKUP_BUTTON_EVENT_CHANGE_PLACE               = "Змінити місце"
+	MARKUP_BUTTON_EVENT_CHANGE_FB                  = "Змінити фб івент"
+	MARKUP_BUTTON_EVENT_CHANGE_POSTER              = "Змінити постер"
+	MARKUP_BUTTON_ADD_PHOTO_MANUAL                 = "Завантажте фото інструкції"
+	MARKUP_BUTTON_PHOTO_MANUAL_SUCCESSFULY_UPDATED = "Фото інструкції успішно змінено"
 
 	// ========================= USER MARKUP ======================================================================
 	MARKUP_BUTTON_CREATE_USER = "Створити користувача"
@@ -192,11 +215,11 @@ const (
 	MARKUP_BUTTON_NO   = "Ні"
 	WRONG_PERMISSION   = "Воу-воу, палєгче братиш"
 	DONE               = "Зроблено!"
+	CURRENT_VALUE      = "Поточне значення:"
 
 	// ========================= PROFILE SECTION ==================================================================
 	// ========================= Command: profileName =============================================================
 	PROFILE_ALL_INFO                     = "Профіль:\nІм'я: %s\nFB: %s\nVK: %s\nДата народження: %s\n"
-	PROFILE_CURRENT_VALUE                = "Поточне значення:"
 	PROFILE_WHAT_IS_YOUR_NAME            = "Якщо бажаєш змінити, введи ім'я та прізвище"
 	PROFILE_WHAT_IS_ROLE                 = "Якщо бажаєш змінити, вибери роль"
 	PROFILE_ROLE_SUCCESSFULY_UPDATED     = "Роль успішно змінено"

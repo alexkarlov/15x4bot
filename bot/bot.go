@@ -104,16 +104,16 @@ func (b *Bot) SendText(chatID int64, msg string) error {
 	return err
 }
 
-// SendTextToChannel sends a message to particular chat
-func (b *Bot) SendTextToChannel(channel string, msg string, fileIDs []string) error {
+// SendMsgToChannel sends a message to particular chat
+func (b *Bot) SendMsgToChannel(channel string, msg string, fileIDs []string) error {
 	replyMsg := tgbotapi.NewMessageToChannel(channel, msg)
-	_, err := b.bot.Send(replyMsg)
+	sendMsg, err := b.bot.Send(replyMsg)
 	if err != nil {
 		return err
 	}
 	if len(fileIDs) > 0 {
 		for _, f := range fileIDs {
-			pc := tgbotapi.NewPhotoShare(replyMsg.ChatID, f)
+			pc := tgbotapi.NewPhotoShare(sendMsg.Chat.ID, f)
 			_, err = b.bot.Send(pc)
 			if err != nil {
 				return err

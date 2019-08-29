@@ -1,0 +1,1 @@
+DELETE FROM articles WHERE name='event_manual_photo_id'

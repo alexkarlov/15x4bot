@@ -72,25 +72,25 @@ func profileMarkupField(u *store.User, answer string) (*ReplyMarkup, string) {
 	switch answer {
 	case lang.MARKUP_BUTTON_PROFILE_ROLE:
 		field = "role"
-		replyMarkup.Text = lang.PROFILE_CURRENT_VALUE + "\n" + string(u.Role) + "\n" + lang.PROFILE_WHAT_IS_ROLE
+		replyMarkup.Text = lang.CURRENT_VALUE + "\n" + string(u.Role) + "\n" + lang.PROFILE_WHAT_IS_ROLE
 		roles := MessageButtons{string(store.USER_ROLE_ADMIN), string(store.USER_ROLE_LECTOR), string(store.USER_ROLE_GUEST)}
 		replyMarkup.Buttons = append(replyMarkup.Buttons, roles...)
 	case lang.MARKUP_BUTTON_PROFILE_NAME:
 		field = "name"
-		replyMarkup.Text = lang.PROFILE_CURRENT_VALUE + "\n" + u.Name + "\n" + lang.PROFILE_WHAT_IS_YOUR_NAME
+		replyMarkup.Text = lang.CURRENT_VALUE + "\n" + u.Name + "\n" + lang.PROFILE_WHAT_IS_YOUR_NAME
 	case lang.MARKUP_BUTTON_PROFILE_FB_ACCOUNT:
 		field = "fb"
-		replyMarkup.Text = lang.PROFILE_CURRENT_VALUE + "\n" + u.FB + "\n" + lang.PROFILE_WHAT_IS_YOUR_FB
+		replyMarkup.Text = lang.CURRENT_VALUE + "\n" + u.FB + "\n" + lang.PROFILE_WHAT_IS_YOUR_FB
 	case lang.MARKUP_BUTTON_PROFILE_PICTURE:
 		field = "picture"
 		replyMarkup.FileID = u.PictureID
 		replyMarkup.Text = lang.PROFILE_WHAT_IS_YOUR_PICTURE
 	case lang.MARKUP_BUTTON_PROFILE_VK_ACCOUNT:
 		field = "vk"
-		replyMarkup.Text = lang.PROFILE_CURRENT_VALUE + "\n" + u.VK + "\n" + lang.PROFILE_WHAT_IS_YOUR_VK
+		replyMarkup.Text = lang.CURRENT_VALUE + "\n" + u.VK + "\n" + lang.PROFILE_WHAT_IS_YOUR_VK
 	case lang.MARKUP_BUTTON_PROFILE_BIRTHDAY:
 		field = "bdate"
-		replyMarkup.Text = lang.PROFILE_CURRENT_VALUE + "\n" + u.BDate.Format(Conf.DateLayout) + "\n" + lang.PROFILE_WHAT_IS_YOUR_BIRTHDAY
+		replyMarkup.Text = lang.CURRENT_VALUE + "\n" + u.BDate.Format(Conf.DateLayout) + "\n" + lang.PROFILE_WHAT_IS_YOUR_BIRTHDAY
 	}
 	return replyMarkup, field
 }

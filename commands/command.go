@@ -3,6 +3,7 @@ package commands
 import (
 	"errors"
 	"github.com/alexkarlov/15x4bot/config"
+	"github.com/alexkarlov/15x4bot/lang"
 	"github.com/alexkarlov/15x4bot/store"
 	"regexp"
 	"strconv"
@@ -168,6 +169,36 @@ var (
 			pattern: `Список івентів`,
 			createCmd: func(cmd string) Command {
 				return &eventsList{}
+			},
+		},
+		{
+			pattern: `Змінити івент`,
+			createCmd: func(cmd string) Command {
+				return newUpdateEvent()
+			},
+		},
+		{
+			pattern: lang.MARKUP_BUTTON_SEND_EVENT_TO_DESIGNERS,
+			createCmd: func(cmd string) Command {
+				return newSendEvent(SEND_EVENT_TO_DESIGNERS)
+			},
+		},
+		{
+			pattern: lang.MARKUP_BUTTON_SEND_EVENT_TO_CHAT,
+			createCmd: func(cmd string) Command {
+				return newSendEvent(SEND_EVENT_TO_CHAT)
+			},
+		},
+		{
+			pattern: lang.MARKUP_BUTTON_SEND_EVENT_TO_CHANNEL,
+			createCmd: func(cmd string) Command {
+				return newSendEvent(SEND_EVENT_TO_CHANNEL)
+			},
+		},
+		{
+			pattern: lang.MARKUP_BUTTON_CHANGE_PHOTO_MANUAL,
+			createCmd: func(cmd string) Command {
+				return newUpdateArticle("event_manual_photo_id")
 			},
 		},
 		{

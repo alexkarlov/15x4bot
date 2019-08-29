@@ -101,8 +101,11 @@ func LoadEvent(ID int) (*Event, error) {
 	e := &Event{}
 	q := "SELECT e.id, e.starttime, e.endtime, p.name, p.address, e.description, e.fb, e.poster FROM events e LEFT JOIN places p ON p.id=e.place WHERE e.id=$1"
 	err := dbConn.QueryRow(q, ID).Scan(&e.ID, &e.StartTime, &e.EndTime, &e.PlaceName, &e.Address, &e.Description, &e.FB, &e.Poster)
-	if err == sql.ErrNoRows {
-		return nil, ErrNoEvent
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrNoEvent
+		}
+		return nil, err
 	}
 	q = "SELECT id_lecture FROM event_lectures WHERE id_event=$1"
 	var lID int
@@ -129,4 +132,34 @@ func LoadEvent(ID int) (*Event, error) {
 	}
 
 	return e, err
+}
+
+func (e *Event) UpdateStartTime(startTime time.Time) error {
+	_, err := dbConn.Exec("UPDATE events SET starttime=$1 WHERE id=$2", startTime, e.ID)
+	return err
+}
+
+func (e *Event) UpdateEndTime(endTime time.Time) error {
+	_, err := dbConn.Exec("UPDATE events SET endtime=$1 WHERE id=$2", endTime, e.ID)
+	return err
+}
+
+func (e *Event) UpdateDescription(description string) error {
+	_, err := dbConn.Exec("UPDATE events SET description=$1 WHERE id=$2", description, e.ID)
+	return err
+}
+
+func (e *Event) UpdatePlace(place int) error {
+	_, err := dbConn.Exec("UPDATE events SET place=$1 WHERE id=$2", place, e.ID)
+	return err
+}
+
+func (e *Event) UpdateFB(fb string) error {
+	_, err := dbConn.Exec("UPDATE events SET fb=$1 WHERE id=$2", fb, e.ID)
+	return err
+}
+
+func (e *Event) UpdatePoster(poster string) error {
+	_, err := dbConn.Exec("UPDATE events SET poster=$1 WHERE id=$2", poster, e.ID)
+	return err
 }

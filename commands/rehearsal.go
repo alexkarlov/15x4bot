@@ -120,7 +120,7 @@ func addRehearsalReminder(ID int, execTime time.Time) error {
 	msg := fmt.Sprintf(lang.REHEARSAL_MSG_TO_CHANNEL, r.PlaceName, wd, r.Time.Day(), m, r.Time.Format(Conf.TimeLayout), r.Address, r.MapUrl)
 	rh := &store.RemindChannel{
 		Msg:             msg,
-		ChannelUsername: Conf.InternalChatID,
+		ChannelUsername: Conf.OrgChatID,
 	}
 	details, err := json.Marshal(rh)
 	if err != nil {
@@ -132,7 +132,7 @@ func addRehearsalReminder(ID int, execTime time.Time) error {
 		return err
 	}
 	// create channel reminder
-	rh.ChannelUsername = Conf.InternalChannelUsername
+	rh.ChannelUsername = Conf.OrgChannelUsername
 	details, err = json.Marshal(rh)
 	if err != nil {
 		return err

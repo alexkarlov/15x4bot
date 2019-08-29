@@ -66,17 +66,25 @@ func (c *addEvent) thirdStep(answer string) (*ReplyMarkup, error) {
 		replyMarkup.Text = lang.ADD_EVENT_WRONG_DATETIME
 		return replyMarkup, nil
 	}
+	pl, err := markupPlacesList()
+	if err != nil {
+		return nil, err
+	}
+	replyMarkup.Buttons = pl
+	return replyMarkup, nil
+}
+
+func markupPlacesList() ([]string, error) {
 	places, err := store.Places(store.PlaceTypes{store.PLACE_TYPE_FOR_EVENT, store.PLACE_TYPE_FOR_ALL})
 	if err != nil {
 		return nil, err
 	}
-	replyMarkup.Buttons = nil
+	pl := make([]string, 0)
 	for _, p := range places {
 		b := fmt.Sprintf(lang.PLACES_LIST_BUTTONS, p.ID, p.Name)
-		replyMarkup.Buttons = append(replyMarkup.Buttons, b)
+		pl = append(pl, b)
 	}
-	replyMarkup.Text = lang.PLACES_CHOSE_PLACE
-	return replyMarkup, nil
+	return pl, nil
 }
 
 // fourthStep saves place for the event and asks for text of the event
@@ -258,16 +266,25 @@ func markupEventsList() (*ReplyMarkup, error) {
 		return nil, err
 	}
 	for _, event := range events {
-		eText := fmt.Sprintf(lang.DELETE_EVENT_ITEM, event.ID, event.StartTime)
+		eText := fmt.Sprintf(lang.DELETE_EVENT_ITEM, event.ID, event.StartTime.Format(Conf.TimeLayout))
 		replyMarkup.Buttons = append(replyMarkup.Buttons, eText)
 	}
 	replyMarkup.Text = lang.EVENTS_CHOSE_EVENT
 	return replyMarkup, nil
 }
 
+const (
+	SEND_EVENT_TO_DESIGNERS typeSendEvent = 1
+	SEND_EVENT_TO_CHAT      typeSendEvent = 2
+	SEND_EVENT_TO_CHANNEL   typeSendEvent = 3
+)
+
+type typeSendEvent int
+
 // sendEvent is a command for deleting events
 type sendEvent struct {
 	eventID int
+	t       typeSendEvent
 	u       *store.User
 	stepConstructor
 }
@@ -278,8 +295,10 @@ func (c *sendEvent) IsAllow(u *store.User) bool {
 }
 
 // newSendEvent creates sendEvent and registers all steps
-func newSendEvent() *sendEvent {
-	c := &sendEvent{}
+func newSendEvent(t typeSendEvent) *sendEvent {
+	c := &sendEvent{
+		t: t,
+	}
 	c.RegisterSteps(c.firstStep, c.secondStep)
 	return c
 }
@@ -302,23 +321,23 @@ func (c *sendEvent) secondStep(answer string) (*ReplyMarkup, error) {
 	if err != nil {
 		return nil, err
 	}
-	switch answer {
-	case lang.MARKUP_BUTTON_SEND_EVENT_TO_DESIGNERS:
+	switch c.t {
+	case SEND_EVENT_TO_DESIGNERS:
 		for _, l := range e.Lectures {
 			// check lectures descriptions
 			if l.Description == "" {
-				replyMarkup.Text = lang.ADD_EVENT_EMPTY_LECTURE_DESCRIPTION
+				replyMarkup.Text = fmt.Sprintf(lang.ADD_EVENT_EMPTY_LECTURE_DESCRIPTION, l.ID, l.Name)
 				return replyMarkup, nil
 			}
 			// check lectors profile pictures
 			if l.Lector.PictureID == "" {
-				replyMarkup.Text = lang.ADD_EVENT_EMPTY_PICTURE_SPEAKER
+				replyMarkup.Text = fmt.Sprintf(lang.ADD_EVENT_EMPTY_PICTURE_SPEAKER, l.ID, l.Name)
 				return replyMarkup, nil
 			}
 		}
 		// create a task for send event to designers chat
 		err = sendToDesignersChat(e)
-	case lang.MARKUP_BUTTON_SEND_EVENT_TO_CHANNEL:
+	case SEND_EVENT_TO_CHANNEL:
 		// check event FB field
 		if e.FB == "" {
 			replyMarkup.Text = lang.ADD_EVENT_EMPTY_FB
@@ -329,15 +348,16 @@ func (c *sendEvent) secondStep(answer string) (*ReplyMarkup, error) {
 			replyMarkup.Text = lang.ADD_EVENT_EMPTY_POSTER
 			return replyMarkup, nil
 		}
-		// create a task for send event to common chat
+		// create a task for send event to common channel
 		err = sendToChannel(e)
-	case lang.MARKUP_BUTTON_SEND_EVENT_TO_CHAT:
+	case SEND_EVENT_TO_CHAT:
 		// check event FB field
 		if e.FB == "" {
 			replyMarkup.Text = lang.ADD_EVENT_EMPTY_FB
 			return replyMarkup, nil
 		}
 		// create a task for send event to common chat
+		err = sendToChat(e)
 	}
 	if err != nil {
 		return nil, err
@@ -368,7 +388,7 @@ func sendToDesignersChat(e *store.Event) error {
 
 func sendToChannel(e *store.Event) error {
 	rh := &store.RemindChannel{
-		Msg:             fmt.Sprintf(lang.ADD_EVENT_SEND_EVENT_TO_CHANNEL, e.StartTime, e.EndTime, e.PlaceName),
+		Msg:             fmt.Sprintf(lang.ADD_EVENT_SEND_EVENT_TO_CHANNEL, e.StartTime.Format(Conf.TimeLayout), e.EndTime.Format("15:04"), e.PlaceName),
 		ChannelUsername: Conf.MainChannelUsername,
 		FileIDs:         []string{e.Poster},
 	}
@@ -378,4 +398,158 @@ func sendToChannel(e *store.Event) error {
 	}
 	execTime := asSoonAsPossible()
 	return store.AddTask(store.TASK_TYPE_REMINDER_TG_CHANNEL, execTime, string(details))
+}
+
+func sendToChat(e *store.Event) error {
+	// load manual photo id
+	a, err := store.LoadArticle("event_manual_photo_id")
+	if err != nil {
+		return err
+	}
+	rh := &store.RemindChannel{
+		Msg:             fmt.Sprintf(lang.ADD_EVENT_SEND_EVENT_TO_COMMON_CHAT, e.StartTime.Format(Conf.TimeLayout), e.EndTime.Format("15:04"), e.PlaceName, e.FB),
+		ChannelUsername: Conf.OrgChatID,
+		FileIDs:         []string{a.Text},
+	}
+	details, err := json.Marshal(rh)
+	if err != nil {
+		return err
+	}
+	execTime := asSoonAsPossible()
+	return store.AddTask(store.TASK_TYPE_REMINDER_TG_CHANNEL, execTime, string(details))
+}
+
+// updateEvent is a command for updating events
+type updateEvent struct {
+	field string
+	e     *store.Event
+	stepConstructor
+}
+
+// newUpdateEvent creates updateEvent and registers all steps
+func newUpdateEvent() *updateEvent {
+	c := &updateEvent{}
+	c.RegisterSteps(c.firstStep, c.secondStep, c.thirdStep, c.fourthStep)
+	return c
+}
+
+func (c *updateEvent) IsAllow(u *store.User) bool {
+	return u.Role == store.USER_ROLE_ADMIN
+}
+
+func (c *updateEvent) firstStep(answer string) (*ReplyMarkup, error) {
+	return markupEventsList()
+}
+
+func (c *updateEvent) secondStep(answer string) (*ReplyMarkup, error) {
+	eID, err := parseID(answer)
+	if err != nil {
+		return nil, err
+	}
+	e, err := store.LoadEvent(eID)
+	if err != nil {
+		return nil, err
+	}
+	c.e = e
+	replyMarkup := eventMarkupButtons()
+	return replyMarkup, nil
+}
+
+func (c *updateEvent) thirdStep(answer string) (*ReplyMarkup, error) {
+	replyMarkup := &ReplyMarkup{
+		Buttons: MainMarkup,
+	}
+	switch answer {
+	case lang.MARKUP_BUTTON_EVENT_CHANGE_START_DATE:
+		c.field = "starttime"
+		replyMarkup.Text = lang.CURRENT_VALUE + "\n" + c.e.StartTime.Format(Conf.TimeLayout) + "\n" + lang.EVENT_WHAT_IS_START_TIME
+	case lang.MARKUP_BUTTON_EVENT_CHANGE_END_DATE:
+		c.field = "endtime"
+		replyMarkup.Text = lang.CURRENT_VALUE + "\n" + c.e.EndTime.Format(Conf.TimeLayout) + "\n" + lang.EVENT_WHAT_IS_END_TIME
+	case lang.MARKUP_BUTTON_EVENT_CHANGE_DESCRIPTION:
+		c.field = "description"
+		replyMarkup.Text = lang.CURRENT_VALUE + "\n" + c.e.Description + "\n" + lang.EVENT_WHAT_IS_DESCRIPTION
+	case lang.MARKUP_BUTTON_EVENT_CHANGE_PLACE:
+		c.field = "place"
+		replyMarkup.Text = lang.CURRENT_VALUE + "\n" + c.e.PlaceName + "\n" + lang.EVENT_WHAT_IS_PLACE
+		pl, err := markupPlacesList()
+		if err != nil {
+			return nil, err
+		}
+		replyMarkup.Buttons = pl
+	case lang.MARKUP_BUTTON_EVENT_CHANGE_FB:
+		c.field = "fb"
+		replyMarkup.Text = lang.CURRENT_VALUE + "\n" + c.e.FB + "\n" + lang.EVENT_WHAT_IS_FB
+	case lang.MARKUP_BUTTON_EVENT_CHANGE_POSTER:
+		c.field = "poster"
+		replyMarkup.FileID = c.e.Poster
+		replyMarkup.Text = lang.EVENT_WHAT_IS_POSTER
+	}
+	return replyMarkup, nil
+}
+
+func (c *updateEvent) fourthStep(answer string) (*ReplyMarkup, error) {
+	replyMarkup := &ReplyMarkup{
+		Buttons: StandardMarkup(store.USER_ROLE_ADMIN),
+	}
+	var err error
+	switch c.field {
+	case "starttime":
+		sd, err := time.Parse(Conf.TimeLayout, answer)
+		if err != nil {
+			replyMarkup.Text = lang.ADD_EVENT_WRONG_DATETIME
+			c.RepeatStep()
+			return replyMarkup, nil
+		}
+		replyMarkup.Text = lang.EVENT_START_TIME_SUCCESSFULY_UPDATED
+		err = c.e.UpdateStartTime(sd)
+	case "endtime":
+		sd, err := time.Parse(Conf.TimeLayout, answer)
+		if err != nil {
+			replyMarkup.Text = lang.ADD_EVENT_WRONG_DATETIME
+			c.RepeatStep()
+			return replyMarkup, nil
+		}
+		replyMarkup.Text = lang.EVENT_END_TIME_SUCCESSFULY_UPDATED
+		err = c.e.UpdateEndTime(sd)
+	case "description":
+		replyMarkup.Text = lang.EVENT_DESCRIPTION_SUCCESSFULY_UPDATED
+		err = c.e.UpdateDescription(answer)
+	case "place":
+		place, err := parseID(answer)
+		if err != nil {
+			return nil, err
+		}
+		ok, err := store.DoesPlaceExist(place)
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			replyMarkup.Text = lang.WRONG_PLACE_ID
+			return replyMarkup, nil
+		}
+		replyMarkup.Text = lang.EVENT_PLACE_SUCCESSFULY_UPDATED
+		err = c.e.UpdatePlace(place)
+	case "fb":
+		replyMarkup.Text = lang.EVENT_FB_SUCCESSFULY_UPDATED
+		err = c.e.UpdateFB(answer)
+	case "poster":
+		replyMarkup.Text = lang.EVENT_POSTER_SUCCESSFULY_UPDATED
+		err = c.e.UpdatePoster(answer)
+	}
+	return replyMarkup, err
+}
+
+func eventMarkupButtons() *ReplyMarkup {
+	replyMarkup := &ReplyMarkup{
+		Buttons: MessageButtons{lang.MARKUP_BUTTON_EVENT_CHANGE_START_DATE,
+			lang.MARKUP_BUTTON_EVENT_CHANGE_END_DATE,
+			lang.MARKUP_BUTTON_EVENT_CHANGE_DESCRIPTION,
+			lang.MARKUP_BUTTON_EVENT_CHANGE_PLACE,
+			lang.MARKUP_BUTTON_EVENT_CHANGE_FB,
+			lang.MARKUP_BUTTON_EVENT_CHANGE_POSTER,
+			lang.MARKUP_BUTTON_MAIN_MENU},
+		Text: lang.CHOSE_MENU,
+	}
+	return replyMarkup
 }

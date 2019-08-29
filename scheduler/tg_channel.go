@@ -19,14 +19,14 @@ func MessageToChannel(t *store.Task, b *bot.Bot) {
 	rc, err := t.LoadRemindChannel()
 	if err != nil {
 		log.Errorf("failed to load reminder rehearsal to channel of task %d error:%s", t.ID, err)
-		if err := t.ReleaseTask(); err != nil {
+		if err := t.ErrorTask(); err != nil {
 			log.Errorf("failed to release task %d error:%s", t.ID, err)
 		}
 		return
 	}
-	if err := b.SendTextToChannel(rc.ChannelUsername, rc.Msg, rc.FileIDs); err != nil {
+	if err := b.SendMsgToChannel(rc.ChannelUsername, rc.Msg, rc.FileIDs); err != nil {
 		log.Errorf("error while sending msg to %s. task %d error: %s", rc.ChannelUsername, t.ID, err)
-		if err := t.ReleaseTask(); err != nil {
+		if err := t.ErrorTask(); err != nil {
 			log.Errorf("failed to release task %d error:%s", t.ID, err)
 		}
 		return

@@ -160,6 +160,15 @@ func (t *Task) ReleaseTask() error {
 	return nil
 }
 
+// ErrorTask updates udate field to the current time and set status to ERROR if a task fulfills conditions
+func (t *Task) ErrorTask() error {
+	_, err := dbConn.Exec("UPDATE tasks SET udate=NOW(), status=$1 WHERE id=$2 AND status=$3", TASK_STATUS_ERROR, t.ID, TASK_STATUS_IN_PROGRESS)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Messenger is need for notifies admins about newcomers
 type Messenger struct {
 	Username string
