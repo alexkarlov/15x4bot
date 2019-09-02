@@ -2,6 +2,7 @@ package store
 
 import (
 	"database/sql"
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/alexkarlov/15x4bot/config"
 )
 
@@ -22,4 +23,11 @@ func Init() error {
 		return err
 	}
 	return nil
+}
+
+func InitTest() (sqlmock.Sqlmock, error) {
+	var err error
+	var mock sqlmock.Sqlmock
+	dbConn, mock, err = sqlmock.New()
+	return mock, err
 }

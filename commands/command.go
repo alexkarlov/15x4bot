@@ -23,7 +23,7 @@ var (
 		createCmd   func(cmd string) Command
 	}{
 		{
-			pattern: `Створити репетицію`,
+			pattern: lang.MARKUP_BUTTON_CREATE_REHEARSAL,
 			createCmd: func(cmd string) Command {
 				return newAddRehearsal()
 			},

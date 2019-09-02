@@ -49,6 +49,9 @@ func (c *addRehearsal) secondStep(answer string) (*ReplyMarkup, error) {
 	}
 	c.when = t
 	places, err := store.Places(store.PlaceTypes{store.PLACE_TYPE_FOR_REHEARSAL, store.PLACE_TYPE_FOR_ALL})
+	if err != nil {
+		return nil, err
+	}
 	replyMarkup.Buttons = nil
 	for _, p := range places {
 		b := fmt.Sprintf(lang.PLACES_LIST_BUTTONS, p.ID, p.Name)
