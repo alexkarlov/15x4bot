@@ -70,6 +70,7 @@ func (c *addEvent) thirdStep(answer string) (*ReplyMarkup, error) {
 	if err != nil {
 		return nil, err
 	}
+	replyMarkup.Text = lang.PLACES_CHOSE_PLACE
 	replyMarkup.Buttons = pl
 	return replyMarkup, nil
 }
