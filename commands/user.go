@@ -125,7 +125,7 @@ func (c *createUser) secondStep(answer string) (*ReplyMarkup, error) {
 		Buttons: MainMarkup,
 	}
 	c.name = answer
-	replyMarkup.Text = "Аккаунт в телеграмі"
+	replyMarkup.Text = lang.USER_TG_ACCOUNT
 	return replyMarkup, nil
 }
 
@@ -136,7 +136,7 @@ func (c *createUser) thirdStep(answer string) (*ReplyMarkup, error) {
 	}
 	replyMarkup := &ReplyMarkup{
 		Buttons: append(MainMarkup, lang.I_DONT_KNOW),
-		Text:    "Аккаунт в Фейсбуці",
+		Text:    lang.USER_FB_ACCOUNT,
 	}
 	return replyMarkup, nil
 }
@@ -147,7 +147,7 @@ func (c *createUser) fourthStep(answer string) (*ReplyMarkup, error) {
 		c.fb = answer
 	}
 	replyMarkup := &ReplyMarkup{
-		Text:    "Аккаунт в ВК",
+		Text:    lang.USER_VK_ACCOUNT,
 		Buttons: append(MainMarkup, lang.I_DONT_KNOW),
 	}
 	return replyMarkup, nil
@@ -159,7 +159,7 @@ func (c *createUser) fifthStep(answer string) (*ReplyMarkup, error) {
 		c.vk = answer
 	}
 	replyMarkup := &ReplyMarkup{
-		Text:    "Дата народження в форматі " + Conf.DateLayout,
+		Text:    lang.USER_DATE_BIRTH + Conf.DateLayout,
 		Buttons: append(MainMarkup, lang.I_DONT_KNOW),
 	}
 	return replyMarkup, nil
@@ -173,12 +173,12 @@ func (c *createUser) sixthStep(answer string) (*ReplyMarkup, error) {
 	if answer != lang.I_DONT_KNOW {
 		t, err := time.Parse(Conf.DateLayout, answer)
 		if err != nil {
-			replyMarkup.Text = "Невірний формат дати та часу. Спробуй ще!"
+			replyMarkup.Text = lang.WRONG_DATE_TIME
 			return replyMarkup, nil
 		}
 		c.bdate = t
 	}
-	replyMarkup.Text = "Роль в проекті"
+	replyMarkup.Text = lang.USER_ROLE
 	roles := MessageButtons{string(store.USER_ROLE_ADMIN), string(store.USER_ROLE_LECTOR), string(store.USER_ROLE_GUEST)}
 	replyMarkup.Buttons = append(replyMarkup.Buttons, roles...)
 	return replyMarkup, nil

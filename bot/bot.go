@@ -1,8 +1,10 @@
 package bot
 
 import (
+	"errors"
 	"github.com/alexkarlov/15x4bot/commands"
 	"github.com/alexkarlov/15x4bot/config"
+	"github.com/alexkarlov/15x4bot/lang"
 	"github.com/alexkarlov/simplelog"
 	"gopkg.in/telegram-bot-api.v4"
 )
@@ -13,7 +15,6 @@ var Conf config.TG
 type ChatType string
 
 const (
-	InternalErrorText = "Внутрішня помилка, сорян"
 	ButtonsCountInRow = 2
 
 	ChatGroup      ChatType = "group"
@@ -27,6 +28,9 @@ type Bot struct {
 }
 
 func NewBot() (*Bot, error) {
+	if Conf.AdminAccount == "ADMIN" {
+		return nil, errors.New("Default admin account cann't be used. Please, set real admin account in .env file")
+	}
 	tgbot, err := tgbotapi.NewBotAPI(Conf.Token)
 	if err != nil {
 		return nil, err
@@ -88,7 +92,7 @@ func (b *Bot) ListenUpdates() {
 
 // SendError sends message with general error
 func (b *Bot) SendError(chatID int64) {
-	msg := tgbotapi.NewMessage(chatID, InternalErrorText)
+	msg := tgbotapi.NewMessage(chatID, lang.INTERNAL_ERROR_TEXT)
 	msg.BaseChat.ReplyMarkup = markup(commands.MainMarkup)
 	// TODO: process error
 	_, err := b.bot.Send(msg)

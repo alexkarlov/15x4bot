@@ -4,9 +4,6 @@ BOT_NAME=Od15x4Bot
 DSN=postgres://bot:@bot-db:5432/bot?sslmode=disable
 NETWORK=15x4
 run: up migrate logs
-startup: create-network run
-create-network:
-	-@docker network create -d bridge $(NETWORK)
 logs: 
 	docker-compose logs -f
 up: 

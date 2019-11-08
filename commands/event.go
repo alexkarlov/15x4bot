@@ -47,7 +47,7 @@ func (c *addEvent) secondStep(answer string) (*ReplyMarkup, error) {
 	}
 	t, err := time.Parse(Conf.TimeLayout, answer)
 	if err != nil {
-		replyMarkup.Text = lang.ADD_EVENT_WRONG_DATETIME
+		replyMarkup.Text = lang.WRONG_DATE_TIME
 		return replyMarkup, nil
 	}
 	c.whenStart = t
@@ -63,7 +63,7 @@ func (c *addEvent) thirdStep(answer string) (*ReplyMarkup, error) {
 	var err error
 	c.whenEnd, err = time.Parse(Conf.TimeLayout, answer)
 	if err != nil {
-		replyMarkup.Text = lang.ADD_EVENT_WRONG_DATETIME
+		replyMarkup.Text = lang.WRONG_DATE_TIME
 		return replyMarkup, nil
 	}
 	pl, err := markupPlacesList()
@@ -369,6 +369,10 @@ func (c *sendEvent) secondStep(answer string) (*ReplyMarkup, error) {
 }
 
 func sendToDesignersChat(e *store.Event) error {
+	// if we don't have designers chat
+	if Conf.DesignerChatID == "" {
+		return nil
+	}
 	msg := fmt.Sprintf(lang.ADD_EVENT_SEND_EVENT_TO_DESIGNERS_CHAT, e.StartTime, e.EndTime, e.PlaceName)
 	msgLectures := lang.LECTURE_LIST_ITEM
 	rh := &store.RemindChannel{
@@ -402,6 +406,10 @@ func sendToChannel(e *store.Event) error {
 }
 
 func sendToChat(e *store.Event) error {
+	// if we don't have org chat - skip it
+	if Conf.OrgChatID == "" {
+		return nil
+	}
 	// load manual photo id
 	a, err := store.LoadArticle("event_manual_photo_id")
 	if err != nil {
@@ -498,7 +506,7 @@ func (c *updateEvent) fourthStep(answer string) (*ReplyMarkup, error) {
 	case "starttime":
 		sd, err := time.Parse(Conf.TimeLayout, answer)
 		if err != nil {
-			replyMarkup.Text = lang.ADD_EVENT_WRONG_DATETIME
+			replyMarkup.Text = lang.WRONG_DATE_TIME
 			c.RepeatStep()
 			return replyMarkup, nil
 		}
@@ -507,7 +515,7 @@ func (c *updateEvent) fourthStep(answer string) (*ReplyMarkup, error) {
 	case "endtime":
 		sd, err := time.Parse(Conf.TimeLayout, answer)
 		if err != nil {
-			replyMarkup.Text = lang.ADD_EVENT_WRONG_DATETIME
+			replyMarkup.Text = lang.WRONG_DATE_TIME
 			c.RepeatStep()
 			return replyMarkup, nil
 		}

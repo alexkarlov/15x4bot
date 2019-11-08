@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"github.com/alexkarlov/15x4bot/lang"
 	"github.com/alexkarlov/15x4bot/store"
 )
@@ -24,8 +25,21 @@ func (c *article) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: StandardMarkup(c.u.Role),
 	}
-	article, err := store.LoadArticle(c.name)
-	replyMarkup.Text = article.Text
+	var err error
+	switch c.name {
+	case "about":
+		replyMarkup.Text = lang.ARTICLE_ABOUT
+	case "documentation":
+		replyMarkup.Text = lang.ARTICLE_DOCUMENTATION
+	case "start":
+		replyMarkup.Text = lang.ARTICLE_START
+	case "help":
+		replyMarkup.Text = lang.ARTICLE_HELP
+	case "main_menu":
+		replyMarkup.Text = lang.ARTICLE_MAIN_MENU
+	default:
+		err = errors.New("wrong article name")
+	}
 	return replyMarkup, err
 }
 
@@ -49,9 +63,15 @@ func newUpdateArticle(n string) *updateArticle {
 func (c *updateArticle) firstStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
-		Text:    lang.MARKUP_BUTTON_ADD_PHOTO_MANUAL,
 	}
-	return replyMarkup, nil
+	var err error
+	switch c.name {
+	case "event_manual_photo_id":
+		replyMarkup.Text = lang.MARKUP_BUTTON_ADD_PHOTO_MANUAL
+	default:
+		err = errors.New("unknown article name")
+	}
+	return replyMarkup, err
 }
 
 func (c *updateArticle) secondStep(answer string) (*ReplyMarkup, error) {
@@ -61,7 +81,12 @@ func (c *updateArticle) secondStep(answer string) (*ReplyMarkup, error) {
 	}
 	replyMarkup := &ReplyMarkup{
 		Buttons: MainMarkup,
-		Text:    lang.MARKUP_BUTTON_PHOTO_MANUAL_SUCCESSFULY_UPDATED,
+	}
+	switch c.name {
+	case "event_manual_photo_id":
+		replyMarkup.Text = lang.MARKUP_BUTTON_PHOTO_MANUAL_SUCCESSFULY_UPDATED
+	default:
+		err = errors.New("unknown article name")
 	}
 	return replyMarkup, err
 }

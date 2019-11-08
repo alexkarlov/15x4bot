@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/alexkarlov/15x4bot/lang"
 	"github.com/alexkarlov/15x4bot/store"
+	local_time "github.com/alexkarlov/15x4bot/time"
 	"strconv"
 	"strings"
 	"time"
@@ -15,7 +16,7 @@ const (
 )
 
 func nextDay(hour int) time.Time {
-	curr := time.Now()
+	curr := local_time.Now()
 	y, m, d := curr.Date()
 	loc, _ := time.LoadLocation(Conf.Location)
 	rTime := time.Date(y, m, d, hour, 0, 0, 0, loc).AddDate(0, 0, 1)
@@ -156,12 +157,15 @@ func (c *upsertLecture) fourthStep(answer string) (*ReplyMarkup, error) {
 		if err != nil {
 			return nil, err
 		}
-		store.AddTask(store.TASK_TYPE_REMINDER_LECTOR, execTime, string(details))
-		replyMarkup.Text += "\n" + fmt.Sprintf(lang.UPSERT_LECTURE_I_WILL_REMIND, execTime.Format(Conf.TimeLayout))
+		err = store.AddTask(store.TASK_TYPE_REMINDER_LECTOR, execTime, string(details))
+		if err != nil {
+			return nil, err
+		}
+		replyMarkup.Text = fmt.Sprintf(lang.UPSERT_LECTURE_I_WILL_REMIND, execTime.Format(Conf.TimeLayout))
 		// need to interrupt because this should be the last step
 		c.InterruptCommand()
 	} else {
-		replyMarkup.Text += "\n\n" + lang.UPSERT_LECTURE_SEND_TO_GRAMMAR_NAZI
+		replyMarkup.Text = lang.UPSERT_LECTURE_SEND_TO_GRAMMAR_NAZI
 		replyMarkup.Buttons = MessageButtons{lang.MARKUP_BUTTON_NO, lang.MARKUP_BUTTON_YES}
 	}
 	return replyMarkup, nil
@@ -232,8 +236,11 @@ func (c *addDescriptionLecture) thirdStep(answer string) (*ReplyMarkup, error) {
 
 func (c *addDescriptionLecture) fourthStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup, err := stepSendToGrammarChat(c.lectureID, answer, c.u)
+	if err != nil {
+		return nil, err
+	}
 	replyMarkup.Text = lang.ADD_LECTURE_DESCRIPTION_COMPLETE
-	return replyMarkup, err
+	return replyMarkup, nil
 }
 
 func stepSendToGrammarChat(lID int, answer string, u *store.User) (*ReplyMarkup, error) {
@@ -253,6 +260,10 @@ func stepSendToGrammarChat(lID int, answer string, u *store.User) (*ReplyMarkup,
 }
 
 func sendTextToGrammarNazi(ID int) error {
+	// if we don't have grammar nazi chat
+	if Conf.GrammarNaziChatID == "" {
+		return nil
+	}
 	l, err := store.LoadLecture(ID)
 	if err != nil {
 		return err

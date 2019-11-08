@@ -1,2 +1,1 @@
-TRUNCATE TABLE actions;
 TRUNCATE TABLE places;

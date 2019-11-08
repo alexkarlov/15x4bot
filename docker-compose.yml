@@ -1,4 +1,4 @@
-version: '3.5'
+version: '2.4'
 
 services:
   bot:
@@ -9,8 +9,11 @@ services:
     env_file:
     - .env
     depends_on: 
-      - postgresql
+      postgresql:
+        condition: service_healthy
     restart: on-failure
+    networks:
+      - 15x4
   postgresql:
     image: postgres:11
     env_file:
@@ -26,13 +29,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 5s
+    networks:
+      - 15x4
 
 volumes:
   pgdata:  
 
 networks:
-  default:
-    external:
-      name: 15x4
+  15x4:
+    name: 15x4
   

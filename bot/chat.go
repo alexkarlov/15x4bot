@@ -102,6 +102,7 @@ func loadChat(msg *Message) (*chat, error) {
 		return nil, err
 	}
 
+	role := store.USER_ROLE_GUEST
 	// if user doesn't have username, we need to create new record
 	// otherwise we can try to find user by username (if it was created before by admin)
 	// admin can create a user and set username
@@ -120,10 +121,15 @@ func loadChat(msg *Message) (*chat, error) {
 		if err != nil && err != store.ErrNoUser {
 			return nil, err
 		}
+
+		if msg.Username == Conf.AdminAccount {
+			// create admin record with current user
+			role = store.USER_ROLE_ADMIN
+		}
 	}
 
-	// here we need to create a new user because we didn't find it by tg id nor tg username
-	u, err = store.AddGuestUser(msg.Username, msg.UserID, msg.Name)
+	// here we need to create a new guest user because we didn't find it by tg id nor tg username
+	u, err = store.AddUser(msg.Username, msg.UserID, msg.Name, role)
 	if err != nil {
 		return nil, err
 	}

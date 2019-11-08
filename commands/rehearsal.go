@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/alexkarlov/15x4bot/lang"
+	local_time "github.com/alexkarlov/15x4bot/time"
 	"time"
 
 	"github.com/alexkarlov/15x4bot/store"
@@ -44,7 +45,7 @@ func (c *addRehearsal) secondStep(answer string) (*ReplyMarkup, error) {
 	}
 	t, err := time.Parse(Conf.TimeLayout, answer)
 	if err != nil {
-		replyMarkup.Text = lang.ADD_REHEARSAL_ERROR_DATE
+		replyMarkup.Text = lang.WRONG_DATE_TIME
 		return replyMarkup, nil
 	}
 	c.when = t
@@ -102,61 +103,67 @@ func (c *addRehearsal) fourthStep(answer string) (*ReplyMarkup, error) {
 		execTime = c.when.AddDate(0, 0, -1)
 	}
 	// create a task for sending post in the internal channel
-	err = addRehearsalReminder(c.ID, execTime)
+	err = c.addRehearsalReminder(execTime)
 	if err != nil {
-		replyMarkup.Text = lang.ADD_REHEARSAL_ERROR_REMINDER_MSG
-		return replyMarkup, nil
+		return nil, err
 	}
 	replyMarkup.Text = fmt.Sprintf(lang.ADD_REHEARSAL_REMINDER_OK, execTime.Format(Conf.TimeLayout))
 	replyMarkup.Buttons = StandardMarkup(c.u.Role)
 	return replyMarkup, nil
 }
 
-func addRehearsalReminder(ID int, execTime time.Time) error {
+func (c *addRehearsal) addRehearsalReminder(execTime time.Time) error {
 	// create chat reminder
-	r, err := store.LoadRehearsal(ID)
+	r, err := store.LoadRehearsal(c.ID)
 	if err != nil {
 		return err
 	}
+	msg := ""
+	// create chat reminder
+	if Conf.OrgChatID != "" {
+		msg, err = c.msgToChannel(r, Conf.OrgChatID)
+		if err != nil {
+			return err
+		}
+	}
+	err = store.AddTask(store.TASK_TYPE_REMINDER_TG_CHANNEL, execTime, msg)
+	if err != nil {
+		return err
+	}
+	// create channel reminder
+	msg, err = c.msgToChannel(r, Conf.OrgChannelUsername)
+	if err != nil {
+		return err
+	}
+	return store.AddTask(store.TASK_TYPE_REMINDER_TG_CHANNEL, execTime, msg)
+}
+
+func (c *addRehearsal) msgToChannel(r *store.Rehearsal, chUsername string) (string, error) {
 	wd := lang.Weekdays[r.Time.Weekday().String()]
 	m := lang.Months[r.Time.Month().String()]
 	msg := fmt.Sprintf(lang.REHEARSAL_MSG_TO_CHANNEL, r.PlaceName, wd, r.Time.Day(), m, r.Time.Format(Conf.TimeLayout), r.Address, r.MapUrl)
 	rh := &store.RemindChannel{
 		Msg:             msg,
-		ChannelUsername: Conf.OrgChatID,
+		ChannelUsername: chUsername,
 	}
 	details, err := json.Marshal(rh)
-	if err != nil {
-		return err
-	}
-
-	err = store.AddTask(store.TASK_TYPE_REMINDER_TG_CHANNEL, execTime, string(details))
-	if err != nil {
-		return err
-	}
-	// create channel reminder
-	rh.ChannelUsername = Conf.OrgChannelUsername
-	details, err = json.Marshal(rh)
-	if err != nil {
-		return err
-	}
-	return store.AddTask(store.TASK_TYPE_REMINDER_TG_CHANNEL, execTime, string(details))
+	return string(details), err
 }
 
-type nextRep struct {
+type nextRehearsal struct {
 	u *store.User
 }
 
-func (c *nextRep) IsEnd() bool {
+func (c *nextRehearsal) IsEnd() bool {
 	return true
 }
 
-func (c *nextRep) IsAllow(u *store.User) bool {
+func (c *nextRehearsal) IsAllow(u *store.User) bool {
 	c.u = u
 	return true
 }
 
-func (c *nextRep) NextStep(answer string) (*ReplyMarkup, error) {
+func (c *nextRehearsal) NextStep(answer string) (*ReplyMarkup, error) {
 	replyMarkup := &ReplyMarkup{
 		Buttons: StandardMarkup(c.u.Role),
 	}
@@ -168,7 +175,7 @@ func (c *nextRep) NextStep(answer string) (*ReplyMarkup, error) {
 		}
 		return nil, err
 	}
-	replyMarkup.Text = fmt.Sprintf(lang.NEXT_REHEARSAL, r.PlaceName, r.Address, r.Time.Format("2006-01-02 15:04:05"), r.MapUrl)
+	replyMarkup.Text = fmt.Sprintf(lang.NEXT_REHEARSAL, r.PlaceName, r.Address, r.Time.Format(Conf.TimeLayout), r.MapUrl)
 	return replyMarkup, nil
 }
 
@@ -234,7 +241,7 @@ func (c *deleteRehearsal) secondStep(answer string) (*ReplyMarkup, error) {
 // asSoonAsPossible returns 2019-01-02 10:00:00
 func asSoonAsPossible() time.Time {
 	loc, _ := time.LoadLocation(Conf.Location)
-	curr := time.Now().In(loc)
+	curr := local_time.Now().In(loc)
 	y, m, d := curr.Date()
 	currH := curr.Hour()
 	if currH < Conf.RemindHourStart {

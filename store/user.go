@@ -161,12 +161,12 @@ func AddUserByAdmin(username string, role UserRole, name string, fb string, vk s
 	return tx.Commit()
 }
 
-// AddGuestUser creates a new guest in users table and returns created user
-func AddGuestUser(username string, tgID int, name string) (*User, error) {
+// AddUser creates a new guest in users table and returns created user
+func AddUser(username string, tgID int, name string, role UserRole) (*User, error) {
 	u := &User{
 		Username: username,
 		TGUserID: tgID,
-		Role:     USER_ROLE_GUEST,
+		Role:     role,
 		Name:     name,
 	}
 	err := dbConn.QueryRow("INSERT INTO users (username, tg_id, role, name) VALUES ($1, $2, $3, $4) RETURNING id", u.Username, u.TGUserID, u.Role, u.Name).Scan(&u.ID)
@@ -218,4 +218,15 @@ func GuestUser() *User {
 	return &User{
 		Role: USER_ROLE_GUEST,
 	}
+}
+
+// UsersEmpty returns whether users table doesn't contain any records
+func UsersEmpty() (bool, error) {
+	q := "SELECT count(*) FROM users"
+	c := 0
+	err := dbConn.QueryRow(q).Scan(&c)
+	if err != nil {
+		return false, err
+	}
+	return c == 0, nil
 }

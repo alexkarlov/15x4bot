@@ -1,1 +1,0 @@
-DELETE FROM actions WHERE command = 'main_menu';

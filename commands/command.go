@@ -29,43 +29,43 @@ var (
 			},
 		},
 		{
-			pattern: `Створити івент`,
+			pattern: lang.MARKUP_BUTTON_CREATE_EVENT,
 			createCmd: func(cmd string) Command {
 				return newAddEvent()
 			},
 		},
 		{
-			pattern: `Створити користувача`,
+			pattern: lang.MARKUP_BUTTON_CREATE_USER,
 			createCmd: func(cmd string) Command {
 				return newCreateUser()
 			},
 		},
 		{
-			pattern: `Змінити користувача`,
+			pattern: lang.MARKUP_BUTTON_UPDATE_USER,
 			createCmd: func(cmd string) Command {
 				return newUpdateUser()
 			},
 		},
 		{
-			pattern: `Створити лекцію`,
+			pattern: lang.MARKUP_BUTTON_CREATE_LECTURE,
 			createCmd: func(cmd string) Command {
 				return newUpsertLecture(false)
 			},
 		},
 		{
-			pattern: `Змінити лекцію`,
+			pattern: lang.MARKUP_BUTTON_UPDATE_LECTURE,
 			createCmd: func(cmd string) Command {
 				return newUpsertLecture(true)
 			},
 		},
 		{
-			pattern: `Список лекцій\(всі\)`,
+			pattern: lang.MARKUP_BUTTON_LECTURES_LIST_ALL,
 			createCmd: func(cmd string) Command {
 				return &lecturesList{}
 			},
 		},
 		{
-			pattern: `Список лекцій\(без опису\)`,
+			pattern: lang.MARKUP_BUTTON_LECTURES_LIST_WITHOUT_DESCRIPTION,
 			createCmd: func(cmd string) Command {
 				return &lecturesList{
 					withoutDescription: true,
@@ -73,19 +73,19 @@ var (
 			},
 		},
 		{
-			pattern: `Наступний івент`,
+			pattern: lang.MARKUP_BUTTON_NEXT_EVENT,
 			createCmd: func(cmd string) Command {
 				return &nextEvent{}
 			},
 		},
 		{
-			pattern: `Наступна репетиція`,
+			pattern: lang.MARKUP_BUTTON_NEXT_REHEARSAL,
 			createCmd: func(cmd string) Command {
-				return &nextRep{}
+				return &nextRehearsal{}
 			},
 		},
 		{
-			pattern: `Документація`,
+			pattern: lang.MARKUP_BUTTON_DOCUMENTATION,
 			createCmd: func(cmd string) Command {
 				return &article{
 					name: "documentation",
@@ -93,7 +93,7 @@ var (
 			},
 		},
 		{
-			pattern: `Хто ми`,
+			pattern: lang.MARKUP_BUTTON_WHO_WE_ARE,
 			createCmd: func(cmd string) Command {
 				return &article{
 					name: "about",
@@ -117,7 +117,7 @@ var (
 			},
 		},
 		{
-			pattern: `Головне меню`,
+			pattern: lang.MARKUP_BUTTON_MAIN_MENU,
 			createCmd: func(cmd string) Command {
 				return &article{
 					name: "main_menu",
@@ -125,54 +125,54 @@ var (
 			},
 		},
 		{
-			pattern: `(?i)101010|3\.14|advice|порада|що робити|что делать`,
+			pattern: `(?i)101010|3\.14`,
 			createCmd: func(cmd string) Command {
 				return &advice{}
 			},
 		},
 		{
-			pattern: `Додати опис до лекції`,
+			pattern: lang.MARKUP_BUTTON_ADD_DESCRIPTION,
 			createCmd: func(cmd string) Command {
 				return newAddDescriptionLecture()
 			},
 		},
 		{
-			pattern: `Видалити лекцію`,
+			pattern: lang.MARKUP_BUTTON_DELETE_LECTURE,
 			createCmd: func(cmd string) Command {
 				return newDeleteLecture()
 			},
 		},
 		{
-			pattern: `^Лекції|Івенти|Юзери|Репетиції$`,
+			pattern: lang.MARKUP_ADMIN_MAIN_MENU,
 			createCmd: func(cmd string) Command {
 				reply := &markup{}
 				switch cmd {
-				case "Лекції":
+				case lang.MARKUP_BUTTON_LECTURES:
 					reply.buttons = LectureMarkup
-				case "Івенти":
+				case lang.MARKUP_BUTTON_EVENTS:
 					reply.buttons = EventMarkup
-				case "Юзери":
+				case lang.MARKUP_BUTTON_USERS:
 					reply.buttons = UserMarkup
-				case "Репетиції":
+				case lang.MARKUP_BUTTON_REHEARSALS:
 					reply.buttons = RehearsalMarkup
 				}
 				return reply
 			},
 		},
 		{
-			pattern: `Профіль`,
+			pattern: lang.MARKUP_BUTTON_PROFILE,
 			createCmd: func(cmd string) Command {
 				return newProfile()
 			},
 		},
 		{
-			pattern: `Список івентів`,
+			pattern: lang.MARKUP_BUTTON_LIST_EVENTS,
 			createCmd: func(cmd string) Command {
 				return &eventsList{}
 			},
 		},
 		{
-			pattern: `Змінити івент`,
+			pattern: lang.MARKUP_BUTTON_UPDATE_EVENT,
 			createCmd: func(cmd string) Command {
 				return newUpdateEvent()
 			},
@@ -202,50 +202,43 @@ var (
 			},
 		},
 		{
-			pattern: `Видалити івент`,
+			pattern: lang.MARKUP_BUTTON_DELETE_EVENT,
 			createCmd: func(cmd string) Command {
 				return newDeleteEvent()
 			},
 		},
 		{
-			pattern: `Список користувачів`,
+			pattern: lang.MARKUP_BUTTON_LIST_USERS,
 			createCmd: func(cmd string) Command {
 				return &usersList{}
 			},
 		},
 		{
-			pattern: `Видалити користувача`,
+			pattern: lang.MARKUP_BUTTON_DELETE_USER,
 			createCmd: func(cmd string) Command {
 				return newDeleteUser()
 			},
 		},
 		{
-			pattern: `Видалити репетицію`,
+			pattern: lang.MARKUP_BUTTON_DELETE_REHEARSAL,
 			createCmd: func(cmd string) Command {
 				return newDeleteRehearsal()
 			},
 		},
 		{
-			pattern: `Я хочу читати лекції!`,
+			pattern: lang.MARKUP_BUTTON_I_WANT_TO_READ_LECTURES,
 			createCmd: func(cmd string) Command {
 				return &messenger{
-					role: "читати лекції",
+					role: lang.MARKUP_BUTTON_READ_LECTURES,
 				}
 			},
 		},
 		{
-			pattern: `Я хочу волонтерити!`,
+			pattern: lang.MARKUP_BUTTON_I_WANT_TO_BE_A_VOLUNTEER,
 			createCmd: func(cmd string) Command {
 				return &messenger{
-					role: "волонтерити",
+					role: lang.MARKUP_BUTTON_VOLUNTEER,
 				}
-			},
-		},
-		// hidden menu
-		{
-			pattern: `(?i)share your knowledge`,
-			createCmd: func(cmd string) Command {
-				return &quiz{}
 			},
 		},
 	}
@@ -325,7 +318,7 @@ type Command interface {
 
 // IsMainMenu returns if user wants to come back to main menu
 func IsMainMenu(m string) bool {
-	return m == "Головне меню"
+	return m == lang.MARKUP_BUTTON_MAIN_MENU
 }
 
 // NewCommand creates a new command by user anwser

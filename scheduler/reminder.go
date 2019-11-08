@@ -3,15 +3,9 @@ package scheduler
 import (
 	"fmt"
 	"github.com/alexkarlov/15x4bot/bot"
+	"github.com/alexkarlov/15x4bot/lang"
 	"github.com/alexkarlov/15x4bot/store"
 	"github.com/alexkarlov/simplelog"
-)
-
-const (
-	TEMPLATE_LECTURE_DESCRIPTION_REMINDER = `Привіт!
-	По можливості - напиши, будь ласка, опис до своєї лекції (два-три речення про що буде лекція). В головному меню є пункт "Додати опис до лекції". Якщо будуть питання - звертайся до @alex_karlov
-	Дякую!
-	`
 )
 
 // RemindLector sends message to the speaker about description of his lecture
@@ -51,7 +45,7 @@ func RemindLector(t *store.Task, b *bot.Bot) {
 		log.Info(fmt.Sprintf("reminder skip the user %d since it doesn't have tg id", l.Lector.ID))
 		return
 	}
-	b.SendText(int64(l.Lector.TGUserID), TEMPLATE_LECTURE_DESCRIPTION_REMINDER)
+	b.SendText(int64(l.Lector.TGUserID), lang.TEMPLATE_LECTURE_DESCRIPTION_REMINDER)
 	// Udate task with new execution time and attempts
 	if err = r.PostponeTask(t.ID); err != nil {
 		log.Errorf("failed to postpone task %d error:%s", t.ID, err)
