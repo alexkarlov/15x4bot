@@ -1,4 +1,5 @@
 This is a bot which helps to manage 15x4 processes
+
 Bot functions:
 - Creating rehearsals, send notification to chats and channels
 - Creating lectors with profiles (it can be useful for creating events)
